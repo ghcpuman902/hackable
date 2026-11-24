@@ -137,6 +137,29 @@
       "HighNetWorthIndividual"
     ]
   },
+  "valid/long-paragraphs.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION",
+      "CAUTION",
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      0,
+      1,
+      1,
+      0
+    ],
+    "keptTags": [
+      "CryptoWorker",
+      "PasswordsInBreaches"
+    ]
+  },
   "messy/01-fenced-markdown.md": {
     "headingsToBold": 0,
     "droppedLinks": [],

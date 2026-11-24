@@ -9,7 +9,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { cleanReportDetailed, parseReport as parseCleaned, type CleanStats } from "../report-md";
+import { cleanReportDetailed, parseReport as parseCleaned, CARD_WORD_CAP, type CleanStats } from "../report-md";
 
 const DIR = join(__dirname, "renderer-fixtures");
 const expected: Record<string, Expected> = JSON.parse(readFileSync(join(DIR, "expected.json"), "utf8"));
@@ -79,6 +79,32 @@ function normalise(cleaned: string, parsed: any): Normalised {
 const sentences = (s: string) =>
   s.replace(/\*\*[^*]+\*\*/, "").replace(/\[\^\d+\]/g, "").split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean);
 
+describe("long blocks split at sentence boundaries", () => {
+  const cleaned = cleanReport(readFileSync(join(DIR, "valid/long-paragraphs.md"), "utf8"));
+  const blocks = cleaned.split(/\n\s*\n/).filter((b) => !b.startsWith("[^") && !b.startsWith("#"));
+  const words = (b: string) => b.replace(/^>\s*\[!\w+\]/gm, "").replace(/^>/gm, "").replace(/\[\^[^\]\s]+\]/g, "").replace(/\*\*/g, "").split(/\s+/).filter(Boolean);
+  const sentenceCount = (b: string) => words(b).join(" ").split(/(?<=[.!?])\s+/).length;
+  it("every part is within the cap unless it is one sentence", () => {
+    for (const b of blocks) if (words(b).length > CARD_WORD_CAP) expect(sentenceCount(b)).toBe(1);
+  });
+  it("splits the long card and the long paragraph", () => {
+    expect(blocks.filter((b) => b.startsWith("> [!CAUTION]")).length).toBeGreaterThan(1);
+    expect(blocks.length).toBeGreaterThan(5);
+  });
+  it("no sentence is split", () => {
+    for (const b of blocks.filter((x) => !x.startsWith("> [!TIP]"))) expect(b.trim()).toMatch(/[.!?](?:\[\^[^\]\s]+\])*$|\*\*(?:\[\^[^\]\s]+\])*$/);
+  });
+  it("each footnote lands in the part holding its marker", () => {
+    const holds = (id: string) => blocks.filter((b) => b.includes(`[^${id}]`));
+    expect(holds("2")).toHaveLength(1);
+    expect(holds("2")[0]).toContain("A page that asks");
+    expect(holds("3")).toHaveLength(1);
+    expect(holds("3")[0]).toContain("Scammers send the link");
+    expect(holds("1")).toHaveLength(1);
+    expect(holds("1")[0]).toContain("You look like a crypto worker");
+  });
+});
+
 describe.each(Object.entries(expected))("%s", (file, exp) => {
   const raw = readFileSync(join(DIR, file), "utf8");
   const cleaned = cleanReport(raw);
@@ -87,7 +113,8 @@ describe.each(Object.entries(expected))("%s", (file, exp) => {
   it("fallback", () => expect(r.fallback).toBe(exp.fallback));
   it("card kinds and count (max 3)", () => {
     expect(r.cards.map((c) => c.kind)).toEqual(exp.cardKinds);
-    expect(r.cards.length).toBeLessThanOrEqual(3);
+    /* Follow on parts from a split carry no bold lead and belong to the card before them. */
+    expect(r.output.split(/\n\s*\n/).filter((b) => /^> \[!\w+\]\n> \*\*/.test(b)).length).toBeLessThanOrEqual(3);
   });
   it("footnotes per card", () => expect(r.cards.map((c) => c.footnoteUrls.length)).toEqual(exp.footnotesPerCard));
   it("every surviving link is whitelisted", () => {

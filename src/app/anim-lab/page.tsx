@@ -1,8 +1,18 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CSSProperties } from "react";
+import ReportMarkdown from "@/components/ReportMarkdown";
+import { cleanReportMarkdown } from "@/lib/report-md";
 import { Fan, runH, type CardState } from "@/components/Fan";
 import { Mini } from "@/components/Mini";
 import { SubscribeCard } from "@/components/SubscribeCard";
 import { FAN, type MiniName, type ScanTool } from "@/lib/synthetic";
+
+const FIXTURES = join(process.cwd(), "src/lib/__tests__/renderer-fixtures");
+const fixtureMd = cleanReportMarkdown(
+  readFileSync(join(FIXTURES, "valid/long-paragraphs.md"), "utf8"),
+  JSON.parse(readFileSync(join(FIXTURES, "whitelist.json"), "utf8")).allowedUrls,
+) ?? "";
 
 const NAMES: MiniName[] = ["rec", "flood", "vish", "sess", "breach", "steal", "prof"];
 
@@ -36,6 +46,9 @@ export default function AnimLab() {
       <section id="subscribe" style={{ display: "grid", gap: 8 }}>
         <b>subscribe (mock)</b>
         <SubscribeCard email="manglekuo@gmail.com" />
+      </section>
+      <section id="report-fixture" style={{ display: "grid", gap: 8 }}>
+        <ReportMarkdown markdown={fixtureMd} />
       </section>
     </main>
   );

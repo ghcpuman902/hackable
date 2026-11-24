@@ -38,6 +38,25 @@ function trimCard(text: string) {
   return [lead, ...keep].filter(Boolean).join(" ");
 }
 
+export const CARD_WORD_CAP = 45;
+
+const wordCount = (s: string) => s.replace(/\[\^[^\]\s]+\]/g, "").replace(/\*\*/g, "").split(/\s+/).filter(Boolean).length;
+
+/* Split text at sentence boundaries into parts of at most CARD_WORD_CAP words; a single long sentence stays whole. */
+function splitLong(text: string): string[] {
+  if (wordCount(text) <= CARD_WORD_CAP) return [text];
+  const parts: string[] = [];
+  let cur = "";
+  /* The bold lead is its own sentence even though its full stop sits inside the bold. */
+  const lead = text.match(/^(\*\*[^*]+\*\*(?:\[\^[^\]\s]+\])*)\s+(.*)$/);
+  for (const s of lead ? [lead[1], ...splitSentences(lead[2])] : splitSentences(text)) {
+    if (cur && wordCount(cur + " " + s) > CARD_WORD_CAP) { parts.push(cur); cur = s; }
+    else cur = cur ? cur + " " + s : s;
+  }
+  if (cur) parts.push(cur);
+  return parts;
+}
+
 /* Dashes become commas; hyphens inside words, links and handles stay. */
 const noDashes = (t: string) => t.replace(/[ \t]*[—–][ \t]*/g, ", ").replace(/[ \t]+-[ \t]+/g, ", ");
 
@@ -143,7 +162,7 @@ export function cleanReportDetailed(md: string, whitelist: string[], allowedTags
   const out: string[] = [];
   for (const b of blocks) {
     if (b.kind === "card") {
-      if (keepCards.has(b)) out.push(`> [!${b.type}]\n> ${b.text}`);
+      if (keepCards.has(b)) for (const part of splitLong(b.text)) out.push(`> [!${b.type}]\n> ${part}`);
     } else if (b.tagsOnly) {
       const kept: string[] = [];
       for (const tag of b.text.split(/\s+/)) {
@@ -153,7 +172,8 @@ export function cleanReportDetailed(md: string, whitelist: string[], allowedTags
       if (kept.length) out.push(kept.join(" "));
     } else if (paras < MAX_PARAS) {
       paras++;
-      out.push(b.text.replace(/(^|\s)#([A-Za-z]\w*)/g, (m, sp: string, tag: string) => (allowedTags.includes(tag) ? m : (droppedTags.add(tag), sp))));
+      const kept = b.text.replace(/(^|\s)#([A-Za-z]\w*)/g, (m, sp: string, tag: string) => (allowedTags.includes(tag) ? m : (droppedTags.add(tag), sp)));
+      out.push(...splitLong(kept));
     }
   }
   let result = out.join("\n\n").trim();
