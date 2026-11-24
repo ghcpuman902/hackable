@@ -1,5 +1,7 @@
 /* Synthetic data only. No network calls. */
 import type { Brand } from "@/components/brand-icons";
+import type { PatternId } from "./patterns";
+export type { Profile } from "./patterns";
 
 /* ---- scan sources: one AI SDK tool each, one fan card each ---- */
 export type ScanTool = "web" | "linkedin" | "github" | "hudsonRock" | "leakCheck" | "hibpTest"
@@ -86,87 +88,9 @@ export const SOURCES: { n: string; c: string; icon: { brand: Brand } | { lucide:
 /* ---- report ---- */
 export type MiniName = "rec" | "flood" | "vish" | "sess" | "breach" | "steal" | "prof";
 
-export type PatternId = "contagious-interview" | "email-bomb-vishing" | "session-hijack"
-  | "ceo-fraud" | "deepfake-giveaway" | "state-spearphish" | "wallet-drainer" | "sim-swap" | "pig-butchering" | "romance-scam";
-export type Pattern = { anim?: MiniName; href?: string; lead: string; rest: string; chain: [string, string][]; lesson: string; cite: string };
-
-/* Copy, chains and sources from 05-search-flow.html and BUILD-NOTES "Attack patterns". */
-export const PATTERNS: Record<PatternId, Pattern> = {
-  "contagious-interview": { anim: "rec", href: "/mockups/03-pattern-fake-recruiter.html",
-    lead: "A fake recruiter sends you a coding test, and running it infects your laptop.",
-    rest: " When you run npm install, the repo starts BeaverTail. It copies your saved logins and crypto wallets, then installs a backdoor called InvisibleFerret.",
-    chain: [["Recruiter message", "T1566.003 Spearphishing via Service"], ["Coding test repo", "T1204 User Execution"], ["npm install", "T1059.007 JavaScript"], ["Browser logins", "T1555.003 Credentials from Web Browsers"], ["Wallets and sessions", "T1539 Steal Web Session Cookie"]],
-    lesson: "Run take-home tests from recruiters you have not met in a GitHub Codespace or on a spare machine.",
-    cite: "Contagious Interview · Microsoft Threat Intelligence · Unit 42 (CL-STA-0240) · MITRE ATT&CK" },
-  "email-bomb-vishing": { anim: "vish", href: "/mockups/03-pattern-signup-bombing.html",
-    lead: "Hundreds of sign-up emails hit your inbox, and then someone from \"IT\" calls to help.",
-    rest: " The caller asks you to open Quick Assist and share your screen. Once you allow it, they can take your logins and later install ransomware.",
-    chain: [["Inbox flood", "T1667 Email Bombing"], ["Call on Teams or phone", "T1566.004 Spearphishing Voice"], ["Quick Assist", "T1219 Remote Access Tools"], ["Logins, then ransomware", "T1486 Data Encrypted for Impact"]],
-    lesson: "If IT calls you about spam, hang up and ring the help desk on the number from your company intranet.",
-    cite: "Black Basta email bomb · Microsoft Threat Intelligence (Storm-1811) · CISA AA24-131A · MITRE ATT&CK" },
-  "session-hijack": { anim: "sess", href: "/mockups/03-pattern-session-hijack.html",
-    lead: "A copied browser cookie lets someone into your accounts without your password or code.",
-    rest: " Infostealers take the cookie that keeps you signed in, and the attacker loads it in their own browser.",
-    chain: [["Infostealer", "T1555.003 Credentials from Web Browsers"], ["Session cookie", "T1539 Steal Web Session Cookie"], ["Replay it", "T1550.004 Web Session Cookie"]],
-    lesson: "After a leak, press Sign out of all sessions in each account's security settings, then change the password.",
-    cite: "Pass-the-cookie · MITRE ATT&CK T1539 · Hudson Rock Cavalier" },
-  "ceo-fraud": {
-    lead: "An email that seems to come from the boss asks finance to pay an invoice today.",
-    rest: " It comes from a lookalike address or a hacked mailbox, and the request is always urgent and secret.",
-    chain: [["Lookalike address", "T1585.002 Email Accounts"], ["Urgent request", "T1656 Impersonation"], ["Payment sent", "T1657 Financial Theft"]],
-    lesson: "Confirm any payment request by calling a number you already have, never one in the email.",
-    cite: "Business email compromise · FBI IC3 · MITRE ATT&CK" },
-  "deepfake-giveaway": {
-    lead: "A fake video of a famous business leader promises to double any crypto you send.",
-    rest: " Scammers loop old interview footage with a cloned voice on a hijacked channel, and the QR code goes to their wallet.",
-    chain: [["Hijacked channel", "T1586.001 Social Media Accounts"], ["Cloned face and voice", "T1656 Impersonation"], ["Crypto sent", "T1657 Financial Theft"]],
-    lesson: "No real company gives away crypto in return for a deposit.",
-    cite: "Deepfake crypto giveaways · FTC · MITRE ATT&CK" },
-  "state-spearphish": {
-    lead: "A state hacking group writes as a journalist, investor or supplier to get one reply.",
-    rest: " After a few friendly messages, a link asks for a sign in, and the login goes to the attackers.",
-    chain: [["Friendly approach", "T1598 Phishing for Information"], ["Lookalike sign in page", "T1566.002 Spearphishing Link"], ["Mailbox access", "T1114 Email Collection"]],
-    lesson: "When a new contact moves quickly to a link or a file, slow down and check who they are.",
-    cite: "Spearphishing by state groups · NCSC · MITRE ATT&CK" },
-  "wallet-drainer": {
-    lead: "A fake mint or airdrop asks for one wallet signature, then moves everything out.",
-    rest: " The signature quietly grants permission to spend every token in the wallet.",
-    chain: [["Fake mint or airdrop", "T1566.002 Spearphishing Link"], ["Signature request", "T1204.001 Malicious Link"], ["Wallet emptied", "T1657 Financial Theft"]],
-    lesson: "Read what a signature allows before you sign, and keep savings in a wallet you never connect to sites.",
-    cite: "Wallet drainers · Chainalysis · MITRE ATT&CK" },
-  "sim-swap": {
-    lead: "Someone talks the mobile network into moving a phone number to their own SIM.",
-    rest: " Every sign in code sent by text then goes to them.",
-    chain: [["Personal details", "T1589 Gather Victim Identity Information"], ["Number moved", "T1451 SIM Card Swap"], ["Codes by text", "T1111 Multi-Factor Authentication Interception"]],
-    lesson: "Use an app or a security key for sign in codes, and add a PIN to your mobile account.",
-    cite: "SIM swapping · FBI IC3 · MITRE ATT&CK" },
-  "pig-butchering": {
-    lead: "A new online friend shows off trading profits and offers to help you start.",
-    rest: " After weeks of daily messages, the recommended app shows growing gains, but every withdrawal needs one more fee, and the app is fake.",
-    chain: [["Wrong number message", "T1656 Impersonation"], ["Fake trading app", "T1036 Masquerading"], ["Deposits kept", "T1657 Financial Theft"]],
-    lesson: "Never invest through an app or site that someone you met online recommends.",
-    cite: "Pig butchering · FBI IC3 · MITRE ATT&CK" },
-  "romance-scam": {
-    lead: "Once trust is built, a sudden emergency needs money.",
-    rest: " The story is a frozen account, a medical bill or a ticket to finally meet, and the money goes by bank transfer, crypto or gift cards.",
-    chain: [["Fake profile", "T1585.001 Social Media Accounts"], ["Weeks of trust", "T1656 Impersonation"], ["Emergency request", "T1657 Financial Theft"]],
-    lesson: "Do not send money to someone you have only met online, however long you have talked.",
-    cite: "Romance fraud · Action Fraud · MITRE ATT&CK" },
-};
-export const LEAD_PATTERNS: PatternId[] = ["contagious-interview", "email-bomb-vishing"];
-export const EXTRA_PATTERNS: PatternId[] = ["session-hijack"];
-
-/* ---- profiles: a label a person may or may not have. When one applies, it picks the scam patterns shown first. ---- */
-export type Profile = "High Value Individual" | "Target of Spies" | "Crypto Worker" | "Romance Target";
-export const PROFILE_PATTERNS: Record<Profile, PatternId[]> = {
-  "High Value Individual": ["ceo-fraud", "deepfake-giveaway"],
-  "Target of Spies": ["state-spearphish", "contagious-interview"],
-  "Crypto Worker": ["wallet-drainer", "sim-swap", "contagious-interview"],
-  "Romance Target": ["pig-butchering", "romance-scam"],
-};
-/* Profile patterns first, then any others the findings point to, without repeats. */
-export const reportPatterns = (profile: Profile | null, others: PatternId[]): PatternId[] =>
-  [...new Set([...(profile ? PROFILE_PATTERNS[profile] : []), ...others])];
+/* The demo report's patterns (synthetic mode): the first two, then one more behind a button. */
+export const LEAD_PATTERNS: PatternId[] = ["contagious-interview", "email-bomb-fake-it-support"];
+export const EXTRA_PATTERNS: PatternId[] = ["pass-the-cookie"];
 
 export const DEMO_EMAIL = "jane@hibp-integration-tests.com";
 export const DEMO_CHIPS = "Jane Doe, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo";

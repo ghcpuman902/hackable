@@ -6,16 +6,17 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
 import { Fan, runH, type CardState } from "./Fan";
-import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, ProfileTag, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, SelfTicks, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
-import { outputFlags, type FlagHit, type FlagId } from "@/lib/flags";
+import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
+import { patternsFor } from "@/lib/patterns";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugExtra, type SugGroup } from "@/lib/suggest";
 import { Suggest, type Opt } from "./Suggest";
 import type { Brand } from "./brand-icons";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, reportPatterns, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 /* Where each recent person was found: one small badge on the avatar cycles through these. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
@@ -95,7 +96,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const [entry, setEntry] = useState("");
   const [running, setRunning] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [extraOpen, setExtraOpen] = useState(false);
+  /* What the person ticks themselves (moved home, big life event, selling online, travelling soon). Never inferred. */
+  const [selfFlags, setSelfFlags] = useState<SelfFlagId[]>([]);
+  const [scanId, setScanId] = useState(0);
   const [toast, setToast] = useState(false);
   const entryRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -263,7 +266,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
 
   const scan = useCallback((list: Chip[]) => {
-    setExtraOpen(false);
+    setSelfFlags([]);
+    setScanId((n) => n + 1);
     setSugQ(null);
     setShowAll(new URLSearchParams(location.search).has("all"));
     setMessages([]);
@@ -385,30 +389,30 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const rise = (i: number) => ({ animationDelay: i * 0.14 + "s" }) as CSSProperties;
   /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
   const flags: FlagId[] = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes").map((f) => f.id);
-  const patterns = livePatterns(outputs, flags);
+  const patterns = patternsFor({ profile: null, flags: [...flags, ...selfFlags] });
   const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
   /* Live scans get No profile for now: nothing they return is a cheap, reliable sign of one. */
+  const ticks = <SelfTicks key="ticks" on={selfFlags} onChange={setSelfFlags} />;
   const report = preset ? [
-    <ProfileTag key="profile" profile={preset.profile} />,
+    <ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />,
     ...presetFindings(preset),
-    ...reportPatterns(preset.profile, preset.patterns).map((id) => <PatternSec key={id} id={id} who={preset.name.split(" ")[0]} />),
+    <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
     <FinalSec key="final" onMail={mail} both={false} />,
   ] : live ? [
     <ProfileTag key="profile" profile={null} flags={flags} />,
     ...liveFindings(outputs),
-    ...patterns.map((id) => <PatternSec key={id} id={id} who={who} />),
-    <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")}
+    ticks,
+    <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
+    <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
       rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
         ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
   ] : [
     <ProfileTag key="profile" profile={null} />,
     ...FINDINGS,
-    ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),
-    ...(showAll || extraOpen
-      ? EXTRA_PATTERNS.map((id) => <PatternSec key={id} id={id} />)
-      : [<button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>One more pattern</button>]),
+    ticks,
+    <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
     <FinalSec key="final" onMail={mail} />,
   ];
 

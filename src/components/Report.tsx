@@ -1,8 +1,9 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Lucide, Tile } from "./icons";
-import { FLAG_LABEL, type FlagId } from "@/lib/flags";
+import { FLAG_LABEL, type FlagId, type SelfFlagId } from "@/lib/flags";
+import { PATTERN_ART, PATTERNS, type PatternId } from "@/lib/patterns";
 import type { Preset } from "@/lib/presets";
-import { DEMO_EMAIL, PATTERNS, type MiniName, type PatternId, type Profile, type ScanResult, type ScanTool } from "@/lib/synthetic";
+import { DEMO_EMAIL, type MiniName, type Profile, type ScanResult, type ScanTool } from "@/lib/synthetic";
 
 const s = (name: string): CSSProperties => ({ animationName: name });
 const dx = (v: string) => ({ "--dx": v }) as CSSProperties;
@@ -101,29 +102,68 @@ export function Sec({ children, mini }: { children: ReactNode; mini?: MiniName }
   );
 }
 
+const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
+
+/* One pattern, wording exactly as in fraud-patterns.json: oneLine and explain, the steps, the advice, then the name and sources. */
 export function PatternSec({ id, who }: { id: PatternId; who?: string }) {
   const p = PATTERNS[id];
+  const art = PATTERN_ART[id];
   const body = (
     <div>
-      <Para lead={p.lead} rest={p.rest} />
+      <Para lead={p.oneLine} rest={" " + p.explain} />
       <ol className="chain">
-        {p.chain.map(([n, t], i) => <li key={n} tabIndex={0} data-id={t} title={t}>{i > 0 && <span className="ar" aria-hidden="true"><Lucide name="arrow-right" /></span>}<span className="st">{n}</span></li>)}
+        {p.steps.map((n, i) => <li key={n}>{i > 0 && <span className="ar" aria-hidden="true"><Lucide name="arrow-right" /></span>}<span className="st">{n}</span></li>)}
       </ol>
-      <p className="lesson">{p.lesson}</p>
-      <span className="cite">{p.cite}</span>
+      <p className="lesson">{p.advice}</p>
+      <span className="cite">{p.name}{p.sources.map((u) => <span key={u}> · {art ? host(u) : <a href={u} target="_blank" rel="noreferrer">{host(u)}</a>}</span>)}</span>
     </div>
   );
-  if (!p.href) return <section className={`sec mk-card${p.anim ? "" : " plain"}`}>{body}{p.anim && <div><Mini name={p.anim} who={who} /></div>}</section>;
+  if (!art) return <section className="sec mk-card plain">{body}</section>;
   return (
-    <a className={`sec mk-card${p.anim ? "" : " plain"}`} href={p.href}>
+    <a className="sec mk-card" href={art.href}>
       {body}
-      {p.anim && <div><Mini name={p.anim} who={who} /></div>}
+      <div><Mini name={art.anim} who={who} /></div>
       <span className="go" aria-hidden="true"><Lucide name="arrow-right" /></span>
     </a>
   );
 }
 
-/* The profile a person has, or a calm No profile. A profile decides which patterns lead the report. */
+/* The first few patterns, then a button for the rest. Baseline patterns (QR code phishing) always show, last. */
+export function PatternList({ ids, who, max = 3, open = false }: { ids: PatternId[]; who?: string; max?: number; open?: boolean }) {
+  const [more, setMore] = useState(open);
+  const main = ids.filter((id) => !PATTERNS[id].triggeredBy.baseline);
+  const base = ids.filter((id) => PATTERNS[id].triggeredBy.baseline);
+  const shown = more ? main : main.slice(0, max);
+  const left = main.length - shown.length;
+  return (
+    <>
+      {shown.map((id) => <PatternSec key={id} id={id} who={who} />)}
+      {left > 0 && <button type="button" className="more" onClick={() => setMore(true)}>{left === 1 ? "One more pattern" : `${left} more patterns`}</button>}
+      {base.map((id) => <PatternSec key={id} id={id} who={who} />)}
+    </>
+  );
+}
+
+/* Things no public source shows. Only the person can tick them, and we never guess them. */
+export const SELF_FLAGS: SelfFlagId[] = ["recently-moved", "big-life-event", "selling-online", "travelling-soon"];
+export function SelfTicks({ on, onChange }: { on: SelfFlagId[]; onChange: (next: SelfFlagId[]) => void }) {
+  return (
+    <section className="sec mk-card plain ticks">
+      <div>
+        <Para lead="Is any of this true for you right now?" rest=" No public source shows these, so they only count if you tick them." />
+        <div className="tick-row">
+          {SELF_FLAGS.map((f) => (
+            <label key={f} className="tick">
+              <input type="checkbox" checked={on.includes(f)} onChange={(e) => onChange(e.target.checked ? [...on, f] : on.filter((x) => x !== f))} />
+              <span><Lucide name="check" />{FLAG_LABEL[f]}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* The profile label, then what public data shows (flags). Labels a person may or may not have; never a rating. */
 export function ProfileTag({ profile, flags = [] }: { profile: Profile | null; flags?: FlagId[] }) {
   return (
@@ -169,23 +209,6 @@ export type Outputs = Partial<Record<ScanTool, ScanResult>>;
 const and = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
 /* A commit email lets a fake recruiter write about your code; any email that is public or leaked can be flooded. */
-/* Flags pick the patterns: a public commit email, one username everywhere or a new job all lead to Contagious Interview;
-   being in the news leads to state spearphishing and fake boss payments. */
-export function livePatterns(o: Outputs, flags: FlagId[] = []): PatternId[] {
-  const on = (f: FlagId) => flags.includes(f);
-  const commitEmail = (o.github?.facts?.emails?.length ?? 0) > 0 || on("public-email-in-commits");
-  const publicEmail = commitEmail || !!o.social?.facts?.profiles?.includes("Gravatar") || !!o.hibpTest?.hit || !!o.leakCheck?.hit;
-  const ids: PatternId[] = [];
-  if (commitEmail || on("same-username-everywhere") || on("just-changed-jobs")) ids.push("contagious-interview");
-  if (publicEmail) ids.push("email-bomb-vishing");
-  /* Stealer logs and combolists with a password point to stolen sessions as well as stolen passwords. */
-  const creds = !!o.hibpTest?.facts?.breaches?.some((b) => b.creds) || !!o.hibpTest?.facts?.pastes?.some((p) => p.creds);
-  if (o.hudsonRock?.hit || creds || on("stealer-log-hit")) ids.push("session-hijack");
-  if (on("in-the-news")) ids.push("state-spearphish");
-  if (on("in-the-news") && on("just-changed-jobs")) ids.push("ceo-fraud");
-  return ids;
-}
-
 export function liveFindings(o: Outputs): ReactNode[] {
   const out: ReactNode[] = [];
   const bf = o.hibpTest?.facts;

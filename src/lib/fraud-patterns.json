@@ -1,0 +1,785 @@
+{
+  "version": "2026-11-24",
+  "profiles": [
+    "high-value-individual",
+    "target-of-spies",
+    "crypto-worker",
+    "romance-target",
+    "no-profile"
+  ],
+  "patterns": [
+    {
+      "id": "contagious-interview",
+      "name": "Fake job coding test",
+      "triggeredBy": {
+        "flags": [
+          "public-email-in-commits",
+          "same-username-everywhere",
+          "just-changed-jobs"
+        ],
+        "profiles": [
+          "crypto-worker",
+          "target-of-spies"
+        ],
+        "baseline": false
+      },
+      "oneLine": "A dream job offer that ends with you running their code.",
+      "explain": "Someone poses as a recruiter on LinkedIn or by email and invites you to a technical test. The project they send contains hidden software that steals passwords, browser logins and crypto wallets as soon as you run it.",
+      "steps": [
+        "Friendly recruiter",
+        "Coding test sent",
+        "Hidden malware runs"
+      ],
+      "advice": "Never run a project or install a tool from a recruiter on your main computer; ask to use an online editor instead, or open it in a throwaway virtual machine.",
+      "sources": [
+        "https://unit42.paloaltonetworks.com/two-campaigns-by-north-korea-bad-actors-target-job-hunters/",
+        "https://www.ic3.gov/PSA/2024/PSA240903"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "email-bomb-fake-it-support",
+      "name": "Inbox flood then a fake helpdesk call",
+      "triggeredBy": {
+        "flags": [
+          "public-email-in-commits",
+          "passwords-in-breaches",
+          "just-changed-jobs"
+        ],
+        "profiles": [
+          "high-value-individual"
+        ],
+        "baseline": false
+      },
+      "oneLine": "Thousands of junk emails, then a kind voice offering to fix it.",
+      "explain": "Your inbox is suddenly flooded with sign up emails. Minutes later someone calls or messages on Teams claiming to be your IT team and asks you to open a remote help tool such as Quick Assist so they can 'clean it up'.",
+      "steps": [
+        "Inbox flooded",
+        "Helpdesk calls",
+        "Remote access given"
+      ],
+      "advice": "Only accept IT help you asked for through your organisation's own helpdesk number, and never share a remote access code with someone who contacted you first.",
+      "sources": [
+        "https://www.microsoft.com/en-us/security/blog/2024/05/15/threat-actors-misusing-quick-assist-in-social-engineering-attacks-leading-to-ransomware/",
+        "https://www.rapid7.com/blog/post/2024/05/10/ongoing-social-engineering-campaign-linked-to-black-basta-ransomware-operators/"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "pass-the-cookie",
+      "name": "Stolen login session",
+      "triggeredBy": {
+        "flags": [
+          "stealer-log-hit"
+        ],
+        "profiles": [
+          "high-value-individual",
+          "crypto-worker"
+        ],
+        "baseline": false
+      },
+      "oneLine": "They don't need your password if they have your browser.",
+      "explain": "Password stealing software on a device you use copies the saved 'stay logged in' cookies from your browser. Criminals load those cookies and walk straight into your accounts, skipping your password and your login codes.",
+      "steps": [
+        "Infected device",
+        "Cookies copied",
+        "Account opened"
+      ],
+      "advice": "If a device of yours shows up in a stealer log, clean or reset it, then sign out of every session on your important accounts and change those passwords from a clean device.",
+      "sources": [
+        "https://attack.mitre.org/techniques/T1539/",
+        "https://attack.mitre.org/techniques/T1550/004/",
+        "https://www.infostealers.com/"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "fake-boss-payment",
+      "name": "Fake boss payment email",
+      "triggeredBy": {
+        "flags": [
+          "just-changed-jobs",
+          "in-the-news"
+        ],
+        "profiles": [
+          "high-value-individual"
+        ],
+        "baseline": false
+      },
+      "oneLine": "An urgent, quiet request from the boss to move money.",
+      "explain": "An email or message that looks like it comes from a senior colleague or a regular supplier asks you to pay an invoice, change bank details or buy gift cards, quickly and without telling anyone. The address is a lookalike or a hacked real account.",
+      "steps": [
+        "Lookalike address",
+        "Urgent request",
+        "Payment sent"
+      ],
+      "advice": "Check any new or changed payment request by calling the person on a number you already have, never one in the message.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2024/PSA240911",
+        "https://www.actionfraud.police.uk/a-z-of-fraud/mandate-fraud"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "deepfake-crypto-giveaway",
+      "name": "Deepfake crypto giveaway",
+      "triggeredBy": {
+        "flags": [
+          "in-the-news"
+        ],
+        "profiles": [
+          "crypto-worker",
+          "high-value-individual"
+        ],
+        "baseline": false
+      },
+      "oneLine": "A famous face on video promising to double your crypto.",
+      "explain": "A fake video, made with AI, shows a well known person or company boss announcing a giveaway or investment. If you are often in the news, your own face and voice could be used to promote one to others.",
+      "steps": [
+        "Fake video",
+        "Send crypto",
+        "Nothing returned"
+      ],
+      "advice": "No genuine giveaway asks you to send crypto first; if your own likeness is being used, report the video to the platform straight away.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2024/PSA241203"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "state-spearphishing",
+      "name": "Tailored phishing from state groups",
+      "triggeredBy": {
+        "flags": [
+          "in-the-news",
+          "same-username-everywhere"
+        ],
+        "profiles": [
+          "target-of-spies"
+        ],
+        "baseline": false
+      },
+      "oneLine": "A carefully researched message that feels like it came from a colleague.",
+      "explain": "Government backed groups study your work, contacts and interests, then send a believable message, often a meeting invite, a document to review or a QR code to join a WhatsApp group. The link steals your login or gives them access to your account.",
+      "steps": [
+        "Research on you",
+        "Trusted pretext",
+        "Account taken"
+      ],
+      "advice": "Confirm unexpected invites through a second channel, use a security key for your email, and treat any request to scan a QR code to 'join' a chat as suspicious.",
+      "sources": [
+        "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-341a",
+        "https://www.microsoft.com/en-us/security/blog/2025/01/16/new-star-blizzard-spear-phishing-campaign-targets-whatsapp-accounts/",
+        "https://attack.mitre.org/techniques/T1566/001/"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "wallet-drainer",
+      "name": "Wallet drainer site",
+      "triggeredBy": {
+        "flags": [
+          "same-username-everywhere",
+          "stealer-log-hit"
+        ],
+        "profiles": [
+          "crypto-worker"
+        ],
+        "baseline": false
+      },
+      "oneLine": "One signature and the wallet is empty.",
+      "explain": "A fake airdrop, mint or project site, often promoted by a hacked Discord or X account or a search ad, asks you to connect your wallet and sign a request. That signature quietly gives the site permission to move your tokens.",
+      "steps": [
+        "Tempting link",
+        "Wallet connected",
+        "Signature drains it"
+      ],
+      "advice": "Read every wallet signature before approving it, reach projects only through bookmarks you saved yourself, and keep long term savings in a separate wallet that never connects to new sites.",
+      "sources": [
+        "https://www.chainalysis.com/blog/crypto-drainers/",
+        "https://drops.scamsniffer.io/scam-sniffer-2024-web3-phishing-attacks-wallet-drainers-drain-494-million/",
+        "https://research.checkpoint.com/2024/wallet-scam-a-case-study-in-crypto-drainer-tactics/"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "sim-swap",
+      "name": "SIM swap",
+      "triggeredBy": {
+        "flags": [
+          "phone-number-exposed",
+          "passwords-in-breaches"
+        ],
+        "profiles": [
+          "crypto-worker",
+          "high-value-individual"
+        ],
+        "baseline": false
+      },
+      "oneLine": "Your phone suddenly loses signal and your texts go elsewhere.",
+      "explain": "Someone convinces your mobile network that they are you and moves your number to their own SIM. Any login codes sent by text then go to them, letting them reset your email, bank or exchange accounts.",
+      "steps": [
+        "Network fooled",
+        "Number moved",
+        "Codes intercepted"
+      ],
+      "advice": "Ask your mobile network to add a PIN or porting lock to your account, and switch important logins from text codes to an authenticator app or security key.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2022/PSA220208",
+        "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "pig-butchering",
+      "name": "Fake investment friendship",
+      "triggeredBy": {
+        "flags": [
+          "phone-number-exposed",
+          "same-username-everywhere"
+        ],
+        "profiles": [
+          "romance-target",
+          "crypto-worker"
+        ],
+        "baseline": false
+      },
+      "oneLine": "A friendly stranger who just happens to be great at investing.",
+      "explain": "It often starts with a 'wrong number' text or a chat that turns into friendship or romance over weeks. They then show you a trading app where your money seems to grow, until you try to withdraw and are asked for fees.",
+      "steps": [
+        "Wrong number text",
+        "Trust built",
+        "Fake profits"
+      ],
+      "advice": "Never invest through an app or site recommended by someone you have only met online, and check any firm on the FCA register before sending money.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2022/PSA221003",
+        "https://www.ic3.gov/AnnualReport/Reports/2024_IC3Report.pdf"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "romance-scam",
+      "name": "Romance scam",
+      "triggeredBy": {
+        "flags": [
+          "big-life-event",
+          "same-username-everywhere"
+        ],
+        "profiles": [
+          "romance-target"
+        ],
+        "baseline": false
+      },
+      "oneLine": "Someone lovely who can never quite meet you in person.",
+      "explain": "A person you meet on a dating app or social media builds a close relationship, then has an emergency, a travel problem or a 'verification' fee and asks you for money or gift cards. AI made photos and video calls now make them look more real.",
+      "steps": [
+        "Fast connection",
+        "Sudden crisis",
+        "Money requested"
+      ],
+      "advice": "If someone you have never met in person asks for money, stop and talk it through with a friend or family member first.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2024/PSA240426",
+        "https://www.ic3.gov/PSA/2024/PSA241203"
+      ],
+      "status": "existing"
+    },
+    {
+      "id": "task-scam",
+      "name": "Paid tasks job offer",
+      "triggeredBy": {
+        "flags": [
+          "just-changed-jobs",
+          "phone-number-exposed"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "Easy money for liking videos or rating products.",
+      "explain": "A message on WhatsApp or Telegram offers remote work completing simple online tasks. You earn small amounts at first, then you are told to pay in, often in crypto, to unlock bigger tasks or withdraw your earnings.",
+      "steps": [
+        "Job message",
+        "Small payouts",
+        "Pay to withdraw"
+      ],
+      "advice": "A real employer never asks you to pay to get your wages; block and report the contact.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2024/PSA240604"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "fake-bank-call",
+      "name": "Fake bank call asking for a code",
+      "triggeredBy": {
+        "flags": [
+          "phone-number-exposed",
+          "passwords-in-breaches"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A calm caller from your bank's fraud team who needs 'just the code'.",
+      "explain": "Someone calls claiming to be your bank or the police, often knowing details from a breach. They say your account is at risk and ask you to read out a code sent by text or to move money to a 'safe account'.",
+      "steps": [
+        "Caller knows details",
+        "Fear of fraud",
+        "Code read out"
+      ],
+      "advice": "Hang up and call the number on the back of your card from a different phone; your bank will never ask for a code or ask you to move money.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2025/PSA250424",
+        "https://www.actionfraud.police.uk/a-z-of-fraud/courier-fraud"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "news-hook-phishing",
+      "name": "Phishing that uses a news story",
+      "triggeredBy": {
+        "flags": [
+          "in-the-news"
+        ],
+        "profiles": [
+          "high-value-individual",
+          "target-of-spies"
+        ],
+        "baseline": false
+      },
+      "oneLine": "A message about something you were just in the news for.",
+      "explain": "Scammers read the coverage and write to you about it, posing as a journalist, event organiser, investor or partner. The link or attachment leads to a fake login page or harmful file.",
+      "steps": [
+        "Story published",
+        "Tailored message",
+        "Login stolen"
+      ],
+      "advice": "Be extra careful with unexpected messages about recent coverage, and reach the sender through their organisation's own website rather than links in the message.",
+      "sources": [
+        "https://www.ncsc.gov.uk/guidance/suspicious-email-actions",
+        "https://attack.mitre.org/techniques/T1566/"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "payroll-change",
+      "name": "Fake HR payroll change",
+      "triggeredBy": {
+        "flags": [
+          "just-changed-jobs",
+          "public-email-in-commits"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A login request from 'HR' just before payday.",
+      "explain": "An email or search advert sends you to a copy of your employer's payroll or benefits portal. Once they have your login, criminals change your bank details so your salary goes to them.",
+      "steps": [
+        "Fake HR portal",
+        "Login captured",
+        "Salary redirected"
+      ],
+      "advice": "Always reach payroll by typing the address yourself or using your company's own app, and check payslips for any change of bank details you did not make.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2018/PSA180918",
+        "https://www.ic3.gov/PSA/2025/PSA250424"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "after-move-council-letter",
+      "name": "Council tax or utility scam after a move",
+      "triggeredBy": {
+        "flags": [
+          "recently-moved",
+          "home-address-exposed"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A refund or rebate offer timed with your new address.",
+      "explain": "After you move, you may get calls, texts or letters claiming you are owed a council tax refund or energy rebate, or that your band is being reassessed. They ask for bank details or an upfront fee to release the money.",
+      "steps": [
+        "New address",
+        "Refund offered",
+        "Fee or details taken"
+      ],
+      "advice": "Contact your council or supplier using details from their official website; they will never ask for a fee to pay you a refund.",
+      "sources": [
+        "https://www.actionfraud.police.uk/a-z-of-fraud/council-tax-fraud"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "marketplace-fake-buyer",
+      "name": "Fake buyer on a marketplace",
+      "triggeredBy": {
+        "flags": [
+          "selling-online",
+          "phone-number-exposed"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A keen buyer who has 'already paid'.",
+      "explain": "When you sell on Facebook Marketplace, Vinted or similar, a buyer sends a fake payment screenshot or a link to 'receive' the money. The link steals your card details, or they take the item before any money arrives.",
+      "steps": [
+        "Eager buyer",
+        "Fake payment proof",
+        "Item or card lost"
+      ],
+      "advice": "Check the money is actually in your own bank account before handing anything over, and never click a buyer's link to receive a payment.",
+      "sources": [
+        "https://www.scotland.police.uk/advice/scams-and-frauds/online-marketplace-fraud/"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "fake-booking-or-visa",
+      "name": "Fake booking or visa site",
+      "triggeredBy": {
+        "flags": [
+          "travelling-soon"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A message about your trip asking you to confirm payment.",
+      "explain": "Fake holiday listings, booking confirmation messages and lookalike visa sites take payment for trips that do not exist or charge far more than the official fee. Some messages copy real booking platforms to steal your card details.",
+      "steps": [
+        "Trip planned",
+        "Lookalike site",
+        "Payment taken"
+      ],
+      "advice": "Pay only inside the official booking site or app, and apply for travel permits such as the UK ETA only through gov.uk or the official government site of the country you are visiting.",
+      "sources": [
+        "https://www.actionfraud.police.uk/a-z-of-fraud/holiday-fraud",
+        "https://www.gov.uk/eta"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "qr-code-phishing",
+      "name": "QR code phishing",
+      "triggeredBy": {
+        "flags": [],
+        "profiles": [
+          "target-of-spies"
+        ],
+        "baseline": true
+      },
+      "oneLine": "A QR code on a car park sign, letter or email that leads somewhere fake.",
+      "explain": "Criminals stick their own QR codes over real ones or put them in emails, where security filters cannot read them. Scanning takes you to a fake payment or login page.",
+      "steps": [
+        "Code scanned",
+        "Fake page",
+        "Details taken"
+      ],
+      "advice": "Check the web address after scanning and type it yourself for anything involving payment or a login.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2022/PSA220118"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "mfa-fatigue",
+      "name": "Login approval spam",
+      "triggeredBy": {
+        "flags": [
+          "passwords-in-breaches",
+          "stealer-log-hit"
+        ],
+        "profiles": [
+          "high-value-individual"
+        ],
+        "baseline": false
+      },
+      "oneLine": "Your phone keeps asking 'Is this you signing in?'.",
+      "explain": "Someone who already has your password tries to log in again and again, so your phone fills with approval prompts, sometimes with a call pretending to be IT. One tap of 'Approve' lets them in.",
+      "steps": [
+        "Password known",
+        "Prompts flood in",
+        "One tap approves"
+      ],
+      "advice": "Never approve a login you did not start; deny it, change that password, and tell your IT team.",
+      "sources": [
+        "https://attack.mitre.org/techniques/T1621/",
+        "https://www.cisa.gov/sites/default/files/publications/fact-sheet-implement-number-matching-in-mfa-applications-508c.pdf"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "credential-stuffing",
+      "name": "Reused password break in",
+      "triggeredBy": {
+        "flags": [
+          "passwords-in-breaches",
+          "same-username-everywhere"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "An old leaked password tried on all your other accounts.",
+      "explain": "When a site you used is breached, criminals feed the leaked email and password into tools that try the same pair on hundreds of other sites. Any account where you reused it can be opened.",
+      "steps": [
+        "Old breach",
+        "Automated tries",
+        "Account opened"
+      ],
+      "advice": "Use a password manager so every account has its own password, starting with your email, and turn on two step login.",
+      "sources": [
+        "https://attack.mitre.org/techniques/T1110/004/",
+        "https://www.ncsc.gov.uk/collection/top-tips-for-staying-secure-online/use-a-strong-and-separate-password-for-email",
+        "https://www.ncsc.gov.uk/guidance/data-breaches"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "voice-clone-family",
+      "name": "Cloned voice of a loved one",
+      "triggeredBy": {
+        "flags": [
+          "in-the-news",
+          "phone-number-exposed",
+          "big-life-event"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A panicked call that sounds exactly like someone you love.",
+      "explain": "With a few seconds of audio from a video or voicemail, AI can copy a person's voice. Your family may get a call from 'you' in trouble asking for money, or you may get one from 'them'.",
+      "steps": [
+        "Voice copied",
+        "Emergency call",
+        "Urgent transfer"
+      ],
+      "advice": "Agree a family code word, and if a call feels wrong, hang up and ring the person back on the number you already have.",
+      "sources": [
+        "https://www.ic3.gov/PSA/2024/PSA241203"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "doxxing-swatting",
+      "name": "Doxxing and swatting",
+      "triggeredBy": {
+        "flags": [
+          "home-address-exposed",
+          "phone-number-exposed",
+          "same-username-everywhere",
+          "in-the-news"
+        ],
+        "profiles": [
+          "target-of-spies",
+          "high-value-individual"
+        ],
+        "baseline": false
+      },
+      "oneLine": "Your home address shared online to frighten you.",
+      "explain": "Someone pieces together your address, phone and family details from breaches and public profiles and posts them online. In rare and serious cases they make a fake emergency call so armed police are sent to your home.",
+      "steps": [
+        "Details gathered",
+        "Posted online",
+        "Harassment follows"
+      ],
+      "advice": "Remove your address from public profiles and people search sites, and if you are threatened, keep screenshots and contact the police.",
+      "sources": [
+        "https://www.security.gov.uk/services-resources/gsecs/security-education-and-awareness-centre-seac/campaigns/doxing/",
+        "https://www.cisa.gov/sites/default/files/2026-04/Protective-Measures-to-Reduce-Doxing_508%20Compliant.pdf",
+        "https://www.fbi.gov/news/stories/the-crime-of-swatting-fake-9-1-1-calls-have-real-consequences1"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "leaked-password-extortion",
+      "name": "Blackmail email quoting an old password",
+      "triggeredBy": {
+        "flags": [
+          "passwords-in-breaches"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "An email that shows one of your real passwords and demands payment.",
+      "explain": "The sender copies an old password from a breach to make the threat feel real, claiming to have hacked your camera or recorded you. They have nothing; the password simply came from a leak.",
+      "steps": [
+        "Old password shown",
+        "Embarrassing threat",
+        "Crypto demanded"
+      ],
+      "advice": "Do not reply or pay; change that password anywhere you still use it and report the email.",
+      "sources": [
+        "https://www.ncsc.gov.uk/guidance/sextortion-scams-how-to-protect-yourself",
+        "https://www.actionfraud.police.uk/a-z-of-fraud/sextortion"
+      ],
+      "status": "new"
+    },
+    {
+      "id": "fake-charity",
+      "name": "Fake charity or appeal after a big life event",
+      "triggeredBy": {
+        "flags": [
+          "big-life-event",
+          "in-the-news"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A moving appeal that uses your news or a loss in your life.",
+      "explain": "After a wedding, birth, bereavement or a disaster in the news, fake fundraising pages and appeals appear, sometimes using your name or a loved one's. Money goes to the scammer, not the cause.",
+      "steps": [
+        "Life event shared",
+        "Fake appeal",
+        "Donations taken"
+      ],
+      "advice": "Check a charity's name and number on the Charity Register before giving, and only support fundraising pages set up by people you know.",
+      "sources": [
+        "https://www.actionfraud.police.uk/a-z-of-fraud/charity-donation-fraud"
+      ],
+      "status": "new"
+    }
+  ],
+  "flags": [
+    {
+      "id": "in-the-news",
+      "label": "In the news",
+      "detectedBy": "Tavily news search on the full name, cross checked against employer or handle from LinkedIn and GitHub to avoid namesakes.",
+      "sources": [
+        "Tavily (news)",
+        "Tavily (LinkedIn)"
+      ],
+      "realistic": "yes",
+      "confidence": "medium",
+      "notes": "Common names give false matches; only flag when a second identifier matches."
+    },
+    {
+      "id": "just-changed-jobs",
+      "label": "Just changed jobs",
+      "detectedBy": "Tavily LinkedIn and web results showing a new role or 'started a new position', or a recent change of employer in a GitHub or Gravatar bio.",
+      "sources": [
+        "Tavily (LinkedIn)",
+        "Tavily (web)",
+        "GitHub",
+        "Gravatar"
+      ],
+      "realistic": "partial",
+      "confidence": "low",
+      "notes": "Search snippets rarely carry dates, so recency is hard to prove."
+    },
+    {
+      "id": "same-username-everywhere",
+      "label": "Same username everywhere",
+      "detectedBy": "The same handle resolves on GitHub, Keybase, Hacker News and Gravatar, and Keybase proofs link accounts together.",
+      "sources": [
+        "GitHub",
+        "Keybase",
+        "HN",
+        "Gravatar"
+      ],
+      "realistic": "yes",
+      "confidence": "high",
+      "notes": "Direct API lookups, deterministic."
+    },
+    {
+      "id": "public-email-in-commits",
+      "label": "Public email in commits",
+      "detectedBy": "GitHub commit and events API exposes author emails on public commits.",
+      "sources": [
+        "GitHub"
+      ],
+      "realistic": "yes",
+      "confidence": "high",
+      "notes": "Ignore users.noreply.github.com addresses."
+    },
+    {
+      "id": "passwords-in-breaches",
+      "label": "Passwords in breaches",
+      "detectedBy": "Breach records whose data classes include passwords for the given emails.",
+      "sources": [
+        "HIBP",
+        "LeakCheck",
+        "XposedOrNot"
+      ],
+      "realistic": "yes",
+      "confidence": "high",
+      "notes": "HIBP email search needs a paid key; XposedOrNot and LeakCheck public endpoints are a fallback. Never show the password itself."
+    },
+    {
+      "id": "stealer-log-hit",
+      "label": "Stealer log hit",
+      "detectedBy": "Hudson Rock Cavalier free lookup by email or username returns infected machine records.",
+      "sources": [
+        "Hudson Rock"
+      ],
+      "realistic": "yes",
+      "confidence": "high",
+      "notes": "Results are dated, so show when the infection was seen."
+    },
+    {
+      "id": "phone-number-exposed",
+      "label": "Phone number exposed",
+      "detectedBy": "Breach data classes that include phone numbers, or a phone listed on Gravatar or Keybase.",
+      "sources": [
+        "HIBP",
+        "XposedOrNot",
+        "LeakCheck",
+        "Gravatar"
+      ],
+      "realistic": "partial",
+      "confidence": "medium",
+      "notes": "Proves a breach held a phone number, not that it is public now."
+    },
+    {
+      "id": "home-address-exposed",
+      "label": "Home address exposed",
+      "detectedBy": "Breach data classes that include physical addresses; occasionally a web result.",
+      "sources": [
+        "HIBP",
+        "XposedOrNot",
+        "Tavily (web)"
+      ],
+      "realistic": "partial",
+      "confidence": "low",
+      "notes": "Do not scrape people search or data broker sites; signal only, never display the address."
+    },
+    {
+      "id": "recently-moved",
+      "label": "Recently moved",
+      "detectedBy": "No reliable public signal in the listed sources.",
+      "sources": [],
+      "realistic": "no",
+      "confidence": "none",
+      "notes": "Offer as a self reported tick box."
+    },
+    {
+      "id": "big-life-event",
+      "label": "Big life event",
+      "detectedBy": "Only an occasional news or web hit (wedding, birth, bereavement).",
+      "sources": [
+        "Tavily (news)",
+        "Tavily (web)"
+      ],
+      "realistic": "no",
+      "confidence": "none",
+      "notes": "Sensitive; do not infer. Self report only."
+    },
+    {
+      "id": "selling-online",
+      "label": "Selling online",
+      "detectedBy": "Marketplace listings are not indexed by the listed sources.",
+      "sources": [],
+      "realistic": "no",
+      "confidence": "none",
+      "notes": "Self report only."
+    },
+    {
+      "id": "travelling-soon",
+      "label": "Travelling soon",
+      "detectedBy": "No public signal in the listed sources.",
+      "sources": [],
+      "realistic": "no",
+      "confidence": "none",
+      "notes": "Self report only."
+    }
+  ]
+}
