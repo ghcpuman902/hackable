@@ -4,6 +4,7 @@ import {
 } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { presetFor } from "@/lib/presets";
 import { makeScanTools } from "@/lib/scan-tools";
 import { CHECK_MS, fanFor, START_MS, STEP_MS, type FanCard } from "@/lib/synthetic";
 
@@ -58,8 +59,10 @@ export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
   const last = messages.at(-1);
   const query = last?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ").slice(0, 500) ?? "";
-  const fan = fanFor(process.env.SCAN_MODE === "live");
-  const real = realModel();
+  /* A preset opens its cached profile with the mock model: no live source and no model call. */
+  const preset = presetFor(query);
+  const fan = fanFor(!!preset || process.env.SCAN_MODE === "live");
+  const real = preset ? null : realModel();
   const model: LanguageModel = real ?? mockModel(query, fan);
   const order = fan.map((c) => c.tool);
 
@@ -68,7 +71,7 @@ export async function POST(req: Request) {
     instructions: `Check every source for the person described. Call one tool per step, each exactly once, in this order: ${order.join(", ")}. `
       + "Pass the full query unchanged. After the last tool, reply with one short sentence.",
     prompt: query,
-    tools: makeScanTools(query),
+    tools: makeScanTools(query, preset?.results),
     /* A real model is held to one named tool per step, in the 06 order, so each card settles in turn as with the mock. */
     prepareStep: real
       ? ({ stepNumber }) => (stepNumber < order.length

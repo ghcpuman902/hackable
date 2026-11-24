@@ -5,10 +5,10 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
 import { Fan, runH, type CardState } from "./Fan";
-import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, Stars, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
-import { LIVE_DEMO_CHIPS } from "@/lib/presets";
+import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import type { ScanMessage } from "@/lib/scan-tools";
 import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
@@ -36,7 +36,6 @@ let uid = 0;
 
 /* live: SCAN_MODE=live on the server. The list then drops the cards with no live source, and the report is built from the live results. */
 export default function SearchFlow({ live = false }: { live?: boolean }) {
-  const fan = fanFor(live);
   const [chips, setChipsState] = useState<Chip[]>([]);
   const chipsRef = useRef<Chip[]>([]);
   const setChips = (next: Chip[]) => { chipsRef.current = next; setChipsState(next); };
@@ -54,6 +53,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const armed = useRef(false);
 
   const { messages, sendMessage, setMessages, stop, status } = useChat<ScanMessage>({ transport });
+  /* A preset opens a cached profile on the live card list, in either mode. */
+  const preset = running ? presetFor(chips.map((c) => c.raw).join(", ")) : undefined;
+  const fan = fanFor(live || !!preset);
 
   const add = useCallback((text: string, at?: number) => {
     const cur = chipsRef.current;
@@ -139,6 +141,12 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     scan(list);
   };
 
+  const pickPreset = (i: number) => {
+    setChips([]);
+    add(PRESETS[i].name);
+    scan(chipsRef.current);
+  };
+
   const pickPerson = (i: number) => {
     const p = PEOPLE[i];
     setChips([]);
@@ -195,7 +203,11 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
-  const report = live ? [
+  const report = preset ? [
+    ...presetFindings(preset),
+    ...preset.patterns.map((id) => <PatternSec key={id} id={id} who={preset.name.split(" ")[0]} />),
+    <FinalSec key="final" onMail={mail} both={false} />,
+  ] : live ? [
     ...liveFindings(outputs),
     ...patterns.map((id) => <PatternSec key={id} id={id} who={who} />),
     <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")}
@@ -288,6 +300,14 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                       <span key={f} className="wc" style={{ "--c": MINI[f].c, "--o": j * 15 + ((i * 3 + j * 5) % 3) + "px", "--rt": 8 + ((i * 5 + j * 3) % 7) + "deg", zIndex: j } as CSSProperties}>{MINI[f].icon}</span>
                     ))}
                   </span>
+                </button>
+              ))}
+            </div>
+            <div className="people presets">
+              {PRESETS.map((p, i) => (
+                <button key={p.name} type="button" className="person preset" onClick={() => pickPreset(i)}>
+                  <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.name)}</span>
+                  <span className="nm">{p.name}<Stars n={p.stars} /></span>
                 </button>
               ))}
             </div>
