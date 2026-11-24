@@ -1,0 +1,115 @@
+.compare {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 32px clamp(16px, 4vw, 48px) 64px;
+}
+
+.compare h1 {
+  margin-bottom: 32px;
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: -.04em;
+}
+
+.compare-person {
+  padding-block: 24px 32px;
+  border-top: 1px solid var(--line);
+}
+
+.compare-person-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.compare-person-heading h2 {
+  font-size: 1.375rem;
+  font-weight: 650;
+  letter-spacing: -.025em;
+}
+
+.compare-button {
+  min-width: 8.25rem;
+  min-height: 44px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.compare-button:disabled {
+  cursor: wait;
+  color: var(--n500);
+}
+
+.compare-pair {
+  display: grid;
+  gap: 16px;
+}
+
+.compare-column {
+  min-width: 0;
+}
+
+.compare-column h3 {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.compare-report {
+  height: 30rem;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--n50);
+}
+
+.compare-report a {
+  text-decoration: underline;
+  text-underline-offset: .15em;
+}
+
+.compare-status {
+  min-height: 1.5rem;
+  margin-top: 4px;
+  color: #a32227;
+}
+
+.compare-rubric {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.compare-rubric th,
+.compare-rubric td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare-rubric thead th:first-child {
+  width: 52%;
+}
+
+.compare-rubric tbody th {
+  font-weight: 400;
+}
+
+.compare-pass {
+  color: #17643d;
+}
+
+.compare-fail {
+  color: #a32227;
+}
+
+@media (min-width: 768px) {
+  .compare-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
