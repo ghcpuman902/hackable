@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Fan, runH, type CardState } from "@/components/Fan";
 import { Mini } from "@/components/Mini";
+import { SubscribeCard } from "@/components/SubscribeCard";
 import { FAN, type MiniName, type ScanTool } from "@/lib/synthetic";
 
 const NAMES: MiniName[] = ["rec", "flood", "vish", "sess", "breach", "steal", "prof"];
@@ -31,6 +32,10 @@ export default function AnimLab() {
         <div className="landing run"><div className="stage" style={stageVars}>
           <Fan states={STATES} label={(_, s) => (s === "hit" ? "Found" : s === "ok" ? "Clear" : s === "checking" ? "Checking" : "")} />
         </div></div>
+      </section>
+      <section id="subscribe" style={{ display: "grid", gap: 8 }}>
+        <b>subscribe (mock)</b>
+        <SubscribeCard email="manglekuo@gmail.com" />
       </section>
     </main>
   );
