@@ -184,8 +184,11 @@ html,body{overflow-x:clip}
   transition:opacity .35s, margin .6s cubic-bezier(.2,.8,.2,1), max-height .6s cubic-bezier(.2,.8,.2,1);max-height:3em;overflow:hidden}
 .run .top{padding-top:20px}
 .run h1{opacity:0;max-height:0;margin-bottom:0}
-.landing .field{padding:10px 76px 10px 10px;min-height:76px;border-radius:39px;gap:6px}
-.landing .field .chip{height:56px;border-radius:28px;padding:0 10px 0 16px}
+/* 78px bar: 1px border + 10px padding + 56px chip. Chip radius 28 = bar radius 39 - border 1 - padding 10. */
+.landing .field{padding:10px 76px 10px 10px;min-height:78px;border-radius:39px;gap:6px;align-items:center;align-content:center}
+.landing .field .chip{box-sizing:border-box;height:56px;border-radius:28px;padding:0 10px 0 16px;align-self:center;line-height:1;margin:0;min-width:0}
+.landing .field .chip .nw{align-items:center;line-height:1}
+.landing .field .chip .ico{vertical-align:middle}
 .landing .field .chip-edit{height:56px;border-radius:28px}
 .landing .field input.entry{height:56px;padding:0 12px;font-size:1.0625rem}
 .landing .go-btn{width:56px;height:56px;right:10px;padding:15px}
@@ -285,13 +288,16 @@ html,body{overflow-x:clip}
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 20px,#000 calc(100% - 20px),transparent);mask-image:linear-gradient(90deg,transparent,#000 20px,#000 calc(100% - 20px),transparent)}
   .srcs::-webkit-scrollbar{display:none}
   .stage{height:340px;--travel:340px}
-  .pc{left:var(--lm);animation-delay:var(--dm)}
-  .pc.d{display:none}
+  .pc{left:var(--lm);animation-duration:30s;animation-delay:var(--dm)}
+  .z0{--sc:.82}
+  .pc.d,.landing:not(.run) .pc.pm{display:none}
   .mc{width:150px;font-size:11px}
   .lrow{width:min(300px,calc(100vw - 48px))}
   .run .pc.ck{left:50%;top:var(--stm)}
   .run .stage{height:var(--runhm)}
   .landing h1{margin-bottom:24px}
+  .landing .field .chip{max-width:100%}
+  .landing .field .chip .lbl{max-width:168px}
 }
 @media (prefers-reduced-motion:reduce){
   .pc{animation:none;top:var(--t);opacity:1}

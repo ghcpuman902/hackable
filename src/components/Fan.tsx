@@ -40,22 +40,25 @@ const TOOL: Record<string, ScanTool> = {
   dm: "leakCheck", people: "peopleSearch", sms: "publicContact", social: "social", forum: "forum",
 };
 
-/* [kind, key, left %, start height %, depth, tilt, phone [left, height] or 0], from 06. Cards appear once; icons repeat. */
+/* [kind, key, left %, start height %, depth, tilt, phone [left, height] or 0], from 06. Cards appear once; icons repeat.
+   Phones show four cards in two columns (26% and 74%) with small icons down the middle. Every phone piece shares
+   one duration (PHONE_DUR), so the scene moves as one and the gaps between pieces never close. */
 type Piece = ["mock" | "icon", string, number, number, 0 | 1 | 2, number, [number, number] | 0];
 const P: Piece[] = [
-  ["mock", "email", 31, 62, 0, -6, [30, 58]], ["mock", "linkedin", 45, 26, 0, 6, [68, 24]], ["mock", "breach", 57, 74, 0, -3, [66, 86]],
-  ["mock", "site", 68, 40, 0, 4, 0], ["mock", "github", 37, 12, 1, -7, [32, 6]], ["mock", "dm", 63, 96, 1, 5, 0],
-  ["mock", "people", 52, 50, 1, -5, [44, 42]], ["mock", "sms", 22, 88, 1, 6, [36, 96]], ["mock", "social", 76, 16, 1, 8, 0],
+  ["mock", "email", 31, 62, 0, -6, [26, 12]], ["mock", "linkedin", 45, 26, 0, 6, [74, 37]], ["mock", "breach", 57, 74, 0, -3, [26, 62]],
+  ["mock", "site", 68, 40, 0, 4, 0], ["mock", "github", 37, 12, 1, -7, 0], ["mock", "dm", 63, 96, 1, 5, 0],
+  ["mock", "people", 52, 50, 1, -5, [74, 87]], ["mock", "sms", 22, 88, 1, 6, 0], ["mock", "social", 76, 16, 1, 8, 0],
   ["mock", "forum", 15, 34, 2, -8, 0], ["mock", "call", 85, 66, 2, 5, 0],
-  ["icon", "fish", 41, 86, 1, -12, [56, 70]], ["icon", "triangle-alert", 48, 6, 2, 10, [84, 8]], ["icon", "bug", 60, 20, 2, 15, [18, 30]],
-  ["icon", "key-round", 73, 82, 2, -20, [82, 50]], ["icon", "lock", 27, 40, 2, -8, [14, 76]], ["icon", "at-sign", 62, 58, 1, 6, [60, 14]],
-  ["icon", "siren", 34, 30, 2, -10, 0], ["icon", "fish", 58, 36, 2, 12, 0], ["icon", "triangle-alert", 44, 64, 1, -6, [50, 92]],
+  ["icon", "fish", 41, 86, 1, -12, 0], ["icon", "triangle-alert", 48, 6, 2, 10, [50, 4]], ["icon", "bug", 60, 20, 2, 15, [50, 24]],
+  ["icon", "key-round", 73, 82, 2, -20, [50, 84]], ["icon", "lock", 27, 40, 2, -8, [50, 44]], ["icon", "at-sign", 62, 58, 1, 6, 0],
+  ["icon", "siren", 34, 30, 2, -10, [50, 64]], ["icon", "fish", 58, 36, 2, 12, 0], ["icon", "triangle-alert", 44, 64, 1, -6, 0],
   ["icon", "bug", 50, 92, 2, -14, 0], ["icon", "binoculars", 66, 4, 2, 14, 0], ["icon", "at-sign", 24, 16, 2, -8, 0],
   ["icon", "lock", 80, 44, 2, 10, 0], ["icon", "fish", 10, 70, 2, -6, 0], ["icon", "siren", 90, 24, 2, 8, 0],
   ["icon", "key-round", 40, 48, 2, 18, 0], ["icon", "bug", 70, 62, 1, -10, 0], ["icon", "triangle-alert", 18, 58, 2, 6, 0],
 ];
 
-const PHONE_TOOLS = FAN.filter((c) => c.phone);
+const PHONE_DUR = 30;
+const PHONE_TOOLS =FAN.filter((c) => c.phone);
 const CLS: Record<CardState, string> = { idle: "", checking: " chk", ok: " ok", hit: " bad" };
 
 /* The landing scene and the check list are the same pieces. Wide screens use the 06 desktop
@@ -69,7 +72,7 @@ export function Fan({ states, label }: { states?: Partial<Record<ScanTool, CardS
         const card = tool && FAN.find((c) => c.tool === tool);
         const vars: Record<string, string | number> = {
           "--l": l + "%", "--t": t + "%", "--lm": (m ? m[0] : l) + "%", "--tm": (m ? m[1] : t) + "%",
-          "--r": r + "deg", "--dur": dur + "s", "--d": -(1 - t / 100) * dur * 0.92 + "s", "--dm": -(1 - (m ? m[1] : t) / 100) * dur * 0.92 + "s",
+          "--r": r + "deg", "--dur": dur + "s", "--d": -(1 - t / 100) * dur * 0.92 + "s", "--dm": -(1 - (m ? m[1] : t) / 100) * PHONE_DUR * 0.92 + "s",
           "--sw": 5 + (i % 4) + "s",
         };
         let s: CardState = "idle";
@@ -82,8 +85,10 @@ export function Fan({ states, label }: { states?: Partial<Record<ScanTool, CardS
           s = states?.[card.tool] ?? "idle";
         }
         const st = card ? label?.(card, s) ?? "" : "";
+        /* d: never on phones. pm: a phone check row that sits out of the phone scene. */
+        const ph = m ? "" : card?.phone ? " pm" : " d";
         return (
-          <div key={i} className={`pc z${z}${m ? "" : " d"}${card ? " ck" : ""}${CLS[s]}`} style={vars as CSSProperties}>
+          <div key={i} className={`pc z${z}${ph}${card ? " ck" : ""}${CLS[s]}`} style={vars as CSSProperties}>
             <div className="art" aria-hidden="true">
               {type === "mock" ? MOCK[k] : <span className={"ic" + (i % 3 ? "" : " g")}>{L(k)}</span>}
             </div>
