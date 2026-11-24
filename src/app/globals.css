@@ -199,13 +199,15 @@ html,body{overflow-x:clip}
 .landing .field .chip .ico{vertical-align:middle}
 .landing .field .chip-edit{height:56px;border-radius:28px}
 .landing .field input.entry{height:56px;padding:0 12px;font-size:1.0625rem}
+/* Empty and unfocused: one placeholder line loops through what you can paste. Focused: the input's own static placeholder. */
+.ph{position:absolute;left:22px;right:76px;top:0;bottom:0;display:grid;align-items:center;pointer-events:none;overflow:hidden}
+.ph span{grid-area:1/1;font:600 1.0625rem var(--font);letter-spacing:-.025em;color:#a3a3a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;animation:phl 8s infinite}
+.ph span:nth-child(2){animation-delay:2s}.ph span:nth-child(3){animation-delay:4s}.ph span:nth-child(4){animation-delay:6s}
+@keyframes phl{0%{opacity:0;transform:translateY(40%)}4%,21%{opacity:1;transform:none}25%,100%{opacity:0;transform:translateY(-40%)}}
+.field:focus-within .ph{display:none}
+.field:has(.ph):not(:focus-within) input.entry::placeholder{color:transparent}
 /* Anchored bottom right, level with the last chip row or the Add more line. In the one-row empty bar this is the same spot as centred. */
 .landing .go-btn{width:56px;height:56px;right:10px;padding:15px;top:auto;bottom:10px;transform:none}
-.ghosts{position:absolute;left:10px;right:38px;top:0;bottom:0;pointer-events:none;overflow:hidden}
-.ghosts .row{position:absolute;left:0;top:50%;display:flex;gap:6px;white-space:nowrap;opacity:0;transform:translateY(-10%)}
-.ghosts .row.go{animation:drift 2.8s cubic-bezier(.3,.7,.3,1) forwards}
-.ghosts .pill{height:56px;border-radius:28px;padding:0 16px;font-size:16px;color:var(--n500);background:#fff}
-@keyframes drift{0%{opacity:0;transform:translateY(10%)}20%,70%{opacity:1;transform:translateY(-50%)}100%{opacity:0;transform:translateY(-95%)}}
 .landing .under{flex-direction:column;gap:14px;margin-top:14px}
 /* recent people: a history; one badge on the avatar cycles through where each person was found */
 .people{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
@@ -348,7 +350,7 @@ button.src:hover{background:var(--n50)}
 @media (prefers-reduced-motion:reduce){
   .pc{animation:none;top:var(--t);opacity:1}
   .art{animation:none}
-  .ghosts .row.go{animation:none;opacity:1;transform:translateY(-50%)}
+  .ph span{animation:none}.ph span:first-child{opacity:1}
   .landing .top,.landing h1,.pc,.stage{transition:none}
 }
 @media (prefers-reduced-motion:reduce) and (max-width:640px){.pc{top:var(--tm)}}

@@ -14,7 +14,7 @@ import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, t
 import { Suggest, type Opt } from "./Suggest";
 import type { Brand } from "./brand-icons";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, reportPatterns, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, reportPatterns, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 /* Where each recent person was found: one small badge on the avatar cycles through these. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
@@ -56,6 +56,7 @@ function planFor(text: string | null, live: boolean): Plan | null {
 }
 const BRANDS: string[] = ["linkedin", "github", "instagram", "x"];
 const brandOf = (key: string) => (BRANDS.includes(key) ? (key as Brand) : null);
+const PASTE = ["Paste your name", "Paste your phone number", "Paste your email", "Paste your LinkedIn"];
 const PRELOAD_MS = 10 * 60 * 1000;
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
@@ -88,7 +89,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const [showAll, setShowAll] = useState(false);
   const [extraOpen, setExtraOpen] = useState(false);
   const [toast, setToast] = useState(false);
-  const [ghost, setGhost] = useState(0);
   const entryRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const armed = useRef(false);
@@ -117,13 +117,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   useEffect(() => { if (!shake) return; const t = setTimeout(() => setShake(null), 300); return () => clearTimeout(t); }, [shake]);
 
-  /* Empty box: example chips drift upwards. */
+  /* Empty box: one placeholder line loops through what you can paste (CSS only, hidden on focus). */
   const empty = !chips.length && !entry && !running;
-  useEffect(() => {
-    if (!empty) return;
-    const t = setInterval(() => setGhost((g) => g + 1), 2800);
-    return () => clearInterval(t);
-  }, [empty]);
 
   const disabled = running || !(chips.length || entry.trim());
 
@@ -377,8 +372,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <FinalSec key="final" onMail={mail} />,
   ];
 
-  const ghostChips = tokenize(EXAMPLES[ghost % EXAMPLES.length]).map((raw) => ({ raw, ...detect(raw) }));
-
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "")}>
       <div className="glow" aria-hidden="true"></div>
@@ -398,10 +391,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
             <div className="field" ref={fieldRef} role="group" aria-label="Who to check"
               onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); entryRef.current?.focus(); } }}>
               {empty && (
-                <div className="ghosts" aria-hidden="true">
-                  <div key={ghost} className="row go">
-                    {ghostChips.map((c) => <span key={c.raw} className="pill"><span className="nw"><Tile kind={c.kind} />{c.label}</span></span>)}
-                  </div>
+                <div className="ph" aria-hidden="true">
+                  {PASTE.map((t) => <span key={t}>{t}</span>)}
                 </div>
               )}
               {chips.map((c, i) =>
@@ -435,7 +426,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls="sg-list"
                 aria-activedescendant={open && active >= 0 ? `sg-${active}` : undefined}
                 aria-label="Name, email or link" enterKeyHint="go" autoComplete="off" autoCapitalize="off" autoCorrect="off"
-                placeholder={chips.length ? "Add more" : ""}
+                placeholder={chips.length ? "Add more" : PASTE[0]}
                 value={entry} onChange={(e) => onEntryInput(e.target.value)} onKeyDown={onEntryKey}
                 onBlur={() => setTimeout(() => {
                   const a = document.activeElement;

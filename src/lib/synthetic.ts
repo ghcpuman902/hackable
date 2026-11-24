@@ -63,13 +63,6 @@ export const STEP_MS = 720;
 export const CHECK_MS = 640;
 
 /* ---- landing ---- */
-export const EXAMPLES = [
-  "Jane Doe Smith, jane@example.com",
-  "@alexchen, github.com/alexchen",
-  "+44 7700 900123, Priya Kapoor",
-  "linkedin.com/in/markreynolds, Mark Reynolds",
-  "priya.k@example.org, @priyak",
-];
 
 /* Recent people. `found` = where they were found, shown as small platform tiles under the name. */
 export type Found = "linkedin" | "github" | "breach" | "forum" | "x" | "social" | "phone" | "web";
