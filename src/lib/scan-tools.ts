@@ -1,11 +1,9 @@
-import { tool, type InferUITools, type UIDataTypes, type UIMessage } from "ai";
+import { tool, type InferUITools, type UIMessage } from "ai";
 import { z } from "zod";
-import { makeLiveContext } from "./live-sources";
+import { makeLiveContext, type Pivot } from "./live-sources";
 import { CHECK_MS, FAN, QUICK, type ScanResult, type ScanTool } from "./synthetic";
 
-/* One tool per source. By default each returns synthetic data after a short delay, with no network calls.
-   With SCAN_MODE=live, every tool calls a free public source instead (see live-sources.ts) and never
-   returns synthetic data; the cards with no live source are dropped from the live list. */
+/* The synthetic model uses one tool per source to pace the demo. */
 const input = z.object({ query: z.string().describe("Names, emails, links or handles to check") });
 
 const DESCRIPTION: Record<ScanTool, string> = {
@@ -27,22 +25,26 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     signal?.addEventListener("abort", () => { clearTimeout(t); res(); });
   });
 
-/* fixedQuery: the words the user typed. A real model only decides when to call each tool; it cannot change what is checked. */
-/* cached: a preset profile (presets.ts). Its results are returned as they are and no source is called. */
-/* fast: every live call for this query was preloaded (live-sources warm()), so results return without the CHECK_MS pacing. */
-export function makeScanTools(fixedQuery?: string, cached?: Partial<Record<ScanTool, ScanResult>>, fast = false) {
-  /* Each source settles CHECK_MS after its call; the next call starts once it has. */
-  const live = process.env.SCAN_MODE === "live" ? makeLiveContext() : null;
+type ScanOutput = ScanResult & { empty: boolean };
+
+export function makeLiveScan(query: string, signal: AbortSignal, onPivot: (pivot: Pivot) => void) {
+  const check = makeLiveContext({ quiet: true }).scan(query, signal, onPivot);
+  return async (tool: ScanTool): Promise<ScanOutput> => {
+    const result = await check(tool);
+    return { ...result, empty: result.empty === true };
+  };
+}
+
+export function makeScanTools(cached?: Partial<Record<ScanTool, ScanResult>>) {
   const make = (card: (typeof FAN)[number]) =>
     tool({
       description: DESCRIPTION[card.tool],
       inputSchema: input,
-      execute: async ({ query }, { abortSignal }): Promise<ScanResult> => {
-        if (cached) { await sleep(QUICK.check, abortSignal); return cached[card.tool] ?? { found: "Not checked", hit: false }; }
-        const check = live?.check(card.tool, fixedQuery ?? query, abortSignal);
-        if (check) return fast ? check : (await Promise.all([check, sleep(CHECK_MS, abortSignal)]))[0];
-        await sleep(CHECK_MS, abortSignal);
-        return card.result;
+      execute: async (_, { abortSignal }): Promise<ScanOutput> => {
+        const result = cached ? cached[card.tool] ?? { found: "Not checked", hit: false } : card.result;
+        const empty = !result.hit && /^(No |Not )/.test(result.found);
+        if (!empty) await sleep(cached ? QUICK.check : CHECK_MS, abortSignal);
+        return { ...result, empty };
       },
     });
   const by = (t: ScanTool) => make(FAN.find((c) => c.tool === t)!);
@@ -54,4 +56,4 @@ export function makeScanTools(fixedQuery?: string, cached?: Partial<Record<ScanT
 }
 
 export type ScanTools = InferUITools<ReturnType<typeof makeScanTools>>;
-export type ScanMessage = UIMessage<unknown, UIDataTypes, ScanTools>;
+export type ScanMessage = UIMessage<unknown, { pivot: Pivot }, ScanTools>;

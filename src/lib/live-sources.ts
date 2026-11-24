@@ -5,10 +5,10 @@
    leakCheck   LeakCheck public API (email)
    hibpTest    cached HIBP results for Mangle's preset emails only, plus LeakCheck and XposedOrNot breach names, merged
    hudsonRock  Hudson Rock Cavalier free OSINT (email and username)
-   github      GitHub public REST, unauthenticated: profile and author emails in recent public commits
+   github      GitHub public REST: profiles, public commit email search and public user search
    social      Gravatar public profile (email hash) and Keybase (username)
    forum       Hacker News public profile (username).
-   web         one search for the name: Tavily when TAVILY_API_KEY is set, otherwise DuckDuckGo HTML;
+   web         Tavily when TAVILY_API_KEY is set, otherwise DuckDuckGo HTML;
                linkedin reads the same results (LinkedIn itself is never fetched)
    GITHUB_TOKEN, when set, is sent as the Authorization header to the GitHub API. Keys are never logged.
    peopleSearch and publicContact have no free source, so live mode drops their cards (LIVE_DROPPED in synthetic.ts)
@@ -16,6 +16,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { z } from "zod";
 import { HIBP_CACHE_EMAILS } from "./presets";
 import { detect, tokenize } from "./chips";
 import type { Facts, ScanResult, ScanTool } from "./synthetic";
@@ -26,6 +27,8 @@ const gh = (): Record<string, string> => ({
   accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28",
   ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
 });
+const githubLogin = /^[a-z\d][a-z\d-]{0,38}$/i;
+const unique = (values: string[]) => [...new Map(values.map((value) => [value.toLowerCase(), value])).values()];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export type Ids = { emails: string[]; usernames: string[]; github: string[]; names: string[] };
@@ -43,8 +46,7 @@ export function identifiers(query: string): Ids {
   }
   /* A bare username is also tried as a GitHub login. */
   for (const u of ids.usernames) add(ids.github, u);
-  const login = /^[a-z\d](?:[a-z\d-]{0,38})$/i;
-  return { emails: ids.emails.slice(0, 3), usernames: ids.usernames.slice(0, 3), github: ids.github.filter((g) => login.test(g)).slice(0, 1), names: ids.names.slice(0, 1) };
+  return { emails: ids.emails.slice(0, 3), usernames: ids.usernames.slice(0, 3), github: ids.github.filter((g) => githubLogin.test(g)).slice(0, 1), names: ids.names.slice(0, 1) };
 }
 
 async function getJson<T>(url: string, signal: AbortSignal, headers: Record<string, string> = {}) {
@@ -55,7 +57,10 @@ async function getJson<T>(url: string, signal: AbortSignal, headers: Record<stri
   return { status: res.status, data };
 }
 
-const skipped = (why: string, found: string): ScanResult => ({ found, hit: false, source: "skipped", detail: why });
+type LiveResult = ScanResult & { empty?: true };
+const skipped = (why: string, found: string): LiveResult => ({ found, hit: false, source: "skipped", detail: why, empty: true });
+const noFindings = (found: string, detail?: string, facts?: Facts): LiveResult =>
+  ({ found, hit: false, source: "live", detail, facts, empty: true });
 const plural = (n: number, one: string, many = one + "s") => `${n} ${n === 1 ? one : many}`;
 const list = (xs: string[], n = 6) => xs.slice(0, n).join(", ") + (xs.length > n ? ` and ${xs.length - n} more` : "");
 
@@ -82,34 +87,71 @@ async function hudson(kind: "email" | "username", value: string, signal: AbortSi
   return data.stealers.map((s) => s.date_compromised?.slice(0, 10) ?? "unknown date");
 }
 
-/* ---- GitHub public REST, unauthenticated: profile plus author emails in recent public commits ---- */
-type GhUser = { login: string; name: string | null; public_repos: number; followers: number; created_at: string; email: string | null };
-type GhRepo = { full_name: string; fork: boolean };
+/* ---- GitHub public REST ---- */
+const githubUser = z.object({
+  login: z.string().regex(githubLogin),
+  name: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  public_repos: z.number().optional(),
+  followers: z.number().optional(),
+  created_at: z.string().optional(),
+});
+type GhUser = z.infer<typeof githubUser>;
+type GhRepo = { full_name: string; fork: boolean; private: boolean };
 type GhCommit = { commit?: { author?: { email?: string } } };
 
-async function github(login: string, signal: AbortSignal): Promise<ScanResult> {
-  const [user, repos] = await Promise.all([
-    getJson<GhUser>(`https://api.github.com/users/${login}`, signal, gh()),
-    getJson<GhRepo[]>(`https://api.github.com/users/${login}/repos?sort=pushed&per_page=5&type=owner`, signal, gh()),
-  ]);
-  if (user.status === 404) return { found: "No GitHub profile", hit: false, source: "live", detail: `No GitHub user ${login}` };
-  if (!user.data?.login) throw new Error(`GitHub HTTP ${user.status}${user.status === 403 ? " (rate limit)" : ""}`);
-  const emails = new Set<string>();
-  if (user.data.email) emails.add(user.data.email.toLowerCase());
-  const own = (Array.isArray(repos.data) ? repos.data : []).filter((r) => !r.fork).slice(0, 2);
+function githubProfile(login: string, signal: AbortSignal, once: Once) {
+  return once(`gh:user:${login.toLowerCase()}`, async () => {
+    const { status, data } = await getJson<unknown>(`https://api.github.com/users/${login}`, signal, gh());
+    if (status === 404) return null;
+    const user = githubUser.safeParse(data);
+    if (status !== 200 || !user.success) throw new Error(`GitHub profile HTTP ${status}`);
+    return user.data;
+  });
+}
+
+async function github(login: string, signal: AbortSignal, once: Once): Promise<LiveResult> {
+  const user = await githubProfile(login, signal, once);
+  if (!user) return noFindings("No GitHub profile");
+  const { data } = await getJson<GhRepo[]>(`https://api.github.com/users/${login}/repos?sort=pushed&per_page=5&type=owner`, signal, gh());
+  const own = (Array.isArray(data) ? data : []).filter((r) => !r.fork && r.private === false).slice(0, 2);
   const commits = await Promise.all(own.map((r) =>
     getJson<GhCommit[]>(`https://api.github.com/repos/${r.full_name}/commits?per_page=30&author=${login}`, signal, gh()).catch(() => null)));
-  for (const c of commits) for (const x of Array.isArray(c?.data) ? c.data : []) {
-    const e = x.commit?.author?.email?.toLowerCase();
-    if (e && !e.endsWith("noreply.github.com")) emails.add(e);
-  }
-  const u = user.data;
-  const profile = `@${u.login}${u.name ? ` (${u.name})` : ""}, ${plural(u.public_repos, "public repo")}, ${plural(u.followers, "follower")}, joined ${u.created_at.slice(0, 4)}`;
-  const seen = [...emails];
+  const seen = unique([user.email ?? "", ...commits.flatMap((c) =>
+    Array.isArray(c?.data) ? c.data.map((x) => x.commit?.author?.email ?? "") : [],
+  )].filter((email) => email && !/noreply\.github\.com$/i.test(email)));
+  const profile = [
+    `@${user.login}${user.name ? ` (${user.name})` : ""}`,
+    user.public_repos === undefined ? "" : plural(user.public_repos, "public repo"),
+    user.followers === undefined ? "" : plural(user.followers, "follower"),
+    user.created_at ? `joined ${user.created_at.slice(0, 4)}` : "",
+  ].filter(Boolean).join(", ");
   return seen.length
-    ? { found: "Found: email in commits", hit: true, source: "live", detail: `${profile}; commit emails: ${list(seen)} (from ${own.map((r) => r.full_name).join(", ")})`,
+    ? { found: "Found email on GitHub", hit: true, source: "live", detail: `${profile}. Public emails ${list(seen)}`,
         facts: { emails: seen, repos: own.map((r) => r.full_name) } }
-    : { found: "Found: profile, no emails", hit: false, source: "live", detail: `${profile}; no personal email in recent public commits` };
+    : { found: "Found GitHub profile", hit: false, source: "live", detail: profile, facts: { profiles: ["GitHub"] } };
+}
+
+const githubUsers = z.object({ items: z.array(z.object({ login: z.string().regex(githubLogin) })) });
+const githubCommits = z.object({ items: z.array(z.object({
+  author: z.object({ login: z.string().regex(githubLogin) }).nullish(),
+  commit: z.object({ author: z.object({ email: z.string() }) }),
+  repository: z.object({ full_name: z.string(), private: z.boolean() }),
+})) });
+
+async function searchGithub<T>(endpoint: "users" | "commits", query: string, schema: z.ZodType<{ items: T[] }>, signal: AbortSignal, once: Once) {
+  return once(`gh:search:${endpoint}:${query.toLowerCase()}`, async () => {
+    const url = `https://api.github.com/search/${endpoint}?q=${encodeURIComponent(query)}&per_page=3`;
+    const { status, data } = await getJson<unknown>(url, signal, gh());
+    const parsed = schema.safeParse(data);
+    if (status !== 200 || !parsed.success) throw new Error(`GitHub search HTTP ${status}`);
+    return parsed.data.items;
+  });
+}
+
+function githubByName(name: string, signal: AbortSignal, once: Once) {
+  const term = name.replace(/["\\]/g, " ").trim();
+  return term ? searchGithub("users", `"${term}" in:fullname type:user`, githubUsers, signal, once) : Promise.resolve([]);
 }
 
 /* ---- HIBP: cached results from the HIBP website, read only for Mangle's preset emails. No HIBP call is made
@@ -147,7 +189,16 @@ const CREDS = /stealer|credential stuffing|combo|naz\.api/i;
 const STEALER_LOG = /stealer\s*log/i;
 
 type Once = <T>(key: string, f: () => Promise<T>) => Promise<T>;
-type Runner = (ids: Ids, signal: AbortSignal, once: Once) => Promise<ScanResult>;
+type ScanIds = Ids & { webTerms?: string[]; commitMatch?: LiveResult; githubNames?: string[] };
+type Runner = (ids: ScanIds, signal: AbortSignal, once: Once) => Promise<LiveResult>;
+
+async function successful<T>(checks: Promise<T>[]): Promise<T[]> {
+  const settled = await Promise.allSettled(checks);
+  const results = settled.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
+  const failure = settled.find((result) => result.status === "rejected");
+  if (!results.length && failure) throw failure.reason;
+  return results;
+}
 
 const leaksFor = (ids: Ids, signal: AbortSignal, once: Once) =>
   Promise.all(ids.emails.map((e) => once(`leakcheck:${e}`, () => leakCheckEmail(e, signal))));
@@ -159,7 +210,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     const n = leaks.reduce((a, l) => a + l.found, 0);
     const pw = leaks.some((l) => l.found > 0 && l.fields.includes("password"));
     const fields = [...new Set(leaks.flatMap((l) => l.fields))];
-    if (!n) return { found: "No leaks found", hit: false, source: "live", detail: "LeakCheck: no records" };
+    if (!n) return noFindings("No leaks found", "LeakCheck found no records");
     return { found: pw ? `Found: passwords in ${n} leaks` : `Found: ${plural(n, "leak")}`, hit: true, source: "live",
       detail: `LeakCheck: ${plural(n, "record")}; fields: ${fields.join(", ") || "none listed"}`,
       facts: { passwords: pw, breaches: leaks.flatMap((l) => l.sources) } };
@@ -211,7 +262,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     const facts: Facts = { breaches: merged, pastes, checked };
     return merged.length
       ? { found: `Found: ${plural(merged.length, "breach", "breaches")}`, hit: true, source: "live", detail, facts }
-      : { found: "No breaches found", hit: false, source: "live", detail, facts };
+      : noFindings("No breaches found", detail, facts);
   },
   hudsonRock: async (ids, signal, once) => {
     const q = [...ids.emails.map((v) => ["email", v] as const), ...ids.usernames.map((v) => ["username", v] as const)];
@@ -220,7 +271,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     const presets = ids.emails.filter((e) => HIBP_CACHE_EMAILS.includes(e));
     const cache = presets.length ? await hibpCache() : null;
     const lists = [...new Set(presets.flatMap((e) => (cache?.accounts?.[e]?.breaches ?? []).filter((b) => STEALER_LOG.test(b.name)).map((b) => b.name)))];
-    const devices = await Promise.all(q.map(([k, v]) => once(`hudson:${k}:${v}`, () => hudson(k, v, signal)))).then((x) => x.flat(), (e: unknown) => {
+    const devices = await successful(q.map(([k, v]) => once(`hudson:${k}:${v}`, () => hudson(k, v, signal)))).then((x) => x.flat(), (e: unknown) => {
       if (!lists.length) throw e;
       return null;
     });
@@ -229,53 +280,98 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     if (devices?.length) return { found: `Found: ${plural(devices.length, "infected device")}`, hit: true, source: "live", detail: hr, facts: { devices, stealerLists: lists } };
     if (lists.length) return { found: "Found in a stealer log list", hit: true, source: "live", detail: `${checkedOn(cache?.source)}: ${list(lists)}; ${hr}`,
       facts: { devices: [], stealerLists: lists, noDevice: devices !== null } };
-    return { found: "No stealer logs found", hit: false, source: "live", detail: hr };
+    return noFindings("No stealer logs found", hr);
   },
   github: async (ids, signal, once) => {
-    if (!ids.github.length) return skipped("No GitHub handle in the query", "No GitHub handle");
-    return once(`gh:${ids.github[0].toLowerCase()}`, () => github(ids.github[0], signal));
+    if (!ids.github.length && !ids.githubNames?.length && !ids.commitMatch) return skipped("No GitHub identifier", "Nothing to check");
+    const checks = ids.github.map((login) => once(`gh:${login.toLowerCase()}`, () => github(login, signal, once)));
+    for (const name of ids.githubNames ?? []) {
+      checks.push(githubByName(name, signal, once).then((users): LiveResult => users.length
+        ? { found: "Found possible GitHub profiles", hit: false, source: "live",
+            facts: { urls: users.map((user) => `https://github.com/${user.login}`) } }
+        : noFindings("No GitHub profile")));
+    }
+    if (ids.commitMatch) checks.unshift(Promise.resolve(ids.commitMatch));
+    const results = await successful(checks);
+    const hits = results.filter((result) => result.hit);
+    const first = hits[0];
+    if (first) return { ...first, facts: {
+      emails: unique(hits.flatMap((result) => result.facts?.emails ?? [])),
+      repos: unique(hits.flatMap((result) => result.facts?.repos ?? [])),
+    } };
+    return results.find((result) => !result.empty) ?? noFindings("No GitHub profile");
   },
   social: async (ids, signal, once) => {
-    const user = ids.usernames[0];
-    if (!ids.emails.length && !user) return skipped("No email or username in the query", "Nothing to check");
+    const users = ids.usernames;
+    if (!ids.emails.length && !users.length) return skipped("No email or username in the query", "Nothing to check");
     const checks = await Promise.allSettled([
       ...ids.emails.map((e) => once(`grav:${e}`, () => gravatar(e, signal))),
-      ...(user ? [once(`kb:${user.toLowerCase()}`, () => keybase(user, signal))] : []),
+      ...users.map((user) => once(`kb:${user.toLowerCase()}`, () => keybase(user, signal))),
     ]);
-    return profiles("social", checks, user);
+    return profiles("social", checks, users[0]);
   },
   forum: async (ids, signal, once) => {
-    const user = ids.usernames[0];
-    if (!user) return skipped("No username in the query", "No username to check");
-    return profiles("forum", await Promise.allSettled([once(`hn:${user.toLowerCase()}`, () => hackerNews(user, signal))]), user);
+    if (!ids.usernames.length) return skipped("No username in the query", "No username to check");
+    const checks = await Promise.allSettled(ids.usernames.map((user) =>
+      once(`hn:${user.toLowerCase()}`, () => hackerNews(user, signal))));
+    const match = ids.usernames.find((_, index) => {
+      const check = checks[index];
+      return check.status === "fulfilled" && check.value;
+    });
+    return profiles("forum", checks, match);
   },
   web: async (ids, signal, once) => {
-    if (!ids.names.length) return skipped("No name in the query", "No name to search");
-    const { engine, urls } = await once(`search:${ids.names[0]}`, () => search(ids.names[0], signal));
+    const terms = ids.webTerms ?? ids.names;
+    if (!terms.length) return skipped("No identifier in the query", "Nothing to search");
+    const results = await searchTerms(terms, signal, once);
+    const engine = unique(results.map((result) => result.engine)).join(", ");
+    const urls = unique(results.flatMap((result) => result.urls));
     const domains = [...new Set(urls.map((u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))];
     return urls.length
       ? { found: `Found: ${plural(urls.length, "result")}`, hit: false, source: "live", detail: `${engine}: ${list(domains)}`, facts: { results: urls.length, domains, urls: urls.slice(0, 5) } }
-      : { found: "No results found", hit: false, source: "live", detail: `${engine}: no results` };
+      : noFindings("No results found", `${engine} found no results`);
   },
   linkedin: async (ids, signal, once) => {
-    if (!ids.names.length) return skipped("No name in the query", "No name to search");
-    const { urls } = await once(`search:${ids.names[0]}`, () => search(ids.names[0], signal));
-    const li = urls.filter((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\//i.test(u));
+    const terms = ids.webTerms ?? ids.names;
+    if (!terms.length) return skipped("No identifier in the query", "Nothing to search");
+    const results = await searchTerms(terms, signal, once);
+    const li = unique(results.flatMap((result) => result.urls)).filter((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\//i.test(u));
     return li.length
       ? { found: "Found: public profile", hit: false, source: "live", detail: `Search result: ${list(li, 2)}`, facts: { profiles: ["LinkedIn"], urls: li.slice(0, 3) } }
-      : { found: "Not in search results", hit: false, source: "live", detail: "No linkedin.com/in result for the name" };
+      : noFindings("Not in search results", "No LinkedIn profile in the results");
   },
 };
 
 /* ---- profile checks: each resolves to a site name when a public profile exists, or null ---- */
 type Profile = { site: string; linked?: string[] } | null;
+const gravatarProfile = z.object({
+  display_name: z.string().nullish(),
+  profile_url: z.string().nullish(),
+  verified_accounts: z.array(z.object({
+    service_label: z.string().optional(),
+    service_type: z.string().optional(),
+    url: z.string().optional(),
+  })).default([]),
+});
+type Gravatar = NonNullable<Profile> & { name?: string; handle?: string };
 
-async function gravatar(email: string, signal: AbortSignal): Promise<Profile> {
+async function gravatar(email: string, signal: AbortSignal): Promise<Gravatar | null> {
   const hash = createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
-  const { status, data } = await getJson<{ verified_accounts?: { service_label?: string; service_type?: string }[] }>(`https://api.gravatar.com/v3/profiles/${hash}`, signal);
+  const { status, data } = await getJson<unknown>(`https://api.gravatar.com/v3/profiles/${hash}`, signal);
   if (status === 404) return null;
-  if (status !== 200 || !data) throw new Error(`Gravatar HTTP ${status}`);
-  return { site: "Gravatar", linked: (data.verified_accounts ?? []).map((a) => a.service_label || a.service_type || "").filter(Boolean) };
+  const parsed = gravatarProfile.safeParse(data);
+  if (status !== 200 || !parsed.success) throw new Error(`Gravatar HTTP ${status}`);
+  const profile = parsed.data;
+  const linkedHandle = profile.verified_accounts
+    .map((account) => account.url?.match(/^https:\/\/github\.com\/([a-z\d-]+)\/?$/i)?.[1])
+    .find(Boolean);
+  const slug = profile.profile_url?.match(/^https:\/\/(?:www\.)?gravatar\.com\/([\w.-]+)\/?$/i)?.[1];
+  return {
+    site: "Gravatar",
+    linked: profile.verified_accounts.map((a) => a.service_label || a.service_type || "").filter(Boolean),
+    name: profile.display_name ?? undefined,
+    handle: linkedHandle ?? (slug && !/^[a-f\d]{32,}$/i.test(slug) ? slug : undefined),
+  };
 }
 
 async function keybase(user: string, signal: AbortSignal): Promise<Profile> {
@@ -291,7 +387,7 @@ async function hackerNews(user: string, signal: AbortSignal): Promise<Profile> {
   return data?.id ? { site: "Hacker News" } : null;
 }
 
-function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile>[], user?: string): ScanResult {
+function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile>[], user?: string): LiveResult {
   const failed = checks.flatMap((c) => (c.status === "rejected" ? [c.reason instanceof Error ? c.reason.message : "error"] : []));
   if (failed.length === checks.length) throw new Error(failed.join("; "));
   const found = checks.flatMap((c) => (c.status === "fulfilled" && c.value ? [c.value] : []));
@@ -299,67 +395,56 @@ function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile
   const linked = [...new Set(found.flatMap((p) => p.linked ?? []))];
   const note = failed.length ? `; could not check ${failed.join(", ")}` : "";
   const facts = { profiles: sites, linked, username: user };
-  if (!sites.length) return { found: kind === "forum" ? "No forum profiles found" : "No public profiles found", hit: false, source: "live", detail: `None found${note}`, facts };
+  if (!sites.length) return noFindings(kind === "forum" ? "No forum profiles found" : "No public profiles found", `None found${note}`, facts);
   return { found: `Found: ${sites.join(", ")}`, hit: sites.includes("Gravatar"), source: "live",
     detail: `${sites.join(", ")}${linked.length ? ` (linked: ${linked.join(", ")})` : ""}${note}`, facts };
 }
 
-/* ---- one public web search for the name: Tavily when TAVILY_API_KEY is set, DuckDuckGo HTML otherwise or when Tavily fails ---- */
+/* ---- public web search: Tavily, with DuckDuckGo as a fallback ---- */
 type Search = { engine: string; urls: string[] };
 const TAVILY_MS = 2500;
-async function tavily(name: string, key: string, signal: AbortSignal): Promise<Search> {
+async function tavily(term: string, key: string, signal: AbortSignal): Promise<Search> {
   const res = await fetch("https://api.tavily.com/search", {
     method: "POST", signal, cache: "no-store",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "user-agent": UA },
-    body: JSON.stringify({ query: `"${name}"`, max_results: 10, search_depth: "basic" }),
+    body: JSON.stringify({ query: `"${term}"`, max_results: 10, search_depth: "basic" }),
   });
   if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
   const data = (await res.json()) as { results?: { url: string }[] };
   return { engine: "Tavily", urls: [...new Set((data.results ?? []).map((r) => r.url))].slice(0, 10) };
 }
-async function search(name: string, signal: AbortSignal): Promise<Search> {
+async function search(term: string, signal: AbortSignal): Promise<Search> {
   const key = process.env.TAVILY_API_KEY;
   let note = "";
   if (key) {
-    try { return await tavily(name, key, AbortSignal.any([signal, AbortSignal.timeout(TAVILY_MS)])); }
+    try { return await tavily(term, key, AbortSignal.any([signal, AbortSignal.timeout(TAVILY_MS)])); }
     catch (e) { note = ` (Tavily failed: ${e instanceof Error ? (e.name === "TimeoutError" ? "timed out" : e.message) : "error"})`; }
   }
-  const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(`"${name}"`)}`,
+  const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(`"${term}"`)}`,
     { headers: { "user-agent": UA, accept: "text/html" }, signal, cache: "no-store" });
   if (res.status !== 200) throw new Error(`Search HTTP ${res.status}${res.status === 202 ? " (rate limited)" : ""}${note}`);
   const html = await res.text();
   const urls = [...html.matchAll(/result__url" href="[^"]*?uddg=([^&"]+)/g)].map((m) => decodeURIComponent(m[1]));
   return { engine: "DuckDuckGo" + note, urls: [...new Set(urls)].slice(0, 10) };
 }
+function searchTerms(terms: string[], signal: AbortSignal, once: Once) {
+  return successful(terms.map((term) => once(`search:${term.toLowerCase()}`, () => search(term, signal))));
+}
+
 /* ---- one shared memo for every network call, keyed by the identifier it checks, kept for 10 minutes.
-   A chip preloaded on its own (/api/preload) warms exactly the calls a later scan of all chips makes.
-   A failed or aborted call is dropped, so the next scan tries it again. ---- */
+   A scan reuses any lookups started by /api/preload. A failed or aborted call
+   is dropped, so the next scan tries it again. ---- */
 const MEMO_MS = 10 * 60 * 1000;
-const memo = new Map<string, { p: Promise<unknown>; done: boolean; t: number }>();
+const memo = new Map<string, { p: Promise<unknown>; t: number }>();
 const shared: Once = (key, f) => {
   const now = Date.now();
   const hit = memo.get(key);
   if (hit && now - hit.t < MEMO_MS) return hit.p as ReturnType<typeof f>;
-  const entry = { p: f() as Promise<unknown>, done: false, t: now };
+  const entry = { p: f() as Promise<unknown>, t: now };
   memo.set(key, entry);
-  entry.p.then(() => { entry.done = true; }, () => { if (memo.get(key) === entry) memo.delete(key); });
+  void entry.p.catch(() => { if (memo.get(key) === entry) memo.delete(key); });
   return entry.p as ReturnType<typeof f>;
 };
-const ready = (key: string) => { const m = memo.get(key); return !!m && m.done && Date.now() - m.t < MEMO_MS; };
-
-/* True when every network call a scan of this query makes has already finished, so the cards can settle at once. */
-export function warm(query: string): boolean {
-  const ids = identifiers(query);
-  const keys = [
-    ...ids.emails.flatMap((e) => [`leakcheck:${e}`, `xon:${e}`, `hudson:email:${e}`, `grav:${e}`]),
-    ...ids.usernames.map((u) => `hudson:username:${u}`),
-    ...ids.usernames.slice(0, 1).flatMap((u) => [`kb:${u.toLowerCase()}`, `hn:${u.toLowerCase()}`]),
-    ...ids.github.map((g) => `gh:${g.toLowerCase()}`),
-    ...ids.names.map((n) => `search:${n}`),
-  ];
-  return keys.length > 0 && keys.every(ready);
-}
-
 /* fresh: skip the memo for this context's calls (the QA page's Rerun), but still share calls within the run
    and store the new results in the memo. */
 function freshOnce(): Once {
@@ -374,19 +459,158 @@ function freshOnce(): Once {
   };
 }
 
+export type Pivot = { from: "GitHub" | "Gravatar"; kind: "name" | "handle"; value: string };
+
+function scanIdentifiers(query: string): ScanIds {
+  const ids = identifiers(query);
+  const tokens = tokenize(query);
+  const single = tokens.length === 1 ? detect(tokens[0]) : null;
+  if (single?.kind === "text" && /^[a-z][a-z\d-]{1,38}$/i.test(single.label)) {
+    ids.usernames.push(single.label);
+    ids.github.push(single.label);
+  } else if (single?.kind === "text" && /^[\p{L}][\p{L}'’ .-]+$/u.test(single.label)) {
+    ids.names.push(single.label);
+  }
+  if (single?.kind === "instagram" || single?.kind === "x") {
+    const handle = single.label.split("/")[1];
+    if (handle && /^[a-z\d][\w.-]{0,38}$/i.test(handle)) {
+      ids.usernames.push(handle);
+      if (githubLogin.test(handle)) ids.github.push(handle);
+    }
+  }
+  const localParts = ids.emails.map((email) => email.slice(0, email.lastIndexOf("@")));
+  const webTerms = unique([...ids.emails, ...localParts, ...ids.names, ...ids.usernames,
+    ...ids.github, ...(single && !ids.emails.length ? [single.label.replace(/^@/, "")] : [])]);
+  return { ...ids, webTerms, githubNames: ids.names };
+}
+
+async function expandIdentifiers(ids: ScanIds, signal: AbortSignal, once: Once, onPivot: (pivot: Pivot) => void): Promise<ScanIds> {
+  const names: string[] = [];
+  const handles: string[] = [];
+  const pivot = (from: Pivot["from"], kind: Pivot["kind"], raw?: string | null) => {
+    const value = raw?.trim().replace(/\s+/g, " ");
+    if (!value || value.length > 100 || signal.aborted) return;
+    if (kind === "handle" && !/^[a-z\d][\w.-]{0,38}$/i.test(value)) return;
+    const next = kind === "name" ? names : handles;
+    const known = kind === "name" ? ids.names : [...ids.github, ...ids.usernames];
+    if (next.length >= 2 || [...known, ...next].some((v) => v.toLowerCase() === value.toLowerCase())) return;
+    next.push(value);
+    onPivot({ from, kind, value });
+  };
+  const readGithubName = (user: GhUser | null) => {
+    if (user) pivot("GitHub", "name", user.name);
+  };
+
+  const email = ids.emails[0];
+  const local = email?.slice(0, email.lastIndexOf("@"));
+  const initialLogins = unique([...ids.github, ...(local && githubLogin.test(local) ? [local] : [])]);
+  const profiles = initialLogins.map((login) => githubProfile(login, signal, once).then((user) => {
+    if (user) pivot("GitHub", "handle", user.login);
+    readGithubName(user);
+  }));
+
+  const name = ids.names[0];
+  if (name && !email && !initialLogins.length) {
+    profiles.push(githubByName(name, signal, once).then(async (users) => {
+      if (users.length !== 1) return;
+      const user = await githubProfile(users[0].login, signal, once);
+      if (user?.name?.trim().toLowerCase() === name.toLowerCase()) pivot("GitHub", "handle", user.login);
+    }));
+  }
+
+  const avatars = ids.emails.map((address) => once(`grav:${address}`, () => gravatar(address, signal))
+    .then((profile) => {
+      if (!profile) return;
+      pivot("Gravatar", "name", profile.name);
+      pivot("Gravatar", "handle", profile.handle);
+    }));
+
+  let commitMatch: LiveResult | undefined;
+  const emailSearches: Promise<void>[] = [];
+  if (email && /^[^"\\\s]+$/.test(email)) {
+    emailSearches.push(searchGithub("commits", `author-email:"${email}" is:public`, githubCommits, signal, once)
+      .then(async (commits) => {
+        const matches = commits.filter((item) => item.repository.private === false && item.commit.author.email.toLowerCase() === email);
+        if (!matches.length) return;
+        commitMatch = { found: "Found email in public commits", hit: true, source: "live",
+          facts: { emails: [email], repos: unique(matches.map((item) => item.repository.full_name)) } };
+        const login = matches.find((item) => item.author)?.author?.login;
+        if (!login) return;
+        pivot("GitHub", "handle", login);
+        readGithubName(await githubProfile(login, signal, once));
+      }));
+    if (process.env.GITHUB_TOKEN) {
+      emailSearches.push(searchGithub("users", `"${email}" in:email type:user`, githubUsers, signal, once)
+        .then(async (users) => {
+          const login = users[0]?.login;
+          if (!login) return;
+          const user = await githubProfile(login, signal, once);
+          if (user?.email?.toLowerCase() !== email) return;
+          pivot("GitHub", "handle", user.login);
+          readGithubName(user);
+        }));
+    }
+  }
+  await Promise.allSettled([...profiles, ...avatars, ...emailSearches]);
+
+  return {
+    ...ids,
+    github: unique([...initialLogins, ...handles.filter((handle) => githubLogin.test(handle))]),
+    usernames: unique([...ids.usernames, ...ids.github, ...handles]).slice(0, 5),
+    webTerms: unique([...(ids.webTerms ?? []), ...names, ...handles]),
+    githubNames: unique([...names, ...ids.names]).slice(0, 2),
+    commitMatch,
+  };
+}
+
+function deadline(signal?: AbortSignal) {
+  const timeout = AbortSignal.timeout(TIMEOUT_MS);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
 export function makeLiveContext({ quiet = false, fresh = false } = {}) {
   const once = fresh ? freshOnce() : shared;
+  const runCheck = (tool: ScanTool, ids: ScanIds, signal: AbortSignal, lookup: Once = once): Promise<LiveResult> => {
+    const run = RUNNERS[tool] ?? (async () => skipped("No free live source", "Not checked"));
+    return run(ids, signal, lookup)
+      .catch((e: unknown): LiveResult => ({
+        found: "Could not check", hit: false, source: "unavailable",
+        detail: e instanceof Error && e.name === "TimeoutError" ? `Timed out after ${TIMEOUT_MS / 1000}s` : e instanceof Error ? e.message : "Unknown error",
+      }))
+      .then((r) => {
+        if (!quiet) console.info(`[scan:live] ${tool}: ${r.found} (${r.source}) | ${r.detail ?? ""}`);
+        return r;
+      });
+  };
+
   return {
-    check(tool: ScanTool, query: string, abortSignal?: AbortSignal): Promise<ScanResult> {
-      const run = RUNNERS[tool] ?? (async () => skipped("No free live source", "Not checked"));
-      const deadline = AbortSignal.timeout(TIMEOUT_MS);
-      const signal = abortSignal ? AbortSignal.any([abortSignal, deadline]) : deadline;
-      return run(identifiers(query), signal, once)
-        .catch((e: unknown): ScanResult => ({
-          found: "Could not check", hit: false, source: "unavailable",
-          detail: e instanceof Error && e.name === "TimeoutError" ? `Timed out after ${TIMEOUT_MS / 1000}s` : e instanceof Error ? e.message : "Unknown error",
-        }))
-        .then((r) => { if (!quiet) console.info(`[scan:live] ${tool}: ${r.found} (${r.source}) | ${r.detail ?? ""}`); return r; });
+    check(tool: ScanTool, query: string, abortSignal?: AbortSignal) {
+      return runCheck(tool, identifiers(query), deadline(abortSignal));
+    },
+    scan(query: string, abortSignal: AbortSignal, onPivot: (pivot: Pivot) => void) {
+      const ids = scanIdentifiers(query);
+      const local = new Map<string, Promise<unknown>>();
+      const lookup: Once = (key, fetch) => {
+        const cached = local.get(key);
+        if (cached) return cached as ReturnType<typeof fetch>;
+        const result = once(key, fetch);
+        local.set(key, result);
+        return result;
+      };
+      const signal = deadline(abortSignal);
+      // Share web searches with LinkedIn and start each as soon as its term is known.
+      const startSearch = (terms: string[]) => {
+        void searchTerms(terms, deadline(abortSignal), lookup).catch(() => {});
+      };
+      startSearch(ids.webTerms ?? []);
+      const expanded = expandIdentifiers(ids, signal, lookup, (pivot) => {
+        onPivot(pivot);
+        startSearch([pivot.value]);
+      });
+      return async (tool: ScanTool) => {
+        if (tool === "hibpTest" || tool === "leakCheck") return runCheck(tool, ids, deadline(abortSignal), lookup);
+        return runCheck(tool, await expanded, deadline(abortSignal), lookup);
+      };
     },
   };
 }

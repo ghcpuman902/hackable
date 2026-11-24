@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
-import { Fan, Logo, runH, type CardState } from "./Fan";
+import { Logo, type CardState } from "./Fan";
+import { ScanRows } from "./ScanRows";
 import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, SelfTicks, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
@@ -261,10 +262,16 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const states: Partial<Record<ScanTool, CardState>> = {};
   const found: Partial<Record<ScanTool, string>> = {};
   const outputs: Outputs = {};
+  const pivots = [];
   for (const p of assistant?.parts ?? []) {
+    if (p.type === "data-pivot") pivots.push(p.data);
     if (!isStaticToolUIPart(p)) continue;
     const name = getStaticToolName(p) as ScanTool;
-    if (p.state === "output-available") { states[name] = p.output.hit ? "hit" : "ok"; found[name] = p.output.found; outputs[name] = p.output; }
+    if (p.state === "output-available") {
+      states[name] = p.output.hit ? "hit" : "ok";
+      if (!p.output.empty) found[name] = p.output.found;
+      outputs[name] = p.output;
+    }
     else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
   }
   const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
@@ -590,10 +597,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
           </div>
         </div>
       </div>
-      <div className="stage" aria-live="polite" style={{ "--runh": runH(fan).wide + "px", "--runhm": runH(fan).phone + "px" } as CSSProperties}>
-        <Fan fan={fan} states={running ? states : undefined}
-          label={(c, s) => (s === "checking" ? c.checking : s === "ok" || s === "hit" ? found[c.tool] ?? "" : "")} />
-      </div>
+      <ScanRows fan={fan} states={running ? states : undefined} found={found}
+        pivots={pivots} showPivots={running && live && !quick} />
       <div className="app results-area">
         {done && <div className="report" id="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
       </div>

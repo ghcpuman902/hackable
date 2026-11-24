@@ -1,12 +1,11 @@
 import {
-  createUIMessageStreamResponse, isStepCount, simulateReadableStream, streamText, toUIMessageStream,
-  type LanguageModel, type UIMessage,
+  createUIMessageStream, createUIMessageStreamResponse, isStepCount, simulateReadableStream, streamText, toUIMessageStream,
+  type LanguageModel,
 } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { presetFor } from "@/lib/presets";
-import { warm } from "@/lib/live-sources";
-import { makeScanTools } from "@/lib/scan-tools";
+import { makeLiveScan, makeScanTools, type ScanMessage } from "@/lib/scan-tools";
 import { CHECK_MS, FAN, fanFor, isDemoQuery, QUICK, START_MS, STEP_MS, type FanCard } from "@/lib/synthetic";
 
 /* Default: a mock model that calls every source tool, so the demo needs no API key.
@@ -28,7 +27,7 @@ const usage = {
   outputTokens: { total: 0, text: 0, reasoning: undefined },
 };
 
-function mockModel(query: string, fan: FanCard[], fast = false, quick = false) {
+function mockModel(query: string, fan: FanCard[], quick = false) {
   const json = JSON.stringify({ query });
   /* One tool call per step, so each result streams as soon as its check is done. */
   let step = 0;
@@ -47,7 +46,7 @@ function mockModel(query: string, fan: FanCard[], fast = false, quick = false) {
         : [{ type: "finish" as const, finishReason: { unified: "stop" as const, raw: undefined }, usage }];
       return {
         stream: simulateReadableStream({
-          initialDelayInMs: fast ? 0 : quick ? (i === 0 ? QUICK.start : QUICK.step - QUICK.check) : i === 0 ? START_MS : STEP_MS - CHECK_MS,
+          initialDelayInMs: quick ? (i === 0 ? QUICK.start : QUICK.step - QUICK.check) : i === 0 ? START_MS : STEP_MS - CHECK_MS,
           chunkDelayInMs: 0,
           chunks,
         }),
@@ -57,7 +56,7 @@ function mockModel(query: string, fan: FanCard[], fast = false, quick = false) {
 }
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const { messages }: { messages: ScanMessage[] } = await req.json();
   const last = messages.at(-1);
   const query = last?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ").slice(0, 500) ?? "";
   /* A preset opens its cached profile with the mock model: no live source and no model call. */
@@ -66,10 +65,25 @@ export async function POST(req: Request) {
   const demo = !preset && isDemoQuery(query);
   const cached = preset?.results ?? (demo ? Object.fromEntries(FAN.map((c) => [c.tool, c.result])) : undefined);
   const fan = fanFor(!demo && (!!preset || process.env.SCAN_MODE === "live"));
-  /* Every chip was preloaded: the tools already hold their results, so the mock drives the steps with no delay and no model call. */
-  const fast = !preset && process.env.SCAN_MODE === "live" && warm(query);
-  const real = cached || fast ? null : realModel();
-  const model: LanguageModel = real ?? mockModel(query, fan, fast, !!cached);
+  if (!cached && process.env.SCAN_MODE === "live") {
+    const stream = createUIMessageStream<ScanMessage>({
+      originalMessages: messages,
+      execute: async ({ writer }) => {
+        writer.write({ type: "start" });
+        const check = makeLiveScan(query, req.signal, (data) => writer.write({ type: "data-pivot", data }));
+        await Promise.all(fan.map(async ({ tool }) => {
+          writer.write({ type: "tool-input-available", toolCallId: tool, toolName: tool, input: { query } });
+          const output = await check(tool);
+          writer.write({ type: "tool-output-available", toolCallId: tool, output });
+        }));
+        writer.write({ type: "finish", finishReason: "stop" });
+      },
+    });
+    return createUIMessageStreamResponse({ stream });
+  }
+
+  const real = cached ? null : realModel();
+  const model: LanguageModel = real ?? mockModel(query, fan, !!cached);
   const order = fan.map((c) => c.tool);
 
   const result = streamText({
@@ -77,7 +91,7 @@ export async function POST(req: Request) {
     instructions: `Check every source for the person described. Call one tool per step, each exactly once, in this order: ${order.join(", ")}. `
       + "Pass the full query unchanged. After the last tool, reply with one short sentence.",
     prompt: query,
-    tools: makeScanTools(query, cached, fast),
+    tools: makeScanTools(cached),
     /* A real model is held to one named tool per step, in the 06 order, so each card settles in turn as with the mock. */
     prepareStep: real
       ? ({ stepNumber }) => (stepNumber < order.length

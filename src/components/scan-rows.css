@@ -1,0 +1,40 @@
+.run .scan-rows .pc.ck.ok:has(.st:empty) {
+  display: none;
+}
+
+.scan-pivots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 36px;
+  gap: 4px;
+  width: min(340px, calc(100% - 32px));
+  min-height: 76px;
+  margin-inline: auto;
+}
+
+.scan-pivots > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-inline: 8px;
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--n900);
+  box-shadow: var(--card-shadow);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.scan-pivots > div > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .run .scan-rows .pc.ck.chk .st::after,
+  .run .scan-rows .pc.ck.bad .lrow {
+    animation: none;
+  }
+}
