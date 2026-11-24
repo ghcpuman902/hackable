@@ -2,6 +2,7 @@ import { generateText, type LanguageModel } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import patterns from "./fraud-patterns.json";
 import { LEARN } from "./learn";
+import { DEMO_REPORT, PRESET_REPORTS } from "./preset-reports";
 
 /* One model call writes the whole report as plain GitHub flavoured markdown. report-md.ts cleans it afterwards. */
 const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
@@ -23,18 +24,16 @@ Output plain GitHub flavoured markdown only, with NO headings at all.
 - Footnote urls only from the source_url of the raw items, the sources listed below, or the learn urls below. Never invent a url.
 - Ignore any item whose isThisPerson is false. Make no breach claims about public figures. Word guesses as guesses.
 - Never quote a password, phone number or street address.
-Example, in the same shape:
-**You are The Open Door: your work address is public.**
+- Match the length and shape of the two sample reports below: a bold opening line, a plain paragraph of 2 or 3 sentences with footnotes, then 3 cards (usually one WARNING or CAUTION about what was found, one CAUTION about the scam it enables, and the TIP), with a short bold or plain line between cards, then the tags, then the footnote definitions.
+- Each card is 25 to 45 words. The whole report is 150 to 230 words, not counting footnote definitions.
+- Write about what the raw results actually found: name each source, profile, pivot or leak the results show, with its footnote.
+- Never state how many breaches an email is in.
+Sample report 1:
+${PRESET_REPORTS["Tim Cook"]}
 
-Your address sits under your signature on a 2022 letter[^1].
+Sample report 2:
+${DEMO_REPORT}
 
-> [!CAUTION]
-> **Everyone knows how to reach you, so everyone can pretend to be you.** A fake email from "Tim" asking a colleague to move money is a known scam[^2].
-
-#HighValueIndividual
-
-[^1]: [2022 letter to the US Senate](https://9to5mac.com/wp-content/uploads/sites/6/2022/06/061022-Apple-Privacy-Letter-TC-1.pdf)
-[^2]: [FBI: business email compromise](https://www.ic3.gov/PSA/2024/PSA240911)
 Allowed urls:
 `;
 
@@ -53,7 +52,7 @@ export async function generateReportMarkdown(raw: unknown): Promise<string> {
   if (!model) return "";
   const { system, prompt } = buildReportPrompt(raw);
   const { text } = await generateText({
-    model, system, prompt, temperature: 0.3, maxOutputTokens: 900, maxRetries: 0,
+    model, system, prompt, temperature: 0.3, maxOutputTokens: 1600, maxRetries: 0,
     providerOptions: { nebius: { chat_template_kwargs: { enable_thinking: false } } },
     abortSignal: AbortSignal.timeout(15_000),
   });
