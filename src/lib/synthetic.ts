@@ -4,8 +4,13 @@ import type { Brand } from "@/components/brand-icons";
 /* ---- scan sources: one AI SDK tool each, one fan card each ---- */
 export type ScanTool = "web" | "linkedin" | "github" | "hudsonRock" | "leakCheck" | "hibpTest"
   | "forum" | "peopleSearch" | "publicContact" | "social";
-/* source and detail are set only by live checks (SCAN_MODE=live); synthetic results leave them out. */
-export type ScanResult = { found: string; hit: boolean; source?: "live" | "skipped" | "unavailable"; detail?: string };
+/* source, detail and facts are set only by live checks (SCAN_MODE=live); synthetic results leave them out.
+   facts carry what the live report is built from. */
+export type Facts = {
+  emails?: string[]; repos?: string[]; breaches?: { name: string; date?: string }[]; passwords?: boolean;
+  devices?: string[]; profiles?: string[]; linked?: string[]; domains?: string[]; results?: number; username?: string;
+};
+export type ScanResult = { found: string; hit: boolean; source?: "live" | "skipped" | "unavailable"; detail?: string; facts?: Facts };
 
 export type FanCard = {
   tool: ScanTool;
@@ -41,6 +46,13 @@ export const FAN: FanCard[] = [
   { tool: "forum", title: "Forums", icon: { brand: "reddit" },
     checking: "Checking forums", result: { found: "Found: 3 old posts", hit: false } },
 ];
+/* Live mode has no free source for people search or phone numbers, so those cards are dropped. The rest keep
+   the 06 order, and the first six still fill the phone list. */
+export const LIVE_DROPPED: ScanTool[] = ["peopleSearch", "publicContact"];
+const PHONE_ROWS = FAN.filter((c) => c.phone).length;
+const LIVE_FAN: FanCard[] = FAN.filter((c) => !LIVE_DROPPED.includes(c.tool)).map((c, i) => ({ ...c, phone: i < PHONE_ROWS }));
+export const fanFor = (live: boolean): FanCard[] => (live ? LIVE_FAN : FAN);
+
 /* Timing, as in 06: sources are checked one at a time. A new one starts every STEP_MS and
    each takes CHECK_MS, which is shorter, so only one card is checking at any moment. */
 export const START_MS = 300;

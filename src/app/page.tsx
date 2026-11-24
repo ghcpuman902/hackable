@@ -1,5 +1,5 @@
 import SearchFlow from "@/components/SearchFlow";
 
 export default function Home() {
-  return <SearchFlow />;
+  return <SearchFlow live={process.env.SCAN_MODE === "live"} />;
 }

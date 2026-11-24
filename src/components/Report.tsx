@@ -1,17 +1,17 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Lucide, Tile } from "./icons";
-import { DEMO_EMAIL, PATTERNS, type MiniName, type PatternId } from "@/lib/synthetic";
+import { DEMO_EMAIL, PATTERNS, type MiniName, type PatternId, type ScanResult, type ScanTool } from "@/lib/synthetic";
 
 const s = (name: string): CSSProperties => ({ animationName: name });
 const dx = (v: string) => ({ "--dx": v }) as CSSProperties;
 
 /* Mini animations: markup from 05-search-flow.html, motion is pure CSS. */
-export function Mini({ name }: { name: MiniName }) {
+export function Mini({ name, who = "Jane" }: { name: MiniName; who?: string }) {
   switch (name) {
     case "rec":
       return (
         <div className="mini m-rec" aria-hidden="true">
-          <div className="bub a" style={s("s5")}>Hi Jane, £140k remote role. Quick take-home test?</div>
+          <div className="bub a" style={s("s5")}>Hi {who}, £140k remote role. Quick take-home test?</div>
           <div className="term a" style={s("s20")}>
             <div><span className="p">$</span> npm install</div>
             <div className="a" style={s("s30")}>added 214 packages</div>
@@ -45,7 +45,7 @@ export function Mini({ name }: { name: MiniName }) {
           <div className="w them">
             <span className="x a" style={s("s60")}>password</span>
             <span className="x a" style={s("s65")}>2-step code</span>
-            <div className="ok a" style={s("s70")}>Signed in as Jane</div>
+            <div className="ok a" style={s("s70")}>Signed in as {who === "there" ? "you" : who}</div>
           </div>
         </div>
       );
@@ -99,7 +99,7 @@ export function Sec({ children, mini }: { children: ReactNode; mini?: MiniName }
   );
 }
 
-export function PatternSec({ id }: { id: PatternId }) {
+export function PatternSec({ id, who }: { id: PatternId; who?: string }) {
   const p = PATTERNS[id];
   return (
     <a className="sec mk-card" href={p.href}>
@@ -111,7 +111,7 @@ export function PatternSec({ id }: { id: PatternId }) {
         <p className="lesson">{p.lesson}</p>
         <span className="cite">{p.cite}</span>
       </div>
-      <div><Mini name={p.anim} /></div>
+      <div><Mini name={p.anim} who={who} /></div>
       <span className="go" aria-hidden="true"><Lucide name="arrow-right" /></span>
     </a>
   );
@@ -130,10 +130,10 @@ export const FINDINGS = [
   </Sec>,
 ];
 
-export function FinalSec({ onMail }: { onMail: () => void }) {
+export function FinalSec({ onMail, both = true }: { onMail: () => void; both?: boolean }) {
   return (
     <Sec>
-      <Para lead="Both scams start in one channel and make the request in another." rest=" The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo." />
+      {both && <Para lead="Both scams start in one channel and make the request in another." rest=" The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo." />}
       <p className="lesson">When a message pushes you to act fast, reply through a channel you already use with that person or company.</p>
       <p className="lesson">Stop and check whenever someone asks you to run their code or share your screen.</p>
       <div className="actions">
@@ -143,4 +143,91 @@ export function FinalSec({ onMail }: { onMail: () => void }) {
       </div>
     </Sec>
   );
+}
+
+/* ---- live report (SCAN_MODE=live): built only from what the live tools returned ---- */
+export type Outputs = Partial<Record<ScanTool, ScanResult>>;
+const and = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+
+/* A commit email lets a fake recruiter write about your code; any email that is public or leaked can be flooded. */
+export function livePatterns(o: Outputs): PatternId[] {
+  const commitEmail = (o.github?.facts?.emails?.length ?? 0) > 0;
+  const publicEmail = commitEmail || !!o.social?.facts?.profiles?.includes("Gravatar") || !!o.hibpTest?.hit || !!o.leakCheck?.hit;
+  const ids: PatternId[] = [];
+  if (commitEmail) ids.push("contagious-interview");
+  if (publicEmail) ids.push("email-bomb-vishing");
+  if (o.hudsonRock?.hit) ids.push("session-hijack");
+  return ids;
+}
+
+export function liveFindings(o: Outputs): ReactNode[] {
+  const out: ReactNode[] = [];
+  const breaches = o.hibpTest?.facts?.breaches ?? [];
+  if (o.hibpTest?.hit && breaches.length) {
+    const newest = breaches.filter((b) => b.date).sort((a, b) => (b.date! > a.date! ? 1 : -1))[0];
+    out.push(
+      <Sec key="breach">
+        <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> is in {breaches.length === 1 ? "one breach" : `${breaches.length} breaches`}.</>}
+          rest={newest ? ` The newest was ${newest.name} in ${newest.date!.slice(0, 4)}. We only saw the breach names.` : " We only saw the breach names."} />
+      </Sec>,
+    );
+  }
+  if (o.leakCheck?.facts?.passwords) {
+    out.push(<Sec key="pw"><Para lead="Your email appears next to a password in a leaked list." rest=" Change that password wherever you still use it." /></Sec>);
+  }
+  const devices = o.hudsonRock?.facts?.devices ?? [];
+  if (o.hudsonRock?.hit) {
+    const latest = [...devices].sort().at(-1);
+    out.push(
+      <Sec key="steal">
+        <Para lead={`A program on ${devices.length > 1 ? `${devices.length} of your devices` : "one of your devices"} copied saved logins.`}
+          rest={latest && latest !== "unknown date" ? ` The latest copy was made on ${latest}, and someone may be selling the logins.` : " Someone may be selling the logins."} />
+      </Sec>,
+    );
+  }
+  const emails = o.github?.facts?.emails ?? [];
+  const repos = o.github?.facts?.repos ?? [];
+  if (emails.length) {
+    out.push(
+      <Sec key="github">
+        <Para lead={<>Your <span className="nw"><Tile kind="github" />GitHub</span> commits show your personal email.</>}
+          rest={` Anyone can read ${and(emails)} in the history of ${and(repos)}, so a stranger can write to you about your code.`} />
+      </Sec>,
+    );
+  }
+  const social = o.social?.facts?.profiles ?? [];
+  const linked = o.social?.facts?.linked ?? [];
+  if (social.includes("Gravatar")) {
+    out.push(
+      <Sec key="gravatar">
+        <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> has a public Gravatar profile.</>}
+          rest={linked.length ? ` It lists your ${and(linked)} ${linked.length === 1 ? "account" : "accounts"}, so anyone who has your email can find ${linked.length === 1 ? "it" : "them"}.` : " Anyone who has your email can see its name and picture."} />
+      </Sec>,
+    );
+  }
+  const others = [...social.filter((p) => p !== "Gravatar"), ...(o.forum?.facts?.profiles ?? [])];
+  const user = o.forum?.facts?.username ?? o.social?.facts?.username;
+  if (others.length && user) {
+    out.push(<Sec key="user"><Para lead={`Your username ${user} has public profiles on ${and(others)}.`} rest=" What you posted there can be read next to your other profiles." /></Sec>);
+  }
+  const web = o.web?.facts;
+  if (web?.results) {
+    const li = (o.linkedin?.facts?.profiles?.length ?? 0) > 0;
+    out.push(
+      <Sec key="web">
+        <Para lead="A web search for your name finds pages about you."
+          rest={` The first results include ${and((web.domains ?? []).slice(0, 4))}${li ? ", and a LinkedIn profile" : ""}.`} />
+      </Sec>,
+    );
+  }
+  if (!out.length) {
+    const missed = Object.values(o).some((r) => r?.source === "unavailable");
+    out.push(
+      <Sec key="none">
+        <Para lead="We found nothing about these details in the sources we checked."
+          rest={missed ? " Some sources could not be checked, so there may be more." : " That covers breach lists, stealer logs, GitHub, Gravatar, forums and a web search."} />
+      </Sec>,
+    );
+  }
+  return out;
 }

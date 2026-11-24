@@ -58,18 +58,20 @@ const P: Piece[] = [
 ];
 
 const PHONE_DUR = 30;
-const PHONE_TOOLS =FAN.filter((c) => c.phone);
 const CLS: Record<CardState, string> = { idle: "", checking: " chk", ok: " ok", hit: " bad" };
 
 /* The landing scene and the check list are the same pieces. Wide screens use the 06 desktop
    positions and two columns; phones (≤640px, CSS) use the phone positions and one column. */
-export function Fan({ states, label }: { states?: Partial<Record<ScanTool, CardState>>; label?: (c: FanCard, s: CardState) => string }) {
+export function Fan({ fan = FAN, states, label }: {
+  fan?: FanCard[]; states?: Partial<Record<ScanTool, CardState>>; label?: (c: FanCard, s: CardState) => string;
+}) {
+  const phoneTools = fan.filter((c) => c.phone);
   return (
     <>
       {P.map(([type, k, l, t, z, r, m], i) => {
         const dur = 26 + ((i * 7) % 12);
         const tool = type === "mock" ? TOOL[k] : undefined;
-        const card = tool && FAN.find((c) => c.tool === tool);
+        const card = tool && fan.find((c) => c.tool === tool);
         const vars: Record<string, string | number> = {
           "--l": l + "%", "--t": t + "%", "--lm": (m ? m[0] : l) + "%", "--tm": (m ? m[1] : t) + "%",
           "--r": r + "deg", "--dur": dur + "s", "--d": -(1 - t / 100) * dur * 0.92 + "s", "--dm": -(1 - (m ? m[1] : t) / 100) * PHONE_DUR * 0.92 + "s",
@@ -77,7 +79,7 @@ export function Fan({ states, label }: { states?: Partial<Record<ScanTool, CardS
         };
         let s: CardState = "idle";
         if (card) {
-          const di = FAN.indexOf(card), col = di % 2, row = Math.floor(di / 2), pi = PHONE_TOOLS.indexOf(card);
+          const di = fan.indexOf(card), col = di % 2, row = Math.floor(di / 2), pi = phoneTools.indexOf(card);
           vars["--sl"] = `calc(50% ${col ? "+" : "-"} 146px)`;
           vars["--st"] = 12 + row * 74 + (col ? 30 : 0) + "px";
           vars["--stm"] = 12 + Math.max(pi, 0) * 66 + "px";
@@ -105,4 +107,4 @@ export function Fan({ states, label }: { states?: Partial<Record<ScanTool, CardS
   );
 }
 
-export const RUN_H = { phone: 40 + PHONE_TOOLS.length * 66, wide: 70 + Math.ceil(FAN.length / 2) * 74 };
+export const runH = (fan: FanCard[]) => ({ phone: 40 + fan.filter((c) => c.phone).length * 66, wide: 70 + Math.ceil(fan.length / 2) * 74 });

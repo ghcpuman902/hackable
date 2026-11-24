@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Keyb
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
-import { Fan, RUN_H, type CardState } from "./Fan";
-import { FINDINGS, FinalSec, PatternSec } from "./Report";
+import { Fan, runH, type CardState } from "./Fan";
+import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, FAN, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 /* Small platform tiles under each recent person, as in 06. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
@@ -33,7 +33,9 @@ const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("
 
 let uid = 0;
 
-export default function SearchFlow() {
+/* live: SCAN_MODE=live on the server. The list then drops the cards with no live source, and the report is built from the live results. */
+export default function SearchFlow({ live = false }: { live?: boolean }) {
+  const fan = fanFor(live);
   const [chips, setChipsState] = useState<Chip[]>([]);
   const chipsRef = useRef<Chip[]>([]);
   const setChips = (next: Chip[]) => { chipsRef.current = next; setChipsState(next); };
@@ -85,13 +87,14 @@ export default function SearchFlow() {
   const assistant = messages.findLast((m) => m.role === "assistant");
   const states: Partial<Record<ScanTool, CardState>> = {};
   const found: Partial<Record<ScanTool, string>> = {};
+  const outputs: Outputs = {};
   for (const p of assistant?.parts ?? []) {
     if (!isStaticToolUIPart(p)) continue;
     const name = getStaticToolName(p) as ScanTool;
-    if (p.state === "output-available") { states[name] = p.output.hit ? "hit" : "ok"; found[name] = p.output.found; }
+    if (p.state === "output-available") { states[name] = p.output.hit ? "hit" : "ok"; found[name] = p.output.found; outputs[name] = p.output; }
     else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
   }
-  const settled = FAN.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
+  const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
   const done = running && (status === "error" || (status === "ready" && settled));
 
   const scan = useCallback((list: Chip[]) => {
@@ -187,7 +190,15 @@ export default function SearchFlow() {
 
   const mail = () => { setToast(true); setTimeout(() => setToast(false), 2400); };
   const rise = (i: number) => ({ animationDelay: i * 0.14 + "s" }) as CSSProperties;
-  const report = [
+  const patterns = livePatterns(outputs);
+  const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
+  const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
+  const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
+  const report = live ? [
+    ...liveFindings(outputs),
+    ...patterns.map((id) => <PatternSec key={id} id={id} who={who} />),
+    <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")} />,
+  ] : [
     ...FINDINGS,
     ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),
     ...(showAll || extraOpen
@@ -285,14 +296,14 @@ export default function SearchFlow() {
           </div>
         </div>
       </div>
-      <div className="stage" aria-live="polite" style={{ "--runh": RUN_H.wide + "px", "--runhm": RUN_H.phone + "px" } as CSSProperties}>
-        <Fan states={running ? states : undefined}
+      <div className="stage" aria-live="polite" style={{ "--runh": runH(fan).wide + "px", "--runhm": runH(fan).phone + "px" } as CSSProperties}>
+        <Fan fan={fan} states={running ? states : undefined}
           label={(c, s) => (s === "checking" ? c.checking : s === "ok" || s === "hit" ? found[c.tool] ?? "" : "")} />
       </div>
       <div className="app results-area">
         {done && <div className="report" id="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
       </div>
-      <div className={"toast" + (toast ? " on" : "")} role="status">Sent to {DEMO_EMAIL}</div>
+      <div className={"toast" + (toast ? " on" : "")} role="status">Sent to {mailTo}</div>
     </div>
   );
 }

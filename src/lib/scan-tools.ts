@@ -4,8 +4,8 @@ import { makeLiveContext } from "./live-sources";
 import { CHECK_MS, FAN, type ScanResult, type ScanTool } from "./synthetic";
 
 /* One tool per source. By default each returns synthetic data after a short delay, with no network calls.
-   With SCAN_MODE=live, sources that have a free public API call it instead (see live-sources.ts);
-   the rest stay on their synthetic result. */
+   With SCAN_MODE=live, every tool calls a free public source instead (see live-sources.ts) and never
+   returns synthetic data; the cards with no live source are dropped from the live list. */
 const input = z.object({ query: z.string().describe("Names, emails, links or handles to check") });
 
 const DESCRIPTION: Record<ScanTool, string> = {
