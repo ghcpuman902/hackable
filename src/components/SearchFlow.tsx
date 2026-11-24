@@ -8,6 +8,7 @@ import { Fan, runH, type CardState } from "./Fan";
 import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
+import { LIVE_DEMO_CHIPS } from "@/lib/presets";
 import type { ScanMessage } from "@/lib/scan-tools";
 import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
@@ -120,7 +121,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   useEffect(() => {
     const boot = setTimeout(() => {
       if (restore()) return;
-      if (new URLSearchParams(location.search).has("demo")) add(DEMO_CHIPS);
+      if (new URLSearchParams(location.search).has("demo")) add(live ? LIVE_DEMO_CHIPS : DEMO_CHIPS);
       entryRef.current?.focus();
     }, 0);
     addEventListener("popstate", restore);

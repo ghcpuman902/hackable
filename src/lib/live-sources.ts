@@ -3,21 +3,30 @@
    throws: on any error or timeout it returns a "Could not check" result.
 
    leakCheck   LeakCheck public API (email)
-   hibpTest    HIBP when HIBP_API_KEY is set, otherwise the breach names LeakCheck already returned
+   hibpTest    cached HIBP results for Mangle's preset emails only, plus LeakCheck and XposedOrNot breach names, merged
    hudsonRock  Hudson Rock Cavalier free OSINT (email and username)
    github      GitHub public REST, unauthenticated: profile and author emails in recent public commits
    social      Gravatar public profile (email hash) and Keybase (username)
-   forum       Hacker News and Reddit public profiles (username)
-   web         one DuckDuckGo HTML search for the name; linkedin reads the same results (LinkedIn itself is never fetched)
+   forum       Hacker News public profile (username). Reddit blocks anonymous checks, so it is not used.
+   web         one search for the name: Tavily when TAVILY_API_KEY is set, otherwise DuckDuckGo HTML;
+               linkedin reads the same results (LinkedIn itself is never fetched)
+   GITHUB_TOKEN, when set, is sent as the Authorization header to the GitHub API. Keys are never logged.
    peopleSearch and publicContact have no free source, so live mode drops their cards (LIVE_DROPPED in synthetic.ts)
    and returns "skipped" if they are ever called. Live mode never returns synthetic data. */
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { HIBP_CACHE_EMAILS } from "./presets";
 import { detect, tokenize } from "./chips";
-import type { ScanResult, ScanTool } from "./synthetic";
+import type { Facts, ScanResult, ScanTool } from "./synthetic";
 
 const TIMEOUT_MS = 4000;
 const UA = "innovators-guild-retail-ai/0.1 (local hackathon demo)";
-const GH = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" };
+const gh = (): Record<string, string> => ({
+  accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28",
+  ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+});
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export type Ids = { emails: string[]; usernames: string[]; github: string[]; names: string[] };
 
@@ -80,8 +89,8 @@ type GhCommit = { commit?: { author?: { email?: string } } };
 
 async function github(login: string, signal: AbortSignal): Promise<ScanResult> {
   const [user, repos] = await Promise.all([
-    getJson<GhUser>(`https://api.github.com/users/${login}`, signal, GH),
-    getJson<GhRepo[]>(`https://api.github.com/users/${login}/repos?sort=pushed&per_page=5&type=owner`, signal, GH),
+    getJson<GhUser>(`https://api.github.com/users/${login}`, signal, gh()),
+    getJson<GhRepo[]>(`https://api.github.com/users/${login}/repos?sort=pushed&per_page=5&type=owner`, signal, gh()),
   ]);
   if (user.status === 404) return { found: "No GitHub profile", hit: false, source: "live", detail: `No GitHub user ${login}` };
   if (!user.data?.login) throw new Error(`GitHub HTTP ${user.status}${user.status === 403 ? " (rate limit)" : ""}`);
@@ -89,7 +98,7 @@ async function github(login: string, signal: AbortSignal): Promise<ScanResult> {
   if (user.data.email) emails.add(user.data.email.toLowerCase());
   const own = (Array.isArray(repos.data) ? repos.data : []).filter((r) => !r.fork).slice(0, 2);
   const commits = await Promise.all(own.map((r) =>
-    getJson<GhCommit[]>(`https://api.github.com/repos/${r.full_name}/commits?per_page=30&author=${login}`, signal, GH).catch(() => null)));
+    getJson<GhCommit[]>(`https://api.github.com/repos/${r.full_name}/commits?per_page=30&author=${login}`, signal, gh()).catch(() => null)));
   for (const c of commits) for (const x of Array.isArray(c?.data) ? c.data : []) {
     const e = x.commit?.author?.email?.toLowerCase();
     if (e && !e.endsWith("noreply.github.com")) emails.add(e);
@@ -103,14 +112,38 @@ async function github(login: string, signal: AbortSignal): Promise<ScanResult> {
     : { found: "Found: profile, no emails", hit: false, source: "live", detail: `${profile}; no personal email in recent public commits` };
 }
 
-/* ---- HIBP: only with HIBP_API_KEY (paid); never logged ---- */
-async function hibp(email: string, key: string, signal: AbortSignal): Promise<string[]> {
-  const res = await fetch(`https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}?truncateResponse=true`,
-    { headers: { "user-agent": UA, "hibp-api-key": key }, signal, cache: "no-store" });
-  if (res.status === 404) return [];
-  if (!res.ok) throw new Error(`HIBP HTTP ${res.status}`);
-  return ((await res.json()) as { Name: string }[]).map((b) => b.Name);
+/* ---- HIBP: cached results from the HIBP website, read only for Mangle's preset emails. No HIBP call is made
+   for any other input. The file sits under the gitignored _agent/ folder; without it this source is skipped. ---- */
+type HibpCache = { source?: string; accounts?: Record<string, { breaches?: { name: string; date?: string; dataClasses?: string[] }[]; pastes?: { name: string; date?: string }[] }> };
+const HIBP_CACHE_PATH = path.join(process.cwd(), "_agent", "data", "hibp-cache.json");
+
+async function hibpCache(): Promise<HibpCache | null> {
+  try { return JSON.parse(await readFile(HIBP_CACHE_PATH, "utf8")) as HibpCache; } catch { return null; }
 }
+
+const checkedOn = (source?: string) => {
+  const m = source?.match(/checked (\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return "Have I Been Pwned";
+  const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+m[2] - 1];
+  return `Have I Been Pwned, checked ${+m[3]} ${month}`;
+};
+
+/* ---- XposedOrNot: free, no key, at most 2 requests a second ---- */
+async function xposedOrNot(email: string, signal: AbortSignal): Promise<string[]> {
+  const { status, data } = await getJson<{ breaches?: string[][]; Error?: string }>(`https://api.xposedornot.com/v1/check-email/${encodeURIComponent(email)}`, signal);
+  if (data?.breaches) return data.breaches.flat();
+  if (data?.Error && /not found/i.test(data.Error)) return [];
+  throw new Error(`XposedOrNot HTTP ${status}${data?.Error ? `: ${data.Error}` : ""}`);
+}
+
+/* Breach lists name the same leak differently ("Chess.com (2023)", "Chess"; "ALIEN TXTBASE Stealer Logs", "AlienStealerLogs"). */
+const norm = (n: string) => n.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9]/g, "");
+const first = (n: string) => n.toLowerCase().match(/[a-z0-9]+/)?.[0] ?? "";
+const same = (a: string, b: string) => {
+  const x = norm(a), y = norm(b);
+  return x === y || (Math.min(x.length, y.length) >= 5 && (x.startsWith(y) || y.startsWith(x))) || (first(a).length >= 5 && first(a) === first(b));
+};
+const CREDS = /stealer|credential stuffing|combo|naz\.api/i;
 
 type Once = <T>(key: string, f: () => Promise<T>) => Promise<T>;
 type Runner = (ids: Ids, signal: AbortSignal, once: Once) => Promise<ScanResult>;
@@ -132,16 +165,52 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
   },
   hibpTest: async (ids, signal, once) => {
     if (!ids.emails.length) return skipped("No email in the query", "No email to check");
-    const key = process.env.HIBP_API_KEY;
-    const found = key
-      ? (await Promise.all(ids.emails.map((e) => hibp(e, key, signal)))).flat().map((name): { name: string; date?: string } => ({ name }))
-      : (await leaksFor(ids, signal, once)).flatMap((l) => l.sources);
-    const via = key ? "HIBP" : "LeakCheck (HIBP skipped: no key)";
-    const uniq = [...new Map(found.map((b) => [b.name, b])).values()];
-    return uniq.length
-      ? { found: `Found: ${plural(uniq.length, "breach", "breaches")}`, hit: true, source: "live",
-          detail: `${via}: ${list(uniq.map((b) => (b.date ? `${b.name} (${b.date})` : b.name)))}`, facts: { breaches: uniq } }
-      : { found: "No breaches found", hit: false, source: "live", detail: `${via}: none` };
+    type Breach = NonNullable<Facts["breaches"]>[number];
+    const merged: Breach[] = [];
+    const add = (b: Breach) => {
+      const m = merged.find((x) => x.email === b.email && same(x.name, b.name));
+      if (!m) { merged.push(b); return; }
+      m.date ??= b.date; m.passwords ||= b.passwords; m.creds ||= b.creds;
+    };
+    const pastes: NonNullable<Facts["pastes"]> = [];
+    const checked: string[] = [], failed: string[] = [], counts: string[] = [];
+
+    /* 1. Cached HIBP, only for the preset emails. */
+    const presets = ids.emails.filter((e) => HIBP_CACHE_EMAILS.includes(e));
+    const cache = presets.length ? await hibpCache() : null;
+    if (cache?.accounts) {
+      checked.push(checkedOn(cache.source));
+      for (const e of presets) {
+        const acc = cache.accounts[e];
+        if (!acc) continue;
+        for (const x of acc.breaches ?? []) add({ name: x.name, date: x.date, email: e, passwords: !!x.dataClasses?.includes("Passwords"), creds: CREDS.test(x.name) });
+        for (const p of acc.pastes ?? []) pastes.push({ name: p.name, date: p.date, email: e, creds: CREDS.test(p.name) });
+        counts.push(`HIBP cache ${e}: ${acc.breaches?.length ?? 0} breaches, ${acc.pastes?.length ?? 0} pastes`);
+      }
+    }
+    /* 2. LeakCheck (shared with the Leaked passwords card) and 3. XposedOrNot, one email every 500ms. */
+    const [leaks, xon] = await Promise.all([
+      Promise.all(ids.emails.map((e) => once(`leakcheck:${e}`, () => leakCheckEmail(e, signal)).then((l) => ({ e, l }), () => null))),
+      (async () => {
+        const out: { e: string; names: string[] }[] = [];
+        for (const [i, e] of ids.emails.entries()) {
+          if (i) await wait(500);
+          try { out.push({ e, names: await xposedOrNot(e, signal) }); } catch (err) { failed.push(err instanceof Error ? err.message : "XposedOrNot error"); break; }
+        }
+        return out;
+      })(),
+    ]);
+    if (leaks.some(Boolean)) checked.push("LeakCheck"); else failed.push("LeakCheck");
+    for (const r of leaks) if (r) { for (const x of r.l.sources) add({ name: x.name, date: x.date, email: r.e, creds: CREDS.test(x.name) }); counts.push(`LeakCheck ${r.e}: ${r.l.sources.length}`); }
+    if (xon.length) checked.push("XposedOrNot");
+    for (const r of xon) { for (const n of r.names) add({ name: n, email: r.e, creds: CREDS.test(n) }); counts.push(`XposedOrNot ${r.e}: ${r.names.length}`); }
+    if (!checked.length) throw new Error(failed.join("; ") || "No breach source answered");
+
+    const detail = `${counts.join("; ")}; merged ${merged.length}${failed.length ? `; could not check ${failed.join(", ")}` : ""}`;
+    const facts: Facts = { breaches: merged, pastes, checked };
+    return merged.length
+      ? { found: `Found: ${plural(merged.length, "breach", "breaches")}`, hit: true, source: "live", detail, facts }
+      : { found: "No breaches found", hit: false, source: "live", detail, facts };
   },
   hudsonRock: async (ids, signal) => {
     const q = [...ids.emails.map((v) => ["email", v] as const), ...ids.usernames.map((v) => ["username", v] as const)];
@@ -167,19 +236,19 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
   forum: async (ids, signal) => {
     const user = ids.usernames[0];
     if (!user) return skipped("No username in the query", "No username to check");
-    return profiles("forum", await Promise.allSettled([hackerNews(user, signal), reddit(user, signal)]), user);
+    return profiles("forum", await Promise.allSettled([hackerNews(user, signal)]), user);
   },
   web: async (ids, signal, once) => {
     if (!ids.names.length) return skipped("No name in the query", "No name to search");
-    const urls = await once(`ddg:${ids.names[0]}`, () => search(ids.names[0], signal));
+    const { engine, urls } = await once(`search:${ids.names[0]}`, () => search(ids.names[0], signal));
     const domains = [...new Set(urls.map((u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))];
     return urls.length
-      ? { found: `Found: ${plural(urls.length, "result")}`, hit: false, source: "live", detail: `DuckDuckGo: ${list(domains)}`, facts: { results: urls.length, domains } }
-      : { found: "No results found", hit: false, source: "live", detail: "DuckDuckGo: no results" };
+      ? { found: `Found: ${plural(urls.length, "result")}`, hit: false, source: "live", detail: `${engine}: ${list(domains)}`, facts: { results: urls.length, domains } }
+      : { found: "No results found", hit: false, source: "live", detail: `${engine}: no results` };
   },
   linkedin: async (ids, signal, once) => {
     if (!ids.names.length) return skipped("No name in the query", "No name to search");
-    const urls = await once(`ddg:${ids.names[0]}`, () => search(ids.names[0], signal));
+    const { urls } = await once(`search:${ids.names[0]}`, () => search(ids.names[0], signal));
     const li = urls.filter((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\//i.test(u));
     return li.length
       ? { found: "Found: public profile", hit: false, source: "live", detail: `Search result: ${list(li, 2)}`, facts: { profiles: ["LinkedIn"] } }
@@ -211,19 +280,12 @@ async function hackerNews(user: string, signal: AbortSignal): Promise<Profile> {
   return data?.id ? { site: "Hacker News" } : null;
 }
 
-async function reddit(user: string, signal: AbortSignal): Promise<Profile> {
-  const { status, data } = await getJson<{ data?: { name?: string } }>(`https://www.reddit.com/user/${encodeURIComponent(user)}/about.json`, signal);
-  if (status === 404) return null;
-  if (status !== 200 || !data?.data?.name) throw new Error(`Reddit HTTP ${status}`);
-  return { site: "Reddit" };
-}
-
 function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile>[], user?: string): ScanResult {
   const failed = checks.flatMap((c) => (c.status === "rejected" ? [c.reason instanceof Error ? c.reason.message : "error"] : []));
   if (failed.length === checks.length) throw new Error(failed.join("; "));
   const found = checks.flatMap((c) => (c.status === "fulfilled" && c.value ? [c.value] : []));
-  const sites = found.map((p) => p.site);
-  const linked = found.flatMap((p) => p.linked ?? []);
+  const sites = [...new Set(found.map((p) => p.site))];
+  const linked = [...new Set(found.flatMap((p) => p.linked ?? []))];
   const note = failed.length ? `; could not check ${failed.join(", ")}` : "";
   const facts = { profiles: sites, linked, username: user };
   if (!sites.length) return { found: kind === "forum" ? "No forum profiles found" : "No public profiles found", hit: false, source: "live", detail: `None found${note}`, facts };
@@ -231,16 +293,27 @@ function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile
     detail: `${sites.join(", ")}${linked.length ? ` (linked: ${linked.join(", ")})` : ""}${note}`, facts };
 }
 
-/* ---- one public web search for the name (DuckDuckGo HTML); returns result URLs ---- */
-async function search(name: string, signal: AbortSignal): Promise<string[]> {
+/* ---- one public web search for the name: Tavily when TAVILY_API_KEY is set, otherwise DuckDuckGo HTML ---- */
+type Search = { engine: string; urls: string[] };
+async function search(name: string, signal: AbortSignal): Promise<Search> {
+  const key = process.env.TAVILY_API_KEY;
+  if (key) {
+    const res = await fetch("https://api.tavily.com/search", {
+      method: "POST", signal, cache: "no-store",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "user-agent": UA },
+      body: JSON.stringify({ query: `"${name}"`, max_results: 10, search_depth: "basic" }),
+    });
+    if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
+    const data = (await res.json()) as { results?: { url: string }[] };
+    return { engine: "Tavily", urls: [...new Set((data.results ?? []).map((r) => r.url))].slice(0, 10) };
+  }
   const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(`"${name}"`)}`,
     { headers: { "user-agent": UA, accept: "text/html" }, signal, cache: "no-store" });
   if (res.status !== 200) throw new Error(`Search HTTP ${res.status}${res.status === 202 ? " (rate limited)" : ""}`);
   const html = await res.text();
   const urls = [...html.matchAll(/result__url" href="[^"]*?uddg=([^&"]+)/g)].map((m) => decodeURIComponent(m[1]));
-  return [...new Set(urls)].slice(0, 10);
+  return { engine: "DuckDuckGo", urls: [...new Set(urls)].slice(0, 10) };
 }
-
 export function makeLiveContext() {
   const memo = new Map<string, Promise<unknown>>();
   const once: Once = (key, f) => {

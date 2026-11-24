@@ -3,11 +3,21 @@ import {
   type LanguageModel, type UIMessage,
 } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { makeScanTools } from "@/lib/scan-tools";
 import { CHECK_MS, fanFor, START_MS, STEP_MS, type FanCard } from "@/lib/synthetic";
 
 /* Default: a mock model that calls every source tool, so the demo needs no API key.
-   Set SCAN_MODEL (an AI Gateway model id) to use a real model later. */
+   With NEBIUS_API_KEY set (in .env.local), a Nebius Token Factory model replaces it (NEBIUS_MODEL, default below).
+   SCAN_MODEL (an AI Gateway model id) is the other option. */
+const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
+const NEBIUS_DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b";
+
+function realModel(): LanguageModel | null {
+  const apiKey = process.env.NEBIUS_API_KEY;
+  if (apiKey) return createOpenAICompatible({ name: "nebius", baseURL: NEBIUS_BASE_URL, apiKey }).chatModel(process.env.NEBIUS_MODEL || NEBIUS_DEFAULT_MODEL);
+  return process.env.SCAN_MODEL || null;
+}
 type Part = Awaited<ReturnType<MockLanguageModelV4["doStream"]>>["stream"] extends ReadableStream<infer P> ? P : never;
 type Group = Part[];
 
@@ -49,13 +59,22 @@ export async function POST(req: Request) {
   const last = messages.at(-1);
   const query = last?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ").slice(0, 500) ?? "";
   const fan = fanFor(process.env.SCAN_MODE === "live");
-  const model: LanguageModel = process.env.SCAN_MODEL || mockModel(query, fan);
+  const real = realModel();
+  const model: LanguageModel = real ?? mockModel(query, fan);
+  const order = fan.map((c) => c.tool);
 
   const result = streamText({
     model,
-    instructions: "Check every source for the person described. Call each tool once with the full query.",
+    instructions: `Check every source for the person described. Call one tool per step, each exactly once, in this order: ${order.join(", ")}. `
+      + "Pass the full query unchanged. After the last tool, reply with one short sentence.",
     prompt: query,
-    tools: makeScanTools(),
+    tools: makeScanTools(query),
+    /* A real model is held to one named tool per step, in the 06 order, so each card settles in turn as with the mock. */
+    prepareStep: real
+      ? ({ stepNumber }) => (stepNumber < order.length
+        ? { activeTools: [order[stepNumber]], toolChoice: { type: "tool", toolName: order[stepNumber] } }
+        : { activeTools: [], toolChoice: "none" })
+      : undefined,
     stopWhen: isStepCount(fan.length + 1),
     abortSignal: req.signal,
   });

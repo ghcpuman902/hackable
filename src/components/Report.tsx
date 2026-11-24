@@ -158,23 +158,42 @@ export function livePatterns(o: Outputs): PatternId[] {
   const ids: PatternId[] = [];
   if (commitEmail) ids.push("contagious-interview");
   if (publicEmail) ids.push("email-bomb-vishing");
-  if (o.hudsonRock?.hit) ids.push("session-hijack");
+  /* Stealer logs and combolists with a password point to stolen sessions as well as stolen passwords. */
+  const creds = !!o.hibpTest?.facts?.breaches?.some((b) => b.creds) || !!o.hibpTest?.facts?.pastes?.some((p) => p.creds);
+  if (o.hudsonRock?.hit || creds) ids.push("session-hijack");
   return ids;
 }
 
 export function liveFindings(o: Outputs): ReactNode[] {
   const out: ReactNode[] = [];
-  const breaches = o.hibpTest?.facts?.breaches ?? [];
-  if (o.hibpTest?.hit && breaches.length) {
-    const newest = breaches.filter((b) => b.date).sort((a, b) => (b.date! > a.date! ? 1 : -1))[0];
+  const bf = o.hibpTest?.facts;
+  const breaches = bf?.breaches ?? [];
+  const cite = bf?.checked?.length ? <span className="cite">{bf.checked.join(" · ")}</span> : null;
+  for (const email of [...new Set(breaches.map((b) => b.email ?? ""))]) {
+    const mine = breaches.filter((b) => (b.email ?? "") === email);
+    const newest = mine.filter((b) => b.date).sort((a, b) => (b.date! > a.date! ? 1 : -1))[0];
+    const pw = mine.filter((b) => b.passwords).length;
+    const rest = [
+      newest ? ` The newest was ${newest.name} in ${newest.date!.slice(0, 4)}` : "",
+      pw ? `${newest ? ", and" : ""} ${pw === mine.length ? "all of them include" : pw === 1 ? "one of them includes" : `${pw} of them include`} a password.` : newest ? "." : "",
+    ].join("");
     out.push(
-      <Sec key="breach">
-        <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> is in {breaches.length === 1 ? "one breach" : `${breaches.length} breaches`}.</>}
-          rest={newest ? ` The newest was ${newest.name} in ${newest.date!.slice(0, 4)}. We only saw the breach names.` : " We only saw the breach names."} />
+      <Sec key={"breach" + email}>
+        <Para lead={<>Your <span className="nw"><Tile kind="email" />{email || "email"}</span> {mine.length === 1 ? "is in one breach" : `is in ${mine.length} breaches`}.</>} rest={rest} />
+        {cite}
       </Sec>,
     );
+    const creds = [...mine.filter((b) => b.creds).map((b) => b.name), ...(bf?.pastes ?? []).filter((p) => p.creds && p.email === email).map((p) => p.name)];
+    if (creds.length) {
+      out.push(
+        <Sec key={"creds" + email}>
+          <Para lead="Lists that criminals use to break into accounts include this address."
+            rest={` They include ${and(creds.slice(0, 3))}${creds.length > 3 ? " and others" : ""}, which pair it with a password, so anyone can try that login on other sites.`} />
+        </Sec>,
+      );
+    }
   }
-  if (o.leakCheck?.facts?.passwords) {
+  if (o.leakCheck?.facts?.passwords && !breaches.length) {
     out.push(<Sec key="pw"><Para lead="Your email appears next to a password in a leaked list." rest=" Change that password wherever you still use it." /></Sec>);
   }
   const devices = o.hudsonRock?.facts?.devices ?? [];

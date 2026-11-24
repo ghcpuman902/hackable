@@ -7,7 +7,10 @@ export type ScanTool = "web" | "linkedin" | "github" | "hudsonRock" | "leakCheck
 /* source, detail and facts are set only by live checks (SCAN_MODE=live); synthetic results leave them out.
    facts carry what the live report is built from. */
 export type Facts = {
-  emails?: string[]; repos?: string[]; breaches?: { name: string; date?: string }[]; passwords?: boolean;
+  emails?: string[]; repos?: string[]; passwords?: boolean;
+  /* creds: a stealer log, combolist or credential stuffing list. checked: the breach sources that answered. */
+  breaches?: { name: string; date?: string; email?: string; passwords?: boolean; creds?: boolean }[];
+  pastes?: { name: string; date?: string; email?: string; creds?: boolean }[]; checked?: string[];
   devices?: string[]; profiles?: string[]; linked?: string[]; domains?: string[]; results?: number; username?: string;
 };
 export type ScanResult = { found: string; hit: boolean; source?: "live" | "skipped" | "unavailable"; detail?: string; facts?: Facts };
