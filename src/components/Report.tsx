@@ -106,7 +106,7 @@ export function PatternSec({ id, who }: { id: PatternId; who?: string }) {
     <div>
       <Para lead={p.lead} rest={p.rest} />
       <ol className="chain">
-        {p.chain.map(([n, t]) => <li key={n} tabIndex={0} data-id={t} title={t}>{n}</li>)}
+        {p.chain.map(([n, t], i) => <li key={n} tabIndex={0} data-id={t} title={t}>{i > 0 && <span className="ar" aria-hidden="true"><Lucide name="arrow-right" /></span>}<span className="st">{n}</span></li>)}
       </ol>
       <p className="lesson">{p.lesson}</p>
       <span className="cite">{p.cite}</span>

@@ -48,7 +48,7 @@ a{color:inherit}
 
 /* ---- 05 search flow ---- */
 .app{max-width:760px;margin:0 auto;padding:0 20px 64px}
-.search{margin:0}
+.search{margin:0;position:relative}
 .field{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:64px;padding:11px 62px 11px 18px;position:relative;
   border:1px solid var(--n200);border-radius:28px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);cursor:text;transition:box-shadow .15s,border-color .15s}
 .field:focus-within{border-color:#d4d4d4;box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.09)}
@@ -156,8 +156,11 @@ a.sec{padding-right:64px}
 
 /* ---- 05 pattern cards: stage pills, lesson, source line ---- */
 .chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 0;padding:0;list-style:none}
-.chain li{position:relative;font:600 13px/1 var(--font);color:var(--n800);background:#fff;border-radius:999px;padding:7px 10px;cursor:help}
-.chain li+li::before{content:"";position:absolute;left:-6px;top:50%;width:6px;height:1px;background:#d4d4d4}
+/* Each step carries its own arrow, so the arrow wraps with the step it points to. */
+.chain li{position:relative;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:help}
+.chain .st{font:600 13px/1 var(--font);color:var(--n800);background:#fff;border-radius:999px;padding:7px 10px}
+.chain .ar{display:grid;width:12px;height:12px;color:#a3a3a3}
+.chain .ar svg{width:12px;height:12px}
 .chain li[data-id]:hover::after,.chain li[data-id]:focus::after{content:attr(data-id);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;font:600 11px var(--mono);background:var(--n900);color:#fff;padding:4px 7px;border-radius:6px;z-index:3}
 .lesson{margin:14px 0 0;font:600 16px/1.4 var(--font);letter-spacing:-.01em;color:var(--n900)}
 .cite{display:block;margin-top:8px;font:500 12px/1.4 var(--font);color:#a3a3a3}
@@ -187,16 +190,18 @@ html,body{overflow-x:clip}
   transition:opacity .35s, margin .6s cubic-bezier(.2,.8,.2,1), max-height .6s cubic-bezier(.2,.8,.2,1);max-height:3em;overflow:hidden}
 .run .top{padding-top:20px}
 .run h1{opacity:0;max-height:0;margin-bottom:0}
-/* 78px bar: 1px border + 10px padding + 56px chip. Chip radius 28 = bar radius 39 - border 1 - padding 10. */
-.landing .field{padding:10px 76px 10px 10px;min-height:78px;border-radius:39px;gap:6px;align-items:center;align-content:center}
-.landing .field .chip{box-sizing:border-box;height:56px;border-radius:28px;padding:0 10px 0 16px;align-self:center;line-height:1;margin:0;min-width:0}
+/* 78px bar: 1px border + 10px padding + 56px chip. Chip radius 28 = bar radius 39 - border 1 - padding 10.
+   Right inset is the button centre (10px gap + 28px), so a chip wraps there and the round button covers the rest. */
+.landing .field{padding:10px 38px 10px 10px;min-height:78px;border-radius:39px;gap:6px;align-items:center;align-content:center;overflow:hidden}
+.landing .field .chip{box-sizing:border-box;height:56px;border-radius:28px;padding:0 10px 0 16px;align-self:center;line-height:1;margin:0;min-width:0;flex:0 0 auto;max-width:100%}
 .landing .field .chip .nw{align-items:center;line-height:1}
+.landing .field .chip .lbl{max-width:none}
 .landing .field .chip .ico{vertical-align:middle}
 .landing .field .chip-edit{height:56px;border-radius:28px}
 .landing .field input.entry{height:56px;padding:0 12px;font-size:1.0625rem}
 /* Anchored bottom right, level with the last chip row or the Add more line. In the one-row empty bar this is the same spot as centred. */
 .landing .go-btn{width:56px;height:56px;right:10px;padding:15px;top:auto;bottom:10px;transform:none}
-.ghosts{position:absolute;left:10px;right:76px;top:0;bottom:0;pointer-events:none;overflow:hidden}
+.ghosts{position:absolute;left:10px;right:38px;top:0;bottom:0;pointer-events:none;overflow:hidden}
 .ghosts .row{position:absolute;left:0;top:50%;display:flex;gap:6px;white-space:nowrap;opacity:0;transform:translateY(-10%)}
 .ghosts .row.go{animation:drift 2.8s cubic-bezier(.3,.7,.3,1) forwards}
 .ghosts .pill{height:56px;border-radius:28px;padding:0 16px;font-size:16px;color:var(--n500);background:#fff}
@@ -228,13 +233,33 @@ html,body{overflow-x:clip}
 .src{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 6px;border-radius:999px;border:1px solid var(--n200);background:#fff;font:600 14px/1 var(--font);color:var(--n900);letter-spacing:-.01em;white-space:nowrap}
 .src .ti{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;color:#fff;background:var(--c)}
 .src .ti svg{width:12px;height:12px}
+button.src{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button.src:hover{background:var(--n50)}
+/* Name search and typeahead: a flat list laid over the page under the search box, so nothing below moves. */
+.sg{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:30;margin:0;padding:6px;list-style:none;background:#fff;border:1px solid var(--n200);border-radius:24px;box-shadow:0 1px 2px rgba(0,0,0,.04);text-align:left}
+.sg-row{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 10px;border-radius:18px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sg-row.on{background:#f5f5f5}
+.sg-ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--c)}
+.sg-ic svg{width:16px;height:16px}
+.sg-ic.plain{background:#f5f5f5;color:var(--n900)}
+.sg-tx{flex:1;min-width:0;display:grid;gap:3px}
+.sg-tx b{font:600 16px/1.2 var(--font);letter-spacing:-.02em;color:var(--n900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-tx span{font:500 14px/1.2 var(--font);color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-add{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;border:1px solid var(--n200);color:var(--n900);background:#fff}
+.sg-add svg{width:15px;height:15px}
+.sg-add.ok{border-color:transparent;background:var(--ok-bg);color:var(--ok)}
+.sg-row.util{min-height:46px}
+.sg-row.done .sg-tx{text-align:center}
+.sg-row.done .sg-tx b{color:var(--n500)}
+.sg-row.quiet{cursor:default}
+.sg-tx.quiet{font:500 15px/1.3 var(--font);color:var(--n500)}
 .srcs-m{display:none;align-items:center;justify-content:center;gap:8px}
 .srcs-m .slbl{font:600 14px var(--font);color:var(--n500);white-space:nowrap}
 .sslot{display:grid;overflow:hidden;padding:1px 0}
 /* Seven sources, 1.5s each: 10.5s per lap, with a 0.3s slide between pills. */
-.sitem{grid-area:1/1;display:flex;opacity:0;animation:srcm 10.5s linear infinite;animation-delay:calc(var(--i) * 1.5s - 10.8s)}
-@keyframes srcm{0%{opacity:0;transform:translateY(70%)}2.86%,14.29%{opacity:1;transform:none}17.14%,100%{opacity:0;transform:translateY(-70%)}}
-@media (prefers-reduced-motion:reduce){.sitem{animation:none!important;opacity:0}.sitem:first-child{opacity:1}}
+.sitem{grid-area:1/1;display:flex;opacity:0;visibility:hidden;animation:srcm 10.5s linear infinite;animation-delay:calc(var(--i) * 1.5s - 10.8s)}
+@keyframes srcm{0%{opacity:0;visibility:visible;transform:translateY(70%)}2.86%,14.29%{opacity:1;visibility:visible;transform:none}17.14%,100%{opacity:0;visibility:hidden;transform:translateY(-70%)}}
+@media (prefers-reduced-motion:reduce){.sitem{animation:none!important;opacity:0;visibility:hidden}.sitem:first-child{opacity:1;visibility:visible}}
 .report-link{display:none}
 .done .report-link{display:inline-flex;text-decoration:none}
 .glow{position:fixed;left:0;right:0;bottom:0;height:55svh;z-index:0;pointer-events:none;
@@ -318,7 +343,6 @@ html,body{overflow-x:clip}
   .run .stage{height:var(--runhm)}
   .landing h1{margin-bottom:24px}
   .landing .field .chip{max-width:100%}
-  .landing .field .chip .lbl{max-width:168px}
 }
 @media (prefers-reduced-motion:reduce){
   .pc{animation:none;top:var(--t);opacity:1}

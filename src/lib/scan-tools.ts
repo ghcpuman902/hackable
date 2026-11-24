@@ -29,7 +29,8 @@ const sleep = (ms: number, signal?: AbortSignal) =>
 
 /* fixedQuery: the words the user typed. A real model only decides when to call each tool; it cannot change what is checked. */
 /* cached: a preset profile (presets.ts). Its results are returned as they are and no source is called. */
-export function makeScanTools(fixedQuery?: string, cached?: Partial<Record<ScanTool, ScanResult>>) {
+/* fast: every live call for this query was preloaded (live-sources warm()), so results return without the CHECK_MS pacing. */
+export function makeScanTools(fixedQuery?: string, cached?: Partial<Record<ScanTool, ScanResult>>, fast = false) {
   /* Each source settles CHECK_MS after its call; the next call starts once it has. */
   const live = process.env.SCAN_MODE === "live" ? makeLiveContext() : null;
   const make = (card: (typeof FAN)[number]) =>
@@ -39,7 +40,7 @@ export function makeScanTools(fixedQuery?: string, cached?: Partial<Record<ScanT
       execute: async ({ query }, { abortSignal }): Promise<ScanResult> => {
         if (cached) { await sleep(CHECK_MS, abortSignal); return cached[card.tool] ?? { found: "Not checked", hit: false }; }
         const check = live?.check(card.tool, fixedQuery ?? query, abortSignal);
-        if (check) return (await Promise.all([check, sleep(CHECK_MS, abortSignal)]))[0];
+        if (check) return fast ? check : (await Promise.all([check, sleep(CHECK_MS, abortSignal)]))[0];
         await sleep(CHECK_MS, abortSignal);
         return card.result;
       },

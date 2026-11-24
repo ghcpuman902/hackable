@@ -9,6 +9,9 @@ import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindi
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
+import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugGroup } from "@/lib/suggest";
+import { Suggest, type Opt } from "./Suggest";
+import type { Brand } from "./brand-icons";
 import type { ScanMessage } from "@/lib/scan-tools";
 import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, reportPatterns, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
@@ -23,11 +26,36 @@ const MINI: Record<Found, { c: string; icon: ReactNode }> = {
   phone: { c: "#009767", icon: <Lucide name="phone-call" w={2} /> },
   web: { c: "#00a5ef", icon: <Lucide name="globe" w={2} /> },
 };
-const src = (s: (typeof SOURCES)[number]) => (
-  <span key={s.n} className="src">
-    <span className="ti" style={{ "--c": s.c } as CSSProperties}>{"brand" in s.icon ? <BrandIcon name={s.icon.brand} /> : <Lucide name={s.icon.lucide} w={2} />}</span>{s.n}
-  </span>
+/* Source pills with a profile prefix insert it into the search box when tapped. */
+const SRC_PREFIX: Record<string, string> = { LinkedIn: "linkedin.com/in/", GitHub: "github.com/" };
+const srcBody = (s: (typeof SOURCES)[number]) => (
+  <><span className="ti" style={{ "--c": s.c } as CSSProperties}>{"brand" in s.icon ? <BrandIcon name={s.icon.brand} /> : <Lucide name={s.icon.lucide} w={2} />}</span>{s.n}</>
 );
+
+/* What the suggestion list does for the text in the box.
+   sites: a partial site name ("link") offers that site's prefix. complete: a prefix with no live search (x.com/...) offers itself.
+   search: a name (or the text after a searchable prefix) is searched in every category, or only the prefix's one. */
+type Plan =
+  | { kind: "sites"; sites: typeof SITES }
+  | { kind: "complete"; value: string; brand: Brand | null }
+  | { kind: "search"; q: string; cat: SugCat | null; key: string; prefix: string | null };
+function planFor(text: string | null, live: boolean): Plan | null {
+  if (text === null || !text.trim()) return null;
+  const pre = prefixOf(text);
+  if (pre) {
+    const rest = pre.rest.trim();
+    if (!rest) return null;
+    if (!pre.site.cat || !live || rest.length < SUG_MIN) return { kind: "complete", value: pre.site.prefix + rest, brand: brandOf(pre.site.key) };
+    return { kind: "search", q: rest, cat: pre.site.cat, key: `${pre.site.cat}|${rest.toLowerCase()}`, prefix: pre.site.prefix };
+  }
+  const sites = sitesFor(text);
+  if (sites.length) return { kind: "sites", sites };
+  if (live && isNameQuery(text) && !presetFor(text)) return { kind: "search", q: text.trim(), cat: null, key: `all|${text.trim().toLowerCase()}`, prefix: null };
+  return null;
+}
+const BRANDS: string[] = ["linkedin", "github", "instagram", "x"];
+const brandOf = (key: string) => (BRANDS.includes(key) ? (key as Brand) : null);
+const PRELOAD_MS = 10 * 60 * 1000;
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
@@ -86,6 +114,105 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   const disabled = running || !(chips.length || entry.trim());
 
+  /* ---- suggestions: typeahead sites, prefix search and name search (find and confirm) ---- */
+  const [sugQ, setSugQ] = useState<string | null>(null);
+  const [active, setActive] = useState(-1);
+  const [res, setRes] = useState<{ key: string; groups: SugGroup[] | null } | null>(null);
+  const [sugCache, setSugCache] = useState<Record<string, SugGroup[]>>({});
+  const plan = running ? null : planFor(sugQ, live);
+  const planKey = plan?.kind === "search" ? plan.key : null;
+
+  /* Debounced 350ms, cached per query, and the request in flight is cancelled whenever the text changes. */
+  useEffect(() => {
+    if (!plan || plan.kind !== "search" || sugCache[plan.key]) return;
+    const { q, cat, key } = plan;
+    const ctl = new AbortController();
+    const t = setTimeout(() => {
+      fetch("/api/suggest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, cat }), signal: ctl.signal })
+        .then((r) => (r.ok ? (r.json() as Promise<{ groups: SugGroup[] }>) : Promise.reject(new Error("suggest"))))
+        .then(({ groups }) => { if (groups.every((g) => !g.failed)) setSugCache((c) => ({ ...c, [key]: groups })); setRes({ key, groups }); })
+        .catch(() => { if (!ctl.signal.aborted) setRes({ key, groups: null }); });
+    }, 350);
+    return () => { clearTimeout(t); ctl.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planKey]);
+
+  const groups = planKey ? sugCache[planKey] ?? (res?.key === planKey ? res.groups : undefined) : undefined;
+  const opts: Opt[] = (() => {
+    if (!plan) return [];
+    if (plan.kind === "sites") return plan.sites.map((x) => ({ kind: "site", brand: brandOf(x.key), title: x.n, prefix: x.prefix }));
+    if (plan.kind === "complete") return [{ kind: "prefix", cat: null, brand: plan.brand, value: plan.value, insert: false }];
+    if (groups === undefined) return [];
+    /* A group that failed or timed out falls back quietly to its prefix (or, after a prefix, to the typed profile). */
+    const fallback = (c: SugCat): Opt[] => plan.prefix ? [{ kind: "prefix", cat: c, brand: brandOf(c), value: plan.prefix + plan.q, insert: false }]
+      : CAT_PREFIX[c] ? [{ kind: "prefix", cat: c, brand: brandOf(c), value: CAT_PREFIX[c], insert: true }] : [];
+    const list: Opt[] = groups === null
+      ? (plan.cat ? [plan.cat] : (["linkedin", "github", "instagram"] as SugCat[])).flatMap(fallback)
+      : groups.flatMap((g): Opt[] => g.failed ? fallback(g.cat) : g.rows.map((r) => ({ kind: "add", ...r })));
+    const adds = list.filter((o) => o.kind === "add").length;
+    if (!list.length) return plan.prefix ? fallback(plan.cat!) : [{ kind: "empty" }];
+    return [...list, ...(adds >= 2 ? [{ kind: "all" } as Opt] : []), { kind: "done" }];
+  })();
+  const open = opts.length > 0;
+  const hasIn = (list: Chip[], value: string) => list.some((c) => normUrl(c.label) === normUrl(value));
+  const has = (value: string) => hasIn(chipsRef.current, value);
+  const added = (o: Opt) => (o.kind === "add" || o.kind === "prefix") && hasIn(chips, o.value);
+
+  const closeSug = () => { setSugQ(null); setActive(-1); };
+  const insertPrefix = (prefix: string) => {
+    setEntry(prefix); setSugQ(prefix); setActive(-1);
+    const el = entryRef.current;
+    if (el) { el.value = prefix; el.focus(); el.setSelectionRange(prefix.length, prefix.length); }
+  };
+  const clearEntry = () => { setEntry(""); if (entryRef.current) entryRef.current.value = ""; };
+  /* The typed name becomes a chip with the first profile added, so we know the person. */
+  const addFound = (value: string) => {
+    if (has(value)) return;
+    if (plan?.kind === "search" && !plan.prefix && sugQ && !has(sugQ)) add(sugQ.trim());
+    add(value);
+    clearEntry();
+  };
+  const pick = (i: number) => {
+    const o = opts[i];
+    if (!o) return;
+    if (o.kind === "add") addFound(o.value);
+    else if (o.kind === "site") insertPrefix(o.prefix);
+    else if (o.kind === "prefix") { if (o.insert) insertPrefix(o.value); else { addFound(o.value); closeSug(); } }
+    else if (o.kind === "all") opts.forEach((x) => { if (x.kind === "add") addFound(x.value); });
+    else if (o.kind === "done") closeSug();
+    entryRef.current?.focus();
+  };
+
+  /* An outside tap closes the list. */
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!fieldRef.current?.closest("form")?.contains(e.target as Node)) closeSug(); };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open]);
+
+  /* ---- preload: each chip's live checks start in the background as soon as it is added (live mode only).
+     The server keeps every call for 10 minutes, so pressing search reuses them; nothing shows before search.
+     Removing a chip aborts its preload. ?nopreload turns it off for timing. ---- */
+  const preloads = useRef(new Map<string, { ctl: AbortController; t: number }>());
+  useEffect(() => {
+    if (!live || running || new URLSearchParams(location.search).has("nopreload")) return;
+    const want = new Map(chips.filter((c) => !presetFor(c.raw)).map((c) => [normUrl(c.label), c.raw]));
+    for (const [k, p] of preloads.current) if (!want.has(k)) { p.ctl.abort(); preloads.current.delete(k); }
+    for (const [k, raw] of want) {
+      const p = preloads.current.get(k);
+      if (p && Date.now() - p.t < PRELOAD_MS) continue;
+      const ctl = new AbortController();
+      preloads.current.set(k, { ctl, t: Date.now() });
+      fetch("/api/preload", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: raw }), signal: ctl.signal })
+        .catch(() => { if (preloads.current.get(k)?.ctl === ctl) preloads.current.delete(k); });
+    }
+  }, [chips, live, running]);
+
+  const pill = (s: (typeof SOURCES)[number]) => SRC_PREFIX[s.n]
+    ? <button key={s.n} type="button" className="src" onClick={() => insertPrefix(SRC_PREFIX[s.n])}>{srcBody(s)}</button>
+    : <span key={s.n} className="src">{srcBody(s)}</span>;
+
   /* Card states come straight from the typed tool parts of the streaming assistant message. */
   const assistant = messages.findLast((m) => m.role === "assistant");
   const states: Partial<Record<ScanTool, CardState>> = {};
@@ -102,6 +229,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   const scan = useCallback((list: Chip[]) => {
     setExtraOpen(false);
+    setSugQ(null);
     setShowAll(new URLSearchParams(location.search).has("all"));
     setMessages([]);
     setRunning(true);
@@ -156,6 +284,14 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   const onEntryKey = (e: KeyboardEvent<HTMLInputElement>) => {
     const v = e.currentTarget.value;
+    if (open) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => (a + 1) % opts.length); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => (a <= 0 ? opts.length - 1 : a - 1)); return; }
+      if (e.key === "Escape") { e.preventDefault(); closeSug(); return; }
+      if ((e.key === "Enter" || e.key === "Tab") && active >= 0) { e.preventDefault(); pick(active); return; }
+      /* Enter with nothing highlighted searches the typed name on its own. */
+      if (e.key === "Enter" && plan?.kind === "search" && !plan.prefix) { e.preventDefault(); submit(); return; }
+    }
     if (e.key === "Enter") { e.preventDefault(); e.currentTarget.form?.requestSubmit(); return; }
     if ((e.key === "," || e.key === ";" || e.key === "Tab") && v.trim()) { e.preventDefault(); commit(); return; }
     if (e.key === "Backspace" && !v && chips.length) {
@@ -183,6 +319,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       if (words.length && isStrong(words[words.length - 1])) { add(v); v = ""; }
     }
     setEntry(v);
+    setSugQ(v.trim() ? v : null);
+    setActive(-1);
   };
 
   const finishEdit = (id: number, value: string, keep: boolean) => {
@@ -281,6 +419,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 ),
               )}
               <input ref={entryRef} className="entry" type="text" spellCheck={false}
+                role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls="sg-list"
+                aria-activedescendant={open && active >= 0 ? `sg-${active}` : undefined}
                 aria-label="Name, email or link" enterKeyHint="go" autoComplete="off" autoCapitalize="off" autoCorrect="off"
                 placeholder={chips.length ? "Add more" : ""}
                 value={entry} onChange={(e) => onEntryInput(e.target.value)} onKeyDown={onEntryKey}
@@ -292,6 +432,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 <Lucide name="binoculars" />
               </button>
             </div>
+            {open && <Suggest opts={opts} active={active} added={added} loading={false} onPick={pick} onHover={setActive} />}
           </form>
           <div className="under">
             <div className="people">
@@ -317,14 +458,14 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
               ))}
             </div>
             <div className="srcs">
-              <div className="srow"><span className="slbl">Sources we check</span>{SOURCES.slice(0, 4).map(src)}</div>
-              <div className="srow">{SOURCES.slice(4).map(src)}</div>
+              <div className="srow"><span className="slbl">Sources we check</span>{SOURCES.slice(0, 4).map(pill)}</div>
+              <div className="srow">{SOURCES.slice(4).map(pill)}</div>
             </div>
             {/* Phones: one source at a time beside the label. Every pill shares one grid cell, so the slot is as wide as the widest. */}
             <div className="srcs-m">
               <span className="slbl">Sources we check</span>
               <span className="sslot">
-                {SOURCES.map((s, i) => <span key={s.n} className="sitem" style={{ "--i": i } as CSSProperties}>{src(s)}</span>)}
+                {SOURCES.map((s, i) => <span key={s.n} className="sitem" style={{ "--i": i } as CSSProperties}>{pill(s)}</span>)}
               </span>
             </div>
             <a className="pill report-link" href="#report">Open the report</a>

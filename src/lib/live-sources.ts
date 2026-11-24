@@ -196,7 +196,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
         const out: { e: string; names: string[] }[] = [];
         for (const [i, e] of ids.emails.entries()) {
           if (i) await wait(500);
-          try { out.push({ e, names: await xposedOrNot(e, signal) }); } catch (err) { failed.push(err instanceof Error ? err.message : "XposedOrNot error"); break; }
+          try { out.push({ e, names: await once(`xon:${e}`, () => xposedOrNot(e, signal)) }); } catch (err) { failed.push(err instanceof Error ? err.message : "XposedOrNot error"); break; }
         }
         return out;
       })(),
@@ -213,14 +213,14 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
       ? { found: `Found: ${plural(merged.length, "breach", "breaches")}`, hit: true, source: "live", detail, facts }
       : { found: "No breaches found", hit: false, source: "live", detail, facts };
   },
-  hudsonRock: async (ids, signal) => {
+  hudsonRock: async (ids, signal, once) => {
     const q = [...ids.emails.map((v) => ["email", v] as const), ...ids.usernames.map((v) => ["username", v] as const)];
     if (!q.length) return skipped("No email or username in the query", "Nothing to check");
     /* Stealer log lists named in the cached HIBP results (preset emails only) are a hit on their own. */
     const presets = ids.emails.filter((e) => HIBP_CACHE_EMAILS.includes(e));
     const cache = presets.length ? await hibpCache() : null;
     const lists = [...new Set(presets.flatMap((e) => (cache?.accounts?.[e]?.breaches ?? []).filter((b) => STEALER_LOG.test(b.name)).map((b) => b.name)))];
-    const devices = await Promise.all(q.map(([k, v]) => hudson(k, v, signal))).then((x) => x.flat(), (e: unknown) => {
+    const devices = await Promise.all(q.map(([k, v]) => once(`hudson:${k}:${v}`, () => hudson(k, v, signal)))).then((x) => x.flat(), (e: unknown) => {
       if (!lists.length) throw e;
       return null;
     });
@@ -231,23 +231,23 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
       facts: { devices: [], stealerLists: lists, noDevice: devices !== null } };
     return { found: "No stealer logs found", hit: false, source: "live", detail: hr };
   },
-  github: async (ids, signal) => {
+  github: async (ids, signal, once) => {
     if (!ids.github.length) return skipped("No GitHub handle in the query", "No GitHub handle");
-    return github(ids.github[0], signal);
+    return once(`gh:${ids.github[0].toLowerCase()}`, () => github(ids.github[0], signal));
   },
-  social: async (ids, signal) => {
+  social: async (ids, signal, once) => {
     const user = ids.usernames[0];
     if (!ids.emails.length && !user) return skipped("No email or username in the query", "Nothing to check");
     const checks = await Promise.allSettled([
-      ...ids.emails.map((e) => gravatar(e, signal)),
-      ...(user ? [keybase(user, signal)] : []),
+      ...ids.emails.map((e) => once(`grav:${e}`, () => gravatar(e, signal))),
+      ...(user ? [once(`kb:${user.toLowerCase()}`, () => keybase(user, signal))] : []),
     ]);
     return profiles("social", checks, user);
   },
-  forum: async (ids, signal) => {
+  forum: async (ids, signal, once) => {
     const user = ids.usernames[0];
     if (!user) return skipped("No username in the query", "No username to check");
-    return profiles("forum", await Promise.allSettled([hackerNews(user, signal)]), user);
+    return profiles("forum", await Promise.allSettled([once(`hn:${user.toLowerCase()}`, () => hackerNews(user, signal))]), user);
   },
   web: async (ids, signal, once) => {
     if (!ids.names.length) return skipped("No name in the query", "No name to search");
@@ -331,12 +331,37 @@ async function search(name: string, signal: AbortSignal): Promise<Search> {
   const urls = [...html.matchAll(/result__url" href="[^"]*?uddg=([^&"]+)/g)].map((m) => decodeURIComponent(m[1]));
   return { engine: "DuckDuckGo" + note, urls: [...new Set(urls)].slice(0, 10) };
 }
-export function makeLiveContext() {
-  const memo = new Map<string, Promise<unknown>>();
-  const once: Once = (key, f) => {
-    if (!memo.has(key)) memo.set(key, f());
-    return memo.get(key) as Promise<Awaited<ReturnType<typeof f>>>;
-  };
+/* ---- one shared memo for every network call, keyed by the identifier it checks, kept for 10 minutes.
+   A chip preloaded on its own (/api/preload) warms exactly the calls a later scan of all chips makes.
+   A failed or aborted call is dropped, so the next scan tries it again. ---- */
+const MEMO_MS = 10 * 60 * 1000;
+const memo = new Map<string, { p: Promise<unknown>; done: boolean; t: number }>();
+const shared: Once = (key, f) => {
+  const now = Date.now();
+  const hit = memo.get(key);
+  if (hit && now - hit.t < MEMO_MS) return hit.p as ReturnType<typeof f>;
+  const entry = { p: f() as Promise<unknown>, done: false, t: now };
+  memo.set(key, entry);
+  entry.p.then(() => { entry.done = true; }, () => { if (memo.get(key) === entry) memo.delete(key); });
+  return entry.p as ReturnType<typeof f>;
+};
+const ready = (key: string) => { const m = memo.get(key); return !!m && m.done && Date.now() - m.t < MEMO_MS; };
+
+/* True when every network call a scan of this query makes has already finished, so the cards can settle at once. */
+export function warm(query: string): boolean {
+  const ids = identifiers(query);
+  const keys = [
+    ...ids.emails.flatMap((e) => [`leakcheck:${e}`, `xon:${e}`, `hudson:email:${e}`, `grav:${e}`]),
+    ...ids.usernames.map((u) => `hudson:username:${u}`),
+    ...ids.usernames.slice(0, 1).flatMap((u) => [`kb:${u.toLowerCase()}`, `hn:${u.toLowerCase()}`]),
+    ...ids.github.map((g) => `gh:${g.toLowerCase()}`),
+    ...ids.names.map((n) => `search:${n}`),
+  ];
+  return keys.length > 0 && keys.every(ready);
+}
+
+export function makeLiveContext({ quiet = false } = {}) {
+  const once = shared;
   return {
     check(tool: ScanTool, query: string, abortSignal?: AbortSignal): Promise<ScanResult> {
       const run = RUNNERS[tool] ?? (async () => skipped("No free live source", "Not checked"));
@@ -347,7 +372,7 @@ export function makeLiveContext() {
           found: "Could not check", hit: false, source: "unavailable",
           detail: e instanceof Error && e.name === "TimeoutError" ? `Timed out after ${TIMEOUT_MS / 1000}s` : e instanceof Error ? e.message : "Unknown error",
         }))
-        .then((r) => { console.info(`[scan:live] ${tool}: ${r.found} (${r.source}) | ${r.detail ?? ""}`); return r; });
+        .then((r) => { if (!quiet) console.info(`[scan:live] ${tool}: ${r.found} (${r.source}) | ${r.detail ?? ""}`); return r; });
     },
   };
 }

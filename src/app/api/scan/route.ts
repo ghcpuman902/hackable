@@ -5,6 +5,7 @@ import {
 import { MockLanguageModelV4 } from "ai/test";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { presetFor } from "@/lib/presets";
+import { warm } from "@/lib/live-sources";
 import { makeScanTools } from "@/lib/scan-tools";
 import { CHECK_MS, fanFor, START_MS, STEP_MS, type FanCard } from "@/lib/synthetic";
 
@@ -27,7 +28,7 @@ const usage = {
   outputTokens: { total: 0, text: 0, reasoning: undefined },
 };
 
-function mockModel(query: string, fan: FanCard[]) {
+function mockModel(query: string, fan: FanCard[], fast = false) {
   const json = JSON.stringify({ query });
   /* One tool call per step, so each result streams as soon as its check is done. */
   let step = 0;
@@ -46,7 +47,7 @@ function mockModel(query: string, fan: FanCard[]) {
         : [{ type: "finish" as const, finishReason: { unified: "stop" as const, raw: undefined }, usage }];
       return {
         stream: simulateReadableStream({
-          initialDelayInMs: i === 0 ? START_MS : STEP_MS - CHECK_MS,
+          initialDelayInMs: fast ? 0 : i === 0 ? START_MS : STEP_MS - CHECK_MS,
           chunkDelayInMs: 0,
           chunks,
         }),
@@ -62,8 +63,10 @@ export async function POST(req: Request) {
   /* A preset opens its cached profile with the mock model: no live source and no model call. */
   const preset = presetFor(query);
   const fan = fanFor(!!preset || process.env.SCAN_MODE === "live");
-  const real = preset ? null : realModel();
-  const model: LanguageModel = real ?? mockModel(query, fan);
+  /* Every chip was preloaded: the tools already hold their results, so the mock drives the steps with no delay and no model call. */
+  const fast = !preset && process.env.SCAN_MODE === "live" && warm(query);
+  const real = preset || fast ? null : realModel();
+  const model: LanguageModel = real ?? mockModel(query, fan, fast);
   const order = fan.map((c) => c.tool);
 
   const result = streamText({
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
     instructions: `Check every source for the person described. Call one tool per step, each exactly once, in this order: ${order.join(", ")}. `
       + "Pass the full query unchanged. After the last tool, reply with one short sentence.",
     prompt: query,
-    tools: makeScanTools(query, preset?.results),
+    tools: makeScanTools(query, preset?.results, fast),
     /* A real model is held to one named tool per step, in the 06 order, so each card settles in turn as with the mock. */
     prepareStep: real
       ? ({ stepNumber }) => (stepNumber < order.length
