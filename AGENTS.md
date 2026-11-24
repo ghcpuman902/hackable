@@ -7,3 +7,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Product rules (Mangle)
+
+- No eyebrow labels and no subtitles.
+- Every control explains itself through its label or unit. No helper, hint or instruction text.
+- No agent or developer instructions in user-facing copy.
+- Inputs are at least 17px.
+- No layout shift: content that appears later has reserved space or animates in without moving what is already there.
+- The mockups in `public/mockups/` are the design source of truth. Port them; don't restyle them.
+- Synthetic data only until real APIs are approved. No network calls to breach APIs.
+- Never push, add a remote or deploy.
