@@ -208,6 +208,7 @@ html,body{overflow-x:clip}
   font:600 14px/1 var(--font);letter-spacing:-.02em;color:var(--n900);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .person .nm{white-space:nowrap}
 .person .av{position:relative;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--n900);font-size:11px;font-weight:700;background:var(--av);flex:none}
+.person .av-img{position:absolute;inset:0;width:32px;height:32px;border-radius:50%;object-fit:cover}
 .pb{position:absolute;right:-6px;bottom:-4px;width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 2px #fff;overflow:hidden}
 .pbi{position:absolute;inset:0;display:grid;place-items:center;background:var(--c);color:#fff;opacity:0;
   animation:var(--pbk,pb3) calc(var(--n) * 1.5s) linear infinite;animation-delay:calc(var(--i) * 1.5s - var(--n) * 1.5s - var(--off))}
