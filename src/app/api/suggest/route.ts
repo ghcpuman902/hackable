@@ -1,4 +1,4 @@
-import { CAT_ORDER, normUrl, SUG_MAX, SUG_MIN, type SugCat, type SugGroup, type SugRow } from "@/lib/suggest";
+import { CAT_ORDER, normUrl, SUG_MAX, SUG_MIN, type SugCat, type SugExtra, type SugGroup, type SugRow } from "@/lib/suggest";
 import { presetFor } from "@/lib/presets";
 
 /* Name search for the search box: public results only, live mode only, keys stay on the server and queries are never logged.
@@ -56,12 +56,14 @@ async function github(q: string, token: string, signal: AbortSignal): Promise<Su
     headers: { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28", authorization: `Bearer ${token}`, "user-agent": UA },
   });
   if (!res.ok) throw new Error(`GitHub ${res.status}`);
-  const items = ((await res.json()) as { items?: { login: string }[] }).items ?? [];
-  return items.map((u) => ({ cat: "github" as const, title: u.login, detail: "github.com/" + u.login, value: "github.com/" + u.login.toLowerCase() }));
+  const items = ((await res.json()) as { items?: { login: string; avatar_url?: string }[] }).items ?? [];
+  return items.map((u) => ({ cat: "github" as const, title: u.login, detail: "github.com/" + u.login, value: "github.com/" + u.login.toLowerCase(),
+    ...(https(u.avatar_url) ? { img: https(u.avatar_url)! + "&s=64" } : {}) }));
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { q?: unknown; cat?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { q?: unknown; cat?: unknown; enrich?: unknown };
+  if (Array.isArray(body.enrich)) return enrich(body.enrich, req.signal);
   const q = typeof body.q === "string" ? body.q.trim().replace(/\s+/g, " ").slice(0, 80) : "";
   const only = CAT_ORDER.includes(body.cat as SugCat) ? (body.cat as SugCat) : null;
   if (process.env.SCAN_MODE !== "live" || q.length < SUG_MIN || presetFor(q)) return Response.json({ groups: [] });
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
     ...(tok ? { github: (s) => github(q, tok, s) } : {}),
   };
   const cats = CAT_ORDER.filter((c) => runners[c] && (!only || c === only));
-  const key = `${cats.join(",")}|${q.toLowerCase()}|3`;
+  const key = `${cats.join(",")}|${q.toLowerCase()}|4`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.t < CACHE_MS) return Response.json({ groups: hit.groups });
   const signal = AbortSignal.any([req.signal, AbortSignal.timeout(MS)]);
@@ -81,6 +83,7 @@ export async function POST(req: Request) {
   const take = lists.map(() => 0);
   for (let n = 0, round = 0; n < SUG_MAX && round < SUG_MAX; round++) for (let i = 0; i < lists.length && n < SUG_MAX; i++) if (take[i] < lists[i].length) { take[i]++; n++; }
   const groups: SugGroup[] = cats.map((cat, i) => ({ cat, rows: lists[i].slice(0, take[i]), ...(settled[i].status === "rejected" ? { failed: true } : {}) }));
+  for (const g of groups) for (const r of g.rows) issued.set(r.value, { cat: r.cat, t: Date.now() });
   if (!req.signal.aborted && groups.every((g) => !g.failed)) cache.set(key, { t: Date.now(), groups });
   return Response.json({ groups });
 }
@@ -88,4 +91,88 @@ export async function POST(req: Request) {
 function dedupe(rows: SugRow[]) {
   const seen = new Set<string>();
   return rows.filter((r) => (seen.has(r.value) ? false : (seen.add(r.value), true)));
+}
+
+/* ---- enrichment, after the rows show: at most 6 rows, only values this route has just returned (so the server
+   never fetches a URL the page made up), cached with the query cache for 10 minutes. ---- */
+const ENRICH_MS = 2000;
+const PAGE_CAP = 300_000;
+const IMG_CAP = 1_000_000;
+const issued = new Map<string, { cat: SugCat; t: number }>();
+const extras = new Map<string, { t: number; x: SugExtra }>();
+const proxied = new Set<string>();
+const https = (u: unknown) => { if (typeof u !== "string") return null; try { const x = new URL(u); return x.protocol === "https:" ? x.href : null; } catch { return null; } };
+const ghHeaders = (token: string) => ({ accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28", authorization: `Bearer ${token}`, "user-agent": UA });
+
+/* GitHub: two calls, the first public org and the most starred own repo. */
+async function ghExtra(login: string, signal: AbortSignal): Promise<SugExtra> {
+  const tok = process.env.GITHUB_TOKEN;
+  if (!tok) return {};
+  const [orgs, repos] = await Promise.all([
+    fetch(`https://api.github.com/users/${encodeURIComponent(login)}/orgs?per_page=1`, { signal, cache: "no-store", headers: ghHeaders(tok) }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    fetch(`https://api.github.com/search/repositories?per_page=1&sort=stars&q=${encodeURIComponent(`user:${login} fork:false`)}`, { signal, cache: "no-store", headers: ghHeaders(tok) }).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
+  ]) as [{ login?: string }[], { items?: { name: string; stargazers_count: number }[] }];
+  const org = Array.isArray(orgs) ? orgs[0]?.login : undefined;
+  const top = repos.items?.[0];
+  const parts = [org && `@${org}`, top && `${top.name} ★${top.stargazers_count}`].filter(Boolean);
+  return parts.length ? { detail: parts.join(" · ") } : {};
+}
+
+/* Other rows: the page's og:image, read from at most 300KB of HTML within 2s. The image is then served through
+   GET ?img= so the browser never talks to a third party host directly. */
+async function ogImage(url: string, signal: AbortSignal): Promise<string | null> {
+  const res = await fetch(url, { signal, redirect: "follow", cache: "no-store", headers: { "user-agent": UA, accept: "text/html" } });
+  if (!res.ok || !res.body || !/html/i.test(res.headers.get("content-type") ?? "")) return null;
+  const reader = res.body.getReader();
+  let html = "", size = 0;
+  while (size < PAGE_CAP) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    html += new TextDecoder().decode(value);
+    if (/<\/head>/i.test(html)) break;
+  }
+  void reader.cancel().catch(() => {});
+  const m = html.match(/<meta[^>]+(?:property|name)=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/i)
+    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']og:image["']/i);
+  if (!m) return null;
+  const img = https(new URL(m[1].replace(/&amp;/g, "&"), url).href);
+  if (!img) return null;
+  proxied.add(img);
+  return `/api/suggest?img=${encodeURIComponent(img)}`;
+}
+
+async function enrich(values: unknown[], reqSignal: AbortSignal) {
+  if (process.env.SCAN_MODE !== "live") return Response.json({ extras: {} });
+  const list = values.filter((v): v is string => typeof v === "string").slice(0, SUG_MAX);
+  const out: Record<string, SugExtra> = {};
+  await Promise.all(list.map(async (value) => {
+    const ok = issued.get(value);
+    if (!ok || Date.now() - ok.t > CACHE_MS) return;
+    const c = extras.get(value);
+    if (c && Date.now() - c.t < CACHE_MS) { out[value] = c.x; return; }
+    const signal = AbortSignal.any([reqSignal, AbortSignal.timeout(ENRICH_MS)]);
+    let x: SugExtra = {};
+    try {
+      if (ok.cat === "github") x = await ghExtra(value.split("/")[1], signal);
+      else { const img = await ogImage("https://" + value, signal); if (img) x = { img }; }
+    } catch { x = {}; }
+    out[value] = x;
+    if (!reqSignal.aborted) extras.set(value, { t: Date.now(), x });
+  }));
+  return Response.json({ extras: out });
+}
+
+/* Image proxy for og:images found above only (never an arbitrary URL): https, image types, 1MB cap, 2s. */
+export async function GET(req: Request) {
+  const u = https(new URL(req.url).searchParams.get("img"));
+  if (!u || !proxied.has(u)) return new Response(null, { status: 404 });
+  try {
+    const res = await fetch(u, { signal: AbortSignal.timeout(ENRICH_MS), headers: { "user-agent": UA, accept: "image/*" } });
+    const type = res.headers.get("content-type") ?? "";
+    if (!res.ok || !/^image\/(png|jpe?g|webp|gif|avif)/i.test(type)) return new Response(null, { status: 404 });
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength > IMG_CAP) return new Response(null, { status: 413 });
+    return new Response(buf, { headers: { "content-type": type, "cache-control": "private, max-age=600", "x-content-type-options": "nosniff" } });
+  } catch { return new Response(null, { status: 504 }); }
 }

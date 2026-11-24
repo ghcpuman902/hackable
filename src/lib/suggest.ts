@@ -1,7 +1,9 @@
 /* Shared by the search box and /api/suggest: site prefixes for the typeahead, the categories a name is searched in,
    and URL normalising so the same profile cannot be added twice. */
 export type SugCat = "linkedin" | "github" | "instagram" | "web";
-export type SugRow = { cat: SugCat; title: string; detail: string; value: string };
+export type SugRow = { cat: SugCat; title: string; detail: string; value: string; img?: string };
+/* Filled in after the rows show: a photo (GitHub avatar, or the page's og:image through /api/suggest?img=) and, for GitHub, a top org or starred repo. */
+export type SugExtra = { img?: string; detail?: string };
 export type SugGroup = { cat: SugCat; rows: SugRow[]; failed?: boolean };
 
 export const SITES: { n: string; key: string; prefix: string; cat?: SugCat }[] = [

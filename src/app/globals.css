@@ -249,6 +249,13 @@ button.src:hover{background:var(--n50)}
 .sg-ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--c)}
 .sg-ic svg{width:16px;height:16px}
 .sg-ic.plain{background:#f5f5f5;color:var(--n900)}
+.sg-ic{position:relative}
+.sg-ic img{position:absolute;inset:0;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#f5f5f5}
+.sg-ic.has-img img{-webkit-mask:radial-gradient(circle at 26px 26px,transparent 9px,#000 9.5px);mask:radial-gradient(circle at 26px 26px,transparent 9px,#000 9.5px)}
+.sg-ic.has-img{background:transparent}
+.sg-ic .sg-bd{display:none}
+.sg-ic.has-img .sg-bd{display:grid;place-items:center;position:absolute;right:-3px;bottom:-3px;width:14px;height:14px;border-radius:50%;background:var(--c)}
+.sg-ic.has-img .sg-bd svg{width:8px;height:8px}
 .sg-tx{flex:1;min-width:0;display:grid;gap:3px}
 .sg-tx b{font:600 16px/1.2 var(--font);letter-spacing:-.02em;color:var(--n900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sg-tx span{font:500 14px/1.2 var(--font);color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

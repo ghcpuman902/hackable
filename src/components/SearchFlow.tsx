@@ -10,7 +10,7 @@ import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindi
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
-import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugGroup } from "@/lib/suggest";
+import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugExtra, type SugGroup } from "@/lib/suggest";
 import { Suggest, type Opt } from "./Suggest";
 import type { Brand } from "./brand-icons";
 import type { ScanMessage } from "@/lib/scan-tools";
@@ -153,6 +153,20 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   }, [planKey]);
 
   const groups = planKey ? sugCache[planKey] ?? (res?.key === planKey ? res.groups : undefined) : undefined;
+
+  /* Enrich the visible rows after they show: photos and GitHub org or top repo. Kept per row value, like the query cache. */
+  const [extra, setExtra] = useState<Record<string, SugExtra>>({});
+  const want = (groups ?? []).flatMap((g) => g.rows.map((r) => r.value)).filter((v) => !(v in extra)).slice(0, 6);
+  const wantKey = want.join("|");
+  useEffect(() => {
+    if (!wantKey) return;
+    const ctl = new AbortController();
+    fetch("/api/suggest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enrich: wantKey.split("|") }), signal: ctl.signal })
+      .then((r) => (r.ok ? (r.json() as Promise<{ extras: Record<string, SugExtra> }>) : Promise.reject(new Error("enrich"))))
+      .then(({ extras }) => setExtra((x) => ({ ...x, ...Object.fromEntries(wantKey.split("|").map((v) => [v, extras[v] ?? {}])) })))
+      .catch(() => {});
+    return () => ctl.abort();
+  }, [wantKey]);
   const opts: Opt[] = (() => {
     if (!plan) return [];
     if (plan.kind === "sites") return plan.sites.map((x) => ({ kind: "site", brand: brandOf(x.key), title: x.n, prefix: x.prefix }));
@@ -163,7 +177,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       : CAT_PREFIX[c] ? [{ kind: "prefix", cat: c, brand: brandOf(c), value: CAT_PREFIX[c], insert: true }] : [];
     const list: Opt[] = groups === null
       ? (plan.cat ? [plan.cat] : (["linkedin", "github", "instagram"] as SugCat[])).flatMap(fallback)
-      : groups.flatMap((g): Opt[] => g.failed ? fallback(g.cat) : g.rows.map((r) => ({ kind: "add", ...r })));
+      : groups.flatMap((g): Opt[] => g.failed ? fallback(g.cat) : g.rows.map((r) => ({ kind: "add", ...r,
+        img: extra[r.value]?.img ?? r.img, detail: extra[r.value]?.detail ?? r.detail })));
     const adds = list.filter((o) => o.kind === "add").length;
     if (!list.length) return plan.prefix ? fallback(plan.cat!) : [{ kind: "empty" }];
     return [...list, ...(adds >= 2 ? [{ kind: "all" } as Opt] : []), { kind: "done" }];
