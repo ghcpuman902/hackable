@@ -116,7 +116,7 @@ export default function SearchFlow() {
 
   const onEntryKey = (e: KeyboardEvent<HTMLInputElement>) => {
     const v = e.currentTarget.value;
-    if (e.key === "Enter") { e.preventDefault(); if (v.trim()) commit(); else if (!disabled) submit(); return; }
+    if (e.key === "Enter") { e.preventDefault(); e.currentTarget.form?.requestSubmit(); return; }
     if ((e.key === "," || e.key === ";" || e.key === "Tab") && v.trim()) { e.preventDefault(); commit(); return; }
     if (e.key === "Backspace" && !v && chips.length) {
       e.preventDefault();
@@ -167,7 +167,10 @@ export default function SearchFlow() {
           <section className="hero">
             <h1 className="qx" style={{ margin: 0 }}><span className="lead">Mirror</span></h1>
           </section>
-          <form className="search" autoComplete="off" onSubmit={(e) => e.preventDefault()}>
+          <form className="search" autoComplete="off" onSubmit={(e) => {
+            e.preventDefault();
+            if ((entryRef.current?.value ?? "").trim()) commit(); else submit();
+          }}>
             <div className="field" ref={fieldRef} role="group" aria-label="Who to check"
               onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); entryRef.current?.focus(); } }}>
               <span className="lens"><Lucide name="search" /></span>
@@ -199,14 +202,14 @@ export default function SearchFlow() {
                 ),
               )}
               <input ref={entryRef} className="entry" type="text" spellCheck={false}
-                aria-label="Name, email or link"
+                aria-label="Name, email or link" enterKeyHint="go" autoCapitalize="off" autoCorrect="off"
                 placeholder={chips.length ? "Add more" : "Your name, email, LinkedIn, GitHub, anything"}
                 value={entry} onChange={(e) => onEntryInput(e.target.value)} onKeyDown={onEntryKey}
                 onBlur={() => setTimeout(() => {
                   const a = document.activeElement;
                   if (a !== entryRef.current && !a?.classList.contains("chip-edit")) commit();
                 }, 0)} />
-              <button type="button" className="go-btn" aria-label="Check" disabled={disabled} onClick={submit}>
+              <button type="submit" className="go-btn" aria-label="Check" disabled={disabled}>
                 <Lucide name="arrow-right" />
               </button>
             </div>
