@@ -278,6 +278,21 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const flagsIn = !live || quick || netFlags !== null;
   const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
 
+  /* Live runs: Nemotron writes the report from what the scan actually found. "" means fall back to the rules report. */
+  const [liveMd, setLiveMd] = useState<{ key: string; md: string } | null>(null);
+  const liveHits = fan.filter((c) => states[c.tool] === "hit").length;
+  const wantMd = done && live && !quick && !preset && liveHits > 0;
+  const outputsJson = wantMd ? JSON.stringify({ query: chips.map((c) => c.label), findings: outputs, pivots }) : "";
+  useEffect(() => {
+    if (!outputsJson) return;
+    let alive = true;
+    fetch("/api/reason", { method: "POST", headers: { "content-type": "application/json" }, body: outputsJson, signal: AbortSignal.timeout(8000) })
+      .then((r) => r.json()).then((d: { markdown?: string }) => d.markdown ?? "").catch(() => "")
+      .then((md) => { if (alive) setLiveMd({ key: outputsJson, md }); });
+    return () => { alive = false; };
+  }, [outputsJson]);
+  const mdNow = wantMd ? (liveMd?.key === outputsJson ? liveMd.md : null) : "";
+
   const scan = useCallback((list: Chip[]) => {
     setSelfFlags([]);
     setScanId((n) => n + 1);
@@ -482,6 +497,12 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     summary,
     <p key="none" className="sum-none">We found nothing public tied to you.</p>,
     <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
+    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+  ] : live && !demo && mdNow !== "" ? [
+    summary,
+    mdNow === null
+      ? <p key="writing" className="sum-none">Reading what we found…</p>
+      : <ReportMarkdown key="md" markdown={mdNow} />,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,

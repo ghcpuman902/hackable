@@ -402,7 +402,7 @@ function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile
 
 /* ---- public web search: Tavily, with DuckDuckGo as a fallback ---- */
 type Search = { engine: string; urls: string[] };
-const TAVILY_MS = 2500;
+const TAVILY_MS = 5000;
 async function tavily(term: string, key: string, signal: AbortSignal): Promise<Search> {
   const res = await fetch("https://api.tavily.com/search", {
     method: "POST", signal, cache: "no-store",
@@ -478,9 +478,16 @@ function scanIdentifiers(query: string): ScanIds {
       if (githubLogin.test(handle)) ids.github.push(handle);
     }
   }
+  /* A LinkedIn profile URL gives its slug as a handle, plus a "<slug> linkedin" web search. */
+  const linkedinSlug = tokens.map((t) => detect(t)).find((d) => d.kind === "linkedin")?.label.match(/\/in\/([\w-]{2,100})/)?.[1];
+  if (linkedinSlug) {
+    ids.usernames.push(linkedinSlug);
+    if (githubLogin.test(linkedinSlug)) ids.github.push(linkedinSlug);
+  }
   const localParts = ids.emails.map((email) => email.slice(0, email.lastIndexOf("@")));
   const webTerms = unique([...ids.emails, ...localParts, ...ids.names, ...ids.usernames,
-    ...ids.github, ...(single && !ids.emails.length ? [single.label.replace(/^@/, "")] : [])]);
+    ...ids.github, ...(single && !ids.emails.length ? [single.label.replace(/^@/, "")] : []),
+    ...(linkedinSlug ? [`${linkedinSlug} linkedin`] : [])]);
   return { ...ids, webTerms, githubNames: ids.names };
 }
 

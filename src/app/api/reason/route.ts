@@ -7,7 +7,9 @@ export async function POST(req: Request) {
   if (!raw || process.env.SCAN_MODE !== "live") return Response.json({ markdown: "" });
   try {
     const md = await generateReportMarkdown(raw);
-    return Response.json({ markdown: cleanReportMarkdown(md, reportWhitelist()) ?? "" });
+    /* Links the scan actually found are allowed alongside the fixed whitelist. */
+    const found = JSON.stringify(raw).match(/https?:\/\/[^\s"\\<>]+/g) ?? [];
+    return Response.json({ markdown: cleanReportMarkdown(md, [...reportWhitelist(), ...found]) ?? "" });
   } catch {
     return Response.json({ markdown: "" });
   }
