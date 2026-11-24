@@ -5,12 +5,12 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
 import { Fan, runH, type CardState } from "./Fan";
-import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, ProfileTag, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, reportPatterns, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 /* Small platform tiles under each recent person, as in 06. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
@@ -203,17 +203,21 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
+  /* Live scans get No profile for now: nothing they return is a cheap, reliable sign of one. */
   const report = preset ? [
+    <ProfileTag key="profile" profile={preset.profile} />,
     ...presetFindings(preset),
-    ...preset.patterns.map((id) => <PatternSec key={id} id={id} who={preset.name.split(" ")[0]} />),
+    ...reportPatterns(preset.profile, preset.patterns).map((id) => <PatternSec key={id} id={id} who={preset.name.split(" ")[0]} />),
     <FinalSec key="final" onMail={mail} both={false} />,
   ] : live ? [
+    <ProfileTag key="profile" profile={null} />,
     ...liveFindings(outputs),
     ...patterns.map((id) => <PatternSec key={id} id={id} who={who} />),
     <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")}
       rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
         ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
   ] : [
+    <ProfileTag key="profile" profile={null} />,
     ...FINDINGS,
     ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),
     ...(showAll || extraOpen

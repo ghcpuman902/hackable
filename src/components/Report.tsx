@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Lucide, Tile } from "./icons";
 import type { Preset } from "@/lib/presets";
-import { DEMO_EMAIL, PATTERNS, type MiniName, type PatternId, type ScanResult, type ScanTool } from "@/lib/synthetic";
+import { DEMO_EMAIL, PATTERNS, type MiniName, type PatternId, type Profile, type ScanResult, type ScanTool } from "@/lib/synthetic";
 
 const s = (name: string): CSSProperties => ({ animationName: name });
 const dx = (v: string) => ({ "--dx": v }) as CSSProperties;
@@ -102,19 +102,32 @@ export function Sec({ children, mini }: { children: ReactNode; mini?: MiniName }
 
 export function PatternSec({ id, who }: { id: PatternId; who?: string }) {
   const p = PATTERNS[id];
+  const body = (
+    <div>
+      <Para lead={p.lead} rest={p.rest} />
+      <ol className="chain">
+        {p.chain.map(([n, t]) => <li key={n} tabIndex={0} data-id={t} title={t}>{n}</li>)}
+      </ol>
+      <p className="lesson">{p.lesson}</p>
+      <span className="cite">{p.cite}</span>
+    </div>
+  );
+  if (!p.href) return <section className={`sec mk-card${p.anim ? "" : " plain"}`}>{body}{p.anim && <div><Mini name={p.anim} who={who} /></div>}</section>;
   return (
-    <a className="sec mk-card" href={p.href}>
-      <div>
-        <Para lead={p.lead} rest={p.rest} />
-        <ol className="chain">
-          {p.chain.map(([n, t]) => <li key={n} tabIndex={0} data-id={t} title={t}>{n}</li>)}
-        </ol>
-        <p className="lesson">{p.lesson}</p>
-        <span className="cite">{p.cite}</span>
-      </div>
-      <div><Mini name={p.anim} who={who} /></div>
+    <a className={`sec mk-card${p.anim ? "" : " plain"}`} href={p.href}>
+      {body}
+      {p.anim && <div><Mini name={p.anim} who={who} /></div>}
       <span className="go" aria-hidden="true"><Lucide name="arrow-right" /></span>
     </a>
+  );
+}
+
+/* The profile a person has, or a calm No profile. A profile decides which patterns lead the report. */
+export function ProfileTag({ profile }: { profile: Profile | null }) {
+  return (
+    <div className="tag-row">
+      {profile ? <span className="badge">{profile}</span> : <span className="badge none"><Lucide name="check" />No profile</span>}
+    </div>
   );
 }
 
@@ -127,7 +140,7 @@ export const FINDINGS = [
   </Sec>,
   <Sec key="prof" mini="prof">
     <Para lead="To a scammer, you look like a senior JavaScript developer who is open to work."
-      rest={<> Your <span className="nw"><Tile kind="linkedin" />LinkedIn</span> and <span className="nw"><Tile kind="github" />GitHub</span> both say so, and two published scams target people like you.</>} />
+      rest={<> Your <span className="nw"><Tile kind="linkedin" />LinkedIn</span> and <span className="nw"><Tile kind="github" />GitHub</span> both say so, and two published scams are built around exactly that.</>} />
   </Sec>,
 ];
 
@@ -263,14 +276,7 @@ export function liveFindings(o: Outputs): ReactNode[] {
   return out;
 }
 
-/* ---- preset profiles: a status shown as a profile tag at the top of the report ---- */
+/* ---- presets: cached findings; the profile tag sits above them ---- */
 export function presetFindings(p: Preset): ReactNode[] {
-  const [head, ...more] = p.findings;
-  return [
-    <Sec key="head">
-      <div className="tag-row"><span className="badge">{p.badge}</span></div>
-      <Para lead={head.lead} rest={head.rest} />
-    </Sec>,
-    ...more.map((f) => <Sec key={f.lead}><Para lead={f.lead} rest={f.rest} /></Sec>),
-  ];
+  return p.findings.map((f) => <Sec key={f.lead}><Para lead={f.lead} rest={f.rest} /></Sec>);
 }
