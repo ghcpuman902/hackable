@@ -1,0 +1,123 @@
+.sec.subscribe-card {
+  animation: none;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: clip;
+  color: var(--n900);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+.subscribe-card-form,
+.subscribe-card-result {
+  grid-area: 1 / 1;
+}
+
+.subscribe-card[data-submitted="true"] .subscribe-card-form {
+  visibility: hidden;
+}
+
+.subscribe-card-form h2 {
+  margin: 0 0 12px;
+  font-weight: 700;
+}
+
+.subscribe-card-form label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.subscribe-card-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.subscribe-card-controls input {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  border: 1px solid var(--n200);
+  border-radius: var(--pill);
+  background: white;
+  padding: 6px 14px;
+  font-size: max(17px, 1.0625rem);
+}
+
+.subscribe-card-controls button {
+  min-block-size: 44px;
+  padding-inline: 16px;
+  cursor: pointer;
+}
+
+.subscribe-card-controls :focus-visible {
+  outline: 2px solid var(--n900);
+  outline-offset: 2px;
+}
+
+.subscribe-card-result {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  contain: size;
+  pointer-events: none;
+}
+
+.subscribe-card-mail,
+.subscribe-card-status {
+  grid-area: 1 / 1;
+}
+
+.subscribe-card-mail {
+  display: none;
+}
+
+.subscribe-card-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.subscribe-card-check {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .subscribe-card-result {
+    --subscribe-card-flight: 340ms;
+  }
+
+  .subscribe-card-mail {
+    display: block;
+    animation: subscribe-card-fly var(--subscribe-card-flight) ease-in both;
+  }
+
+  .subscribe-card-check,
+  .subscribe-card-status span {
+    animation: subscribe-card-reveal 120ms ease-out both;
+    animation-delay: var(--subscribe-card-flight);
+  }
+
+  .subscribe-card-status span {
+    animation-delay: calc(var(--subscribe-card-flight) + 90ms);
+  }
+}
+
+@keyframes subscribe-card-fly {
+  65% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(90px, -64px) rotate(-18deg) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes subscribe-card-reveal {
+  from {
+    opacity: 0;
+  }
+}
