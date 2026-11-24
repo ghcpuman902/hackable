@@ -30,7 +30,7 @@ export default function EmptyResult({ first, fan, states, found, pivots }: {
     ? `We found your ${list(froms)}, but no leaks, stealer logs or scam signals.`
     : "We found nothing public tied to you, and no leaks, stealer logs or scam signals.";
   return (
-    <>
+    <div className="er">
       <section className="er-card">
         <ShieldCheck className="er-icon" aria-hidden />
         <div className="er-body">
@@ -50,6 +50,6 @@ export default function EmptyResult({ first, fan, states, found, pivots }: {
           );
         })}
       </ul>
-    </>
+    </div>
   );
 }
