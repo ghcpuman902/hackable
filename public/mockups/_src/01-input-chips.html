@@ -71,7 +71,6 @@ main.wrap{max-width:720px;min-height:calc(100svh - 41px);padding-top:56px;paddin
 <main class="wrap">
   <section class="hero">
     <h1>See yourself the way a scammer does</h1>
-    <p class="by">Mirror · a personal exposure check</p>
     <p class="qx"><span class="lead">Your <span class="nw"><span class="ico t-ink">{{i:user}}</span>name,</span> your <span class="nw"><span class="ico t-amber">{{i:mail}}</span>email,</span> your <span class="nw"><span class="ico t-li">{{i:linkedin}}</span>LinkedIn</span> and <span class="nw"><span class="ico t-ink">{{i:github}}</span>GitHub.</span></span><span class="rest"> Add whatever is public. We check the leaks and show the <span class="nw"><span class="ico t-red">{{i:shield-alert}}</span>scams</span> aimed at people like you.</span></p>
   </section>
 
@@ -80,10 +79,6 @@ main.wrap{max-width:720px;min-height:calc(100svh - 41px);padding-top:56px;paddin
       <span class="lens">{{i:search}}</span>
       <input class="entry" id="entry" type="text" spellcheck="false" aria-label="Add a name, email, link or note"
         placeholder="Your name, email, LinkedIn, GitHub, anything">
-    </div>
-    <div class="hint">
-      <span>Separate with <kbd>,</kbd> or <kbd>Enter</kbd>. Double-click to edit.</span>
-      <button type="button" class="linkbtn" id="demo">Use the demo person</button>
     </div>
   </form>
 
@@ -100,12 +95,9 @@ main.wrap{max-width:720px;min-height:calc(100svh - 41px);padding-top:56px;paddin
     </div>
     <div class="go">
       <button class="btn" id="submit" disabled>Check my exposure</button>
-      <small>Public sources and breach lookups only. Nothing is kept after you close the page.</small>
     </div>
   </section>
 
-  <div class="types" aria-label="Recognised types" id="legend"></div>
-  <p class="demo-note">Mockup · synthetic demo data · hibp-integration-tests.com is Have I Been Pwned's test domain</p>
 </main>
 
 <script>
@@ -282,13 +274,10 @@ submitBtn.addEventListener('click', () => {
   const q = encodeURIComponent(JSON.stringify({who:who(), consent: who()==='other' ? new Date().toISOString() : null, chips: chips.map(({raw,kind,label})=>({raw,kind,label}))}));
   location.href = '02-progress.html?q='+q;
 });
-document.getElementById('demo').addEventListener('click', () => {
+document.getElementById('demo')?.addEventListener('click', () => {
   chips=[]; add('Jane Doe, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo, github.com/janedoe-demo, @janedoe_dev, Senior JS developer in London'); entry.focus();
 });
 
-/* Legend of recognised types (for the builder; can be dropped in the app) */
-document.getElementById('legend').innerHTML = ['name','email','linkedin','github','x','url','handle','phone','text']
-  .map(k=>'<span class="pill"><span class="nw">'+ICON[k]+KIND_LABEL[k]+'</span></span>').join('');
 
 window.__mirror = { get chips(){ return chips.map(c=>({kind:c.kind,label:c.label})); }, detect, tokenize }; // test hook
 entry.focus();

@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mirror</title>
+<style>
+/* ===== Shared design tokens (same block in every mockup) =====
+   Refs: manglekuo.com landing tagline (big ink/grey text with inline chips),
+   Quintex "Getting things done with an AI assistant" guide (big lede, inline app icons, bordered cards),
+   Boatlock story frames (one highlighted sentence at a time). */
+:root{
+  --bg:#ffffff; --surface:#f6f6f7; --surface-2:#eeeef0; --line:#e4e4e7;
+  --ink:#111113; --muted:#7c7c84; --faint:#a1a1aa;
+  --danger:#e5484d; --danger-bg:#feebec; --warn:#f5a524; --warn-bg:#fff4d6;
+  --ok:#30a46c; --ok-bg:#e9f9ee; --info:#0b63f6; --info-bg:#e8f0fe;
+  --li:#0a66c2; --gh:#1f2328;
+  --radius:14px; --radius-sm:10px; --pill:999px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
+  --font:Inter,"Inter Fallback",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --n900:#171717; --n800:#262626; --n500:#737373; --n200:#e5e5e5; --n50:#fafafa;
+  --amber:#f99c00;
+  /* manglekuo.com card: grey fill, white 1px inset highlight (surface-shell-glass), Tailwind v4 shadow-sm outside, 4xl radius */
+  --card-bg:#f5f5f5;
+  --card-shadow:inset 0 0 0 1px color-mix(in oklch, white 90%, transparent), 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --card-radius:2rem; --sky:#00a5ef; --red:#fb2c36; --emerald:#009767; --violet:#8e51ff; --li-blue:#0a66c2;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{font-size:16px;line-height:1.5}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.mock-nav{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.mock-nav a{text-decoration:none;color:var(--muted)} .mock-nav a:hover{color:var(--ink)}
+.mock-nav b{color:var(--ink);font-weight:600}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.brand-mark{width:20px;height:20px;border-radius:6px;background:var(--ink);display:inline-grid;place-items:center}
+.brand-mark::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink),0 0 0 3.5px #fff}
+.lede{font-size:clamp(28px,4.6vw,52px);line-height:1.12;letter-spacing:-.025em;font-weight:700;margin:0}
+.lede .g{color:var(--muted)}
+.ichip{display:inline-flex;align-items:center;gap:.3em;padding:.04em .38em .04em .28em;border-radius:.4em;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+.ichip svg,.ichip .ico{width:.8em;height:.8em}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:20px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btn{appearance:none;border:0;border-radius:var(--pill);background:var(--ink);color:#fff;font:600 15px/1 var(--font);padding:14px 22px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:var(--surface);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:var(--surface);color:var(--muted)}
+.tag.danger{background:var(--danger-bg);color:#b42318} .tag.warn{background:var(--warn-bg);color:#9a5b00} .tag.ok{background:var(--ok-bg);color:#1a7f4b} .tag.info{background:var(--info-bg);color:#0b4fc4}
+.demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ===== Quintex inline-icon text style (baseline for 01 and 04; from S-quintex/qag/reports/hack-style-brief.md) ===== */
+.qx{font-family:var(--font);font-weight:600;font-size:1.375rem;line-height:1.5;letter-spacing:-.025em;text-wrap:pretty;margin:0 0 2.5rem}
+@media (min-width:640px){.qx{font-size:1.75rem;line-height:1.45}}
+.qx .lead{color:var(--n900)} .qx .rest{color:var(--n500)}
+.ico{display:inline-flex;align-items:center;justify-content:center;width:.95em;height:.95em;padding:.16em;border-radius:.25em;vertical-align:.06em;margin-inline:.15em .2em;color:#fff;flex:none;box-sizing:border-box}
+.ico svg{width:100%;height:100%;display:block}
+.nw{white-space:nowrap;color:var(--n900)}
+a.nw{text-decoration:none;border-bottom:2px solid var(--n200)} a.nw:hover{border-color:var(--n900)}
+.t-amber{background:var(--amber)} .t-sky{background:var(--sky)} .t-red{background:var(--red)} .t-emerald{background:var(--emerald)}
+.t-ink{background:var(--n900)} .t-grey{background:var(--n500)} .t-violet{background:var(--violet)} .t-li{background:var(--li-blue)}
+/* pill = icon tile + label, same style */
+.pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--n200);background:#fff;padding:6px 12px;font:600 1.0625rem/1.3 var(--font);letter-spacing:-.025em;color:var(--n900)}
+.pill:hover{background:var(--n50)}
+
+.mk-card{background:var(--card-bg);box-shadow:var(--card-shadow);border-radius:var(--card-radius)}
+
+body{min-height:100svh}
+.app{max-width:760px;margin:0 auto;padding:0 20px 64px}
+.top{padding-top:calc(50svh - 64px);transition:padding-top .6s cubic-bezier(.2,.8,.2,1)}
+body.results .top{padding-top:20px}
+/* ---- search field (Google-like shell, Gmail To-field behaviour) holding pills ---- */
+.search{margin:0}
+.field{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:64px;padding:11px 14px 11px 50px;position:relative;
+  border:1px solid var(--n200);border-radius:28px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);cursor:text;transition:box-shadow .15s,border-color .15s}
+.field:focus-within{border-color:#d4d4d4;box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.09)}
+.field .lens{position:absolute;left:18px;top:22px;width:20px;height:20px;color:#a3a3a3}
+.field .lens svg{width:100%;height:100%;display:block}
+.field input.entry{flex:1 1 160px;min-width:120px;border:0;outline:0;font:600 1.0625rem var(--font);letter-spacing:-.025em;padding:7px 4px;background:transparent;color:var(--n900)}
+.field input.entry::placeholder{color:#a3a3a3}
+.chip{max-width:100%;padding:5px 6px 5px 10px;gap:2px;user-select:none;cursor:default}
+.chip .nw{display:inline-flex;align-items:center;min-width:0}
+.chip .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.chip.sel{background:#f5f5f5;border-color:var(--n900);outline:0}
+.chip .x{flex:none;width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:#a3a3a3;cursor:pointer;display:grid;place-items:center;padding:0;margin-left:2px}
+.chip .x:hover{background:#f0f0f0;color:var(--n900)}
+.chip.new{animation:pop .16s ease-out}
+.chip.shake{animation:shake .3s}
+.chip-edit{height:38px;border:1px solid var(--n900);border-radius:999px;padding:0 14px;font:600 1.0625rem var(--font);letter-spacing:-.025em;outline:0;background:#fff;min-width:80px;color:var(--n900)}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+.field{padding-right:62px}
+.go-btn{position:absolute;right:9px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:var(--n900);color:#fff;display:grid;place-items:center;cursor:pointer;padding:12px;transition:background .15s}
+.go-btn svg{width:100%;height:100%}
+.go-btn:disabled{background:#d4d4d4;cursor:default}
+.chip .lbl{max-width:380px}
+.under{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:14px;min-height:36px}
+body.results .under{justify-content:flex-start}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:#f5f5f5}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0}
+.seg span{display:block;padding:6px 12px;border-radius:999px;font-size:14px;font-weight:600;color:var(--n500);cursor:pointer;min-height:30px}
+.seg input:checked+span{background:#fff;color:var(--n900);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.seg input:focus-visible+span{outline:2px solid var(--info)}
+.consent{visibility:hidden;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#9a5b00;background:var(--warn-bg);border-radius:999px;padding:6px 12px;cursor:pointer;min-height:36px}
+.consent.on{visibility:visible} .consent.agreed{background:var(--ok-bg);color:#1a7f4b}
+.consent input{width:18px;height:18px;margin:0;accent-color:var(--n900)}
+/* results */
+.results-area{display:none}
+body.results .results-area{display:block}
+.sources{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
+.src{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;border-radius:999px;border:1px solid var(--n200);font-size:14px;font-weight:600;color:var(--n500);letter-spacing:-.01em;transition:color .3s}
+.src i{width:12px;height:12px;border-radius:50%;border:2px solid #a3a3a3;border-right-color:transparent;animation:spin .7s linear infinite}
+.src.done{color:var(--n900)} .src.done i{border:0;background:var(--ok);animation:none;width:9px;height:9px}
+.src.hit{color:var(--n900)} .src.hit i{border:0;background:var(--danger);animation:none;width:9px;height:9px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.report{display:grid;gap:18px;margin-top:28px}
+.sec{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:center;padding:24px 24px 24px 30px;animation:rise .5s ease-out both;text-decoration:none;color:inherit}
+.sec .qx{margin:0}
+.sec.plain{grid-template-columns:1fr}
+a.sec .go{position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:50%;background:#fff;display:grid;place-items:center;color:var(--n900);padding:8px;box-shadow:0 1px 2px rgba(0,0,0,.06);transition:transform .2s}
+a.sec .go svg{width:100%;height:100%}
+a.sec:hover .go{transform:translateX(2px)}
+a.sec{padding-right:64px}
+.more{justify-self:start;border:0;background:none;font:600 15px var(--font);color:var(--n500);cursor:pointer;padding:10px 4px;min-height:44px}
+.more:hover{color:var(--n900)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.actions .pill{cursor:pointer;min-height:44px}
+.actions .pill.dark{background:var(--n900);color:#fff;border-color:var(--n900)} .actions .pill.dark .nw{color:#fff}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--n900);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+@media (max-width:700px){
+  .top{padding-top:calc(42svh - 64px)}
+  .sec,a.sec{grid-template-columns:1fr;gap:18px;padding:22px 20px}
+  a.sec .qx{padding-right:36px}
+  .field{border-radius:22px;padding-left:44px} .field .lens{left:15px}
+  .chip .lbl{max-width:190px}
+}
+/* mini animations: CSS only, 8s loop, scaled-down versions of the 03 pages */
+.mini{position:relative;height:190px;border-radius:1.25rem;background:#fff;overflow:hidden;font-family:var(--font)}
+.mini *{box-sizing:border-box}
+.mini .a{opacity:0;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+@keyframes s5{0%,5%{opacity:0;transform:translateY(4px)}9%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s10{0%,10%{opacity:0;transform:translateY(4px)}14%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s15{0%,15%{opacity:0;transform:translateY(4px)}19%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s20{0%,20%{opacity:0;transform:translateY(4px)}24%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s25{0%,25%{opacity:0;transform:translateY(4px)}29%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s30{0%,30%{opacity:0;transform:translateY(4px)}34%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s35{0%,35%{opacity:0;transform:translateY(4px)}39%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s40{0%,40%{opacity:0;transform:translateY(4px)}44%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s45{0%,45%{opacity:0;transform:translateY(4px)}49%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s50{0%,50%{opacity:0;transform:translateY(4px)}54%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s55{0%,55%{opacity:0;transform:translateY(4px)}59%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s60{0%,60%{opacity:0;transform:translateY(4px)}64%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s65{0%,65%{opacity:0;transform:translateY(4px)}69%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s70{0%,70%{opacity:0;transform:translateY(4px)}74%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s75{0%,75%{opacity:0;transform:translateY(4px)}79%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s80{0%,80%{opacity:0;transform:translateY(4px)}84%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+@keyframes s85{0%,85%{opacity:0;transform:translateY(4px)}89%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+
+.m-rec .bub{position:absolute;left:12px;top:12px;right:36px;background:#f5f5f5;border-radius:4px 12px 12px 12px;padding:8px 10px;font-size:12.5px;font-weight:600;color:var(--n900)}
+.m-rec .term{position:absolute;left:12px;right:12px;bottom:12px;height:100px;background:#0f1115;border-radius:10px;padding:9px 11px;font:11.5px/1.55 var(--mono);color:#d4d4d8}
+.m-rec .term .p{color:#4ade80} .m-rec .term .r{color:#fb7185}
+.m-rec .loot{position:absolute;right:-4px;bottom:40px;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.m-rec .loot b{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--danger);color:#fff;opacity:0;animation:leave 8s infinite}
+.m-rec .loot b:nth-child(2){animation-delay:.25s}.m-rec .loot b:nth-child(3){animation-delay:.5s}
+@keyframes leave{0%,66%{opacity:0;transform:translateX(-40px)}72%{opacity:1;transform:translateX(-14px)}88%{opacity:1;transform:translateX(0)}95%,100%{opacity:0;transform:translateX(40px)}}
+.m-flood .bar{position:absolute;left:0;right:0;top:0;height:28px;border-bottom:1px solid var(--n200);display:flex;align-items:center;padding:0 12px;font-size:11.5px;font-weight:700;color:var(--n900)}
+.m-flood .bar span{margin-left:auto;color:#0b4fc4}
+.m-flood .bar span b{font-weight:700;animation:cnt 8s steps(1) infinite}
+.m-flood .bar span b::after{content:"2";animation:cnt 8s steps(1) infinite}
+@keyframes cnt{0%{content:"2"}25%{content:"38"}40%{content:"212"}55%{content:"640"}70%,100%{content:"1,284"}}
+.m-flood .list{position:absolute;left:0;right:0;top:28px;bottom:0;overflow:hidden}
+.m-flood .stack{height:0;position:relative;background:repeating-linear-gradient(#fff 0 24px,#f0f0f0 24px 25px);animation:grow 8s infinite ease-in}
+.m-flood .stack::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 9px,#e5e5e5 9px 13px,transparent 13px 25px);-webkit-mask:linear-gradient(90deg,transparent 0 12px,#000 12px 38%,transparent 38% 44%,#000 44% 82%,transparent 82%);mask:linear-gradient(90deg,transparent 0 12px,#000 12px 38%,transparent 38% 44%,#000 44% 82%,transparent 82%)}
+.m-flood .real{height:26px;display:flex;align-items:center;gap:6px;padding:0 12px;font-size:11.5px;font-weight:700;color:#b42318;background:var(--danger-bg)}
+.m-flood .real::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--danger)}
+@keyframes grow{0%,18%{height:0}75%,100%{height:600px}}
+.m-sess .w{position:absolute;top:20px;bottom:20px;width:40%;background:#f5f5f5;border-radius:10px;padding:28px 10px 10px;font-size:11.5px;font-weight:600;color:var(--n500)}
+.m-sess .w::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-radius:10px 10px 0 0;background:#e5e5e5}
+.m-sess .w.you{left:12px} .m-sess .w.them{right:12px} .m-sess .w.them::before{background:#18181b}
+.m-sess .ck{display:inline-block;width:12px;height:12px;border-radius:50%;background:#d6a15a;vertical-align:-2px;margin-right:4px}
+.m-sess .fly{position:absolute;left:30%;top:46%;width:14px;height:14px;border-radius:50%;background:#d6a15a;box-shadow:0 0 0 3px rgba(214,161,90,.25);opacity:0;animation:cross 8s infinite ease-in-out}
+@keyframes cross{0%,25%{opacity:0;left:30%}30%{opacity:1;left:30%}55%{opacity:1;left:66%}60%,100%{opacity:0;left:66%}}
+.m-sess .ok{margin-top:8px;padding:8px;border-radius:7px;background:var(--ok-bg);color:#1a5c38;font-weight:700}
+.m-sess .x{display:block;margin-top:6px;text-decoration:line-through;color:#b42318}
+.m-breach{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+.m-breach .mail{font-size:11.5px;font-weight:700;color:var(--n900);background:#f5f5f5;border-radius:999px;padding:6px 12px;display:inline-flex;align-items:center;max-width:92%;overflow:hidden;white-space:nowrap}
+.m-breach b{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--danger-bg);color:#b42318}
+.m-steal{display:grid;place-items:center}
+.m-steal .lap{width:110px;height:70px;border:3px solid var(--n900);border-radius:8px;background:#fff;position:relative;margin-top:36px}
+.m-steal .lap::after{content:"";position:absolute;left:-18px;right:-18px;bottom:-12px;height:7px;border-radius:0 0 6px 6px;background:var(--n900)}
+.m-steal .k{position:absolute;left:50%;top:60%;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--danger);color:#fff;white-space:nowrap;opacity:0;animation:up 8s infinite}
+.m-steal .k:nth-child(3){animation-delay:.6s}.m-steal .k:nth-child(4){animation-delay:1.2s}.m-steal .k:nth-child(5){animation-delay:1.8s}
+@keyframes up{0%,10%{opacity:0;transform:translate(-50%,0)}18%{opacity:1}55%{opacity:1;transform:translate(var(--dx,-50%),-92px)}62%,100%{opacity:0;transform:translate(var(--dx,-50%),-110px)}}
+.m-prof{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.m-prof .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.m-prof .row .pill{font-size:12.5px;padding:3px 9px}
+.m-prof .lab{font-size:13px;font-weight:700;color:#fff;background:var(--n900);padding:7px 12px;border-radius:10px}
+.m-prof .arrow{width:2px;height:16px;background:#d4d4d4}
+@media (prefers-reduced-motion:reduce){.mini .a,.m-rec .loot b,.m-steal .k{opacity:1!important;animation:none!important}.m-flood .stack{height:600px;animation:none}.m-sess .fly{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <form class="search" id="form" autocomplete="off" onsubmit="return false">
+      <div class="field" id="field" role="group" aria-label="Who to check">
+        <span class="lens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg></span>
+        <input class="entry" id="entry" type="text" spellcheck="false" aria-label="Name, email or link" placeholder="Name, email or link">
+        <button type="button" class="go-btn" id="submit" aria-label="Check" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg></button>
+      </div>
+    </form>
+    <div class="under">
+      <div class="seg" role="radiogroup" aria-label="Who is this for?">
+        <label><input type="radio" name="who" value="me" checked><span>Me</span></label>
+        <label><input type="radio" name="who" value="other"><span>Someone else</span></label>
+      </div>
+      <label class="consent" id="consent"><input type="checkbox" id="agreed"><span id="ctext">They agreed</span></label>
+    </div>
+  </div>
+  <div class="results-area" id="results" aria-live="polite">
+    <div class="sources" id="sources"></div>
+    <div class="report" id="report"></div>
+  </div>
+</div>
+<div class="toast" id="toast">Sent to jane@hibp-integration-tests.com</div>
+
+<script>
+const LUCIDE={"mail": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\" /> <rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\" /></svg>", "user": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\" /> <circle cx=\"12\" cy=\"7\" r=\"4\" /></svg>", "globe": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /> <path d=\"M2 12h20\" /></svg>", "at-sign": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8\" /></svg>", "phone": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384\" /></svg>", "type": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 4v16\" /> <path d=\"M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2\" /> <path d=\"M9 20h6\" /></svg>", "search": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\" /> <circle cx=\"11\" cy=\"11\" r=\"8\" /></svg>", "x": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" /></svg>", "laptop": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z\" /> <path d=\"M20.054 15.987H3.946\" /></svg>", "key-round": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z\" /> <circle cx=\"16.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\" /></svg>", "cookie": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M11 17h.01\" /> <path d=\"M11.496 2c.324-.016.558.292.529.615a4 4 0 004.235 4.368.713.713 0 01.758.757 4 4 0 004.366 4.237c.323-.03.63.204.614.527a10 10 0 01-2.915 6.566A1 1 0 114.93 4.918 10 10 0 0111.496 2\" /> <path d=\"M12 12h.01\" /> <path d=\"M16 16h.01\" /> <path d=\"M16 3h.01\" /> <path d=\"M21 4h.01\" /> <path d=\"M21 8h.01\" /> <path d=\"M7 14h.01\" /> <path d=\"M9 8h.01\" /></svg>", "inbox": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"22 12 16 12 14 15 10 15 8 12 2 12\" /> <path d=\"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z\" /></svg>", "briefcase": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\" /> <rect width=\"20\" height=\"14\" x=\"2\" y=\"6\" rx=\"2\" /></svg>", "code-xml": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m18 16 4-4-4-4\" /> <path d=\"m6 8-4 4 4 4\" /> <path d=\"m14.5 4-5 16\" /></svg>", "terminal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 19h8\" /> <path d=\"m4 17 6-6-6-6\" /></svg>", "log-out": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 17 5-5-5-5\" /> <path d=\"M21 12H9\" /> <path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\" /></svg>", "shield-alert": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\" /> <path d=\"M12 8v4\" /> <path d=\"M12 16h.01\" /></svg>", "lock-keyhole": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"16\" r=\"1\" /> <rect x=\"3\" y=\"10\" width=\"18\" height=\"12\" rx=\"2\" /> <path d=\"M7 10V7a5 5 0 0 1 10 0v3\" /></svg>", "arrow-right": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /> <path d=\"m12 5 7 7-7 7\" /></svg>", "check": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\" /></svg>", "file-search": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\" /> <path d=\"M14 2v5a1 1 0 0 0 1 1h5\" /> <circle cx=\"11.5\" cy=\"14.5\" r=\"2.5\" /> <path d=\"M13.3 16.3 15 18\" /></svg>", "mail-warning": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 10.5V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h12.5\" /> <path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\" /> <path d=\"M20 14v4\" /> <path d=\"M20 22v.01\" /></svg>", "linkedin": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z\" /> <rect width=\"4\" height=\"12\" x=\"2\" y=\"9\" /> <circle cx=\"4\" cy=\"4\" r=\"2\" /></svg>", "github": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4\" /> <path d=\"M9 18c-4.51 2-5-2-7-2\" /></svg>", "twitter": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z\" /></svg>"};
+const TILE = { // [lucide glyph, tile class]
+  email:['mail','t-amber'], linkedin:['linkedin','t-li'], github:['github','t-ink'], x:['twitter','t-ink'],
+  url:['globe','t-sky'], handle:['at-sign','t-violet'], phone:['phone','t-emerald'], name:['user','t-ink'], text:['type','t-grey']
+};
+const ICON = Object.fromEntries(Object.entries(TILE).map(([k,[g,c]])=>[k,'<span class="ico '+c+'">'+LUCIDE[g]+'</span>']));
+const KIND_LABEL = {email:'Email',linkedin:'LinkedIn',github:'GitHub',x:'X',url:'Link',handle:'Username',phone:'Phone',name:'Name',text:'Note'};
+
+/* ============ Type detection ============ */
+const RE = {
+  email:/^[^\s@,;]+@[^\s@,;]+\.[a-z]{2,}$/i,
+  url:/^(https?:\/\/)?(www\.)?([a-z0-9-]+\.)+[a-z]{2,}(:\d+)?(\/[^\s]*)?$/i,
+  handle:/^@[\w.]{2,30}$/,
+  phone:/^\+?[\d][\d\s().-]{6,}$/,
+  name:/^[\p{Lu}][\p{L}'’.-]*(\s+[\p{L}'’.-]+){1,3}$/u,
+  user:/^[a-z0-9._-]*\d[a-z0-9._-]*$|^[a-z0-9]+[._-][a-z0-9._-]+$/i
+};
+function detect(raw){
+  const v = raw.trim();
+  if (RE.email.test(v)) return {kind:'email', label:v.toLowerCase()};
+  if (RE.handle.test(v)) return {kind:'handle', label:v};
+  if (RE.url.test(v) && !/^\d+(\.\d+)+$/.test(v)) {
+    const clean = v.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/$/,'');
+    const host = clean.split('/')[0].toLowerCase();
+    const kind = /(^|\.)linkedin\.com$/.test(host) ? 'linkedin' : /(^|\.)github\.com$/.test(host) ? 'github'
+               : /(^|\.)(x|twitter)\.com$/.test(host) ? 'x' : 'url';
+    return {kind, label:clean};
+  }
+  if (RE.phone.test(v) && v.replace(/\D/g,'').length >= 7) return {kind:'phone', label:v};
+  if (RE.name.test(v)) return {kind:'name', label:v};
+  if (!/\s/.test(v) && RE.user.test(v)) return {kind:'handle', label:v};
+  return {kind:'text', label:v};
+}
+const isStrong = w => RE.email.test(w) || RE.handle.test(w) || (RE.url.test(w) && /[./]/.test(w));
+
+/* Split one segment (no commas) into tokens: emails/links stand alone, other words group together.
+   "Jane Doe jane@x.com" -> ["Jane Doe","jane@x.com"] */
+function explode(segment){
+  const out=[]; let buf=[];
+  for (const w of segment.trim().split(/\s+/).filter(Boolean)){
+    if (isStrong(w)) { if (buf.length) out.push(buf.join(' ')); buf=[]; out.push(w); }
+    else buf.push(w);
+  }
+  if (buf.length) out.push(buf.join(' '));
+  return out;
+}
+const tokenize = text => text.split(/[,;\n]+/).flatMap(explode);
+
+/* ============ Chip store + rendering ============ */
+const field = document.getElementById('field'), entry = document.getElementById('entry');
+let chips = []; // {id, raw, kind, label}
+let uid = 0;
+let freshIds = new Set();
+
+function chipEl(c){
+  const el = document.createElement('span');
+  el.className='chip pill'+(freshIds.has(c.id)?' new':''); el.tabIndex=0; el.dataset.id=c.id; el.dataset.kind=c.kind;
+  el.title = KIND_LABEL[c.kind]+': '+c.raw+'  (double-click to edit)';
+  el.setAttribute('role','button');
+  el.innerHTML = '<span class="nw">'+ICON[c.kind]+'<span class="lbl"></span></span>'+
+    '<button type="button" class="x" aria-label="Remove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>';
+  el.querySelector('.lbl').textContent = c.label;
+  el.addEventListener('dblclick', e => { e.preventDefault(); startEdit(c.id); });
+  el.addEventListener('click', e => {
+    if (e.target.closest('.x')) { remove(c.id); entry.focus(); return; }
+    select(c.id);
+  });
+  el.addEventListener('keydown', e => {
+    if (e.key==='Backspace'||e.key==='Delete'){ e.preventDefault(); remove(c.id); entry.focus(); }
+    if (e.key==='Enter'||e.key==='F2'){ e.preventDefault(); startEdit(c.id); }
+    if (e.key==='ArrowRight'){ e.preventDefault(); (el.nextElementSibling?.classList.contains('chip')?el.nextElementSibling:entry).focus(); }
+    if (e.key==='ArrowLeft'){ e.preventDefault(); el.previousElementSibling?.classList.contains('chip') && el.previousElementSibling.focus(); }
+  });
+  el.addEventListener('focus', () => select(c.id));
+  return el;
+}
+function render(){
+  field.querySelectorAll('.chip,.chip-edit').forEach(n=>n.remove());
+  for (const c of chips) field.insertBefore(chipEl(c), entry);
+  freshIds.clear();
+  entry.placeholder = chips.length ? 'Add more' : 'Your name, email, LinkedIn, GitHub, anything';
+  updateSubmit();
+}
+function makeChips(text){
+  return tokenize(text).map(raw => ({id:++uid, raw, ...detect(raw)}));
+}
+function add(text, at=chips.length){
+  const fresh=[];
+  for (const c of makeChips(text)){
+    const dupe = chips.find(x => x.label.toLowerCase()===c.label.toLowerCase());
+    if (dupe){ requestAnimationFrame(()=>{const d=field.querySelector('[data-id="'+dupe.id+'"]'); d&&(d.classList.remove('shake'),void d.offsetWidth,d.classList.add('shake'));}); continue; }
+    fresh.push(c);
+  }
+  fresh.forEach(c=>freshIds.add(c.id));
+  chips.splice(at,0,...fresh); render();
+}
+function remove(id){ chips = chips.filter(c=>c.id!==id); render(); }
+function select(id){ field.querySelectorAll('.chip').forEach(n=>n.classList.toggle('sel', n.dataset.id==id)); }
+function commit(){ const v=entry.value; entry.value=''; if (v.trim()) add(v); }
+
+/* ============ Editing: double-click turns a chip back into text ============ */
+function startEdit(id){
+  const i = chips.findIndex(c=>c.id===id); if (i<0) return;
+  const c = chips[i], node = field.querySelector('[data-id="'+id+'"]');
+  const inp = document.createElement('input');
+  inp.className='chip-edit'; inp.value=c.raw; inp.setAttribute('aria-label','Edit '+c.label);
+  inp.style.width = Math.max(80, c.raw.length*8.4+28)+'px';
+  node.replaceWith(inp); inp.focus(); inp.select();
+  let done=false;
+  const finish = keep => {
+    if (done) return; done=true;
+    const v = inp.value;
+    chips.splice(i,1);
+    if (keep) { if (v.trim()) add(v, i); else render(); } else { chips.splice(i,0,c); render(); }
+    entry.focus();
+  };
+  inp.addEventListener('input', ()=> inp.style.width = Math.max(80, inp.value.length*8.4+28)+'px');
+  inp.addEventListener('keydown', e => {
+    if (e.key==='Enter'||e.key===','||e.key==='Tab'){ e.preventDefault(); finish(true); }
+    if (e.key==='Escape'){ e.preventDefault(); finish(false); }
+  });
+  inp.addEventListener('blur', ()=>finish(true));
+}
+
+/* ============ Main entry behaviour (Gmail To-field rules) ============ */
+let armed=false; // Backspace on empty: 1st press selects last chip, 2nd deletes
+entry.addEventListener('keydown', e => {
+  if (e.key==='Enter'){ e.preventDefault(); if (entry.value.trim()) commit(); else if (!submitBtn.disabled) submitBtn.click(); return; }
+  if ((e.key===','||e.key===';'||e.key==='Tab') && entry.value.trim()){ e.preventDefault(); commit(); return; }
+  if (e.key==='Backspace' && !entry.value && chips.length){
+    e.preventDefault();
+    const last = chips[chips.length-1];
+    if (armed){ remove(last.id); armed=false; } else { select(last.id); armed=true; }
+    return;
+  }
+  if (e.key==='ArrowLeft' && entry.selectionStart===0 && chips.length){ e.preventDefault(); field.querySelector('.chip:last-of-type')?.focus(); }
+  armed=false; select(null);
+});
+entry.addEventListener('input', () => {
+  const v = entry.value;
+  if (/[,;\n]/.test(v)) {                      // pasted or typed separators
+    const parts = v.split(/[,;\n]/); const tail = parts.pop();
+    add(parts.join(','));
+    entry.value = tail.replace(/^\s+/,'');
+  }
+  if (/\s$/.test(entry.value)) {                 // space after an email/link/@handle commits it
+    const words = entry.value.trim().split(/\s+/);
+    if (words.length && isStrong(words[words.length-1])) commit();
+  }
+});
+entry.addEventListener('blur', () => setTimeout(()=>{ if (document.activeElement!==entry && !document.activeElement?.classList.contains('chip-edit')) commit(); }, 0));
+field.addEventListener('mousedown', e => { if (e.target===field) { e.preventDefault(); entry.focus(); } });
+
+
+/* ---------- mini animations (markup only; motion is CSS) ---------- */
+const MINI = {
+  rec: `<div class="mini m-rec" aria-hidden="true">
+    <div class="bub a" style="animation-name:s5">Hi Jane, £140k remote role. Quick take-home test?</div>
+    <div class="term a" style="animation-name:s20"><div><span class="p">$</span> npm install</div>
+      <div class="a" style="animation-name:s30">added 214 packages</div>
+      <div class="a r" style="animation-name:s40">postinstall: setup.js</div>
+      <div class="a r" style="animation-name:s50">reading saved logins…</div></div>
+    <div class="loot"><b>passwords</b><b>sessions</b><b>wallet</b></div></div>`,
+  flood: `<div class="mini m-flood" aria-hidden="true">
+    <div class="bar">Inbox<span><b></b></span></div>
+    <div class="list"><div class="stack"></div><div class="real">Order confirmed: £2,399</div></div></div>`,
+  sess: `<div class="mini m-sess" aria-hidden="true">
+    <div class="w you"><span class="ck"></span>GitHub<br><span class="ck"></span>Email<br><span class="ck"></span>Slack</div>
+    <div class="fly"></div>
+    <div class="w them"><span class="x a" style="animation-name:s60">password</span><span class="x a" style="animation-name:s65">2-step code</span><div class="ok a" style="animation-name:s70">Signed in as Jane</div></div></div>`,
+  breach: `<div class="mini m-breach" aria-hidden="true">
+    <span class="mail">${ICON.email}jane@hibp-integration-tests.com</span>
+    <b class="a" style="animation-name:s15">DevForum 2023</b><b class="a" style="animation-name:s30">ShopLane 2021</b><b class="a" style="animation-name:s45">PixelPrint 2019</b></div>`,
+  steal: `<div class="mini m-steal" aria-hidden="true"><div class="lap"></div>
+    <span class="k" style="--dx:-130%">GitHub</span><span class="k" style="--dx:-50%">Slack</span><span class="k" style="--dx:30%">Bank</span><span class="k" style="--dx:-90%">Shop</span></div>`,
+  prof: `<div class="mini m-prof" aria-hidden="true">
+    <div class="row"><span class="pill a" style="animation-name:s5"><span class="nw">${ICON.linkedin}Open to work</span></span><span class="pill a" style="animation-name:s15"><span class="nw">${ICON.github}41 repos</span></span></div>
+    <div class="row"><span class="pill a" style="animation-name:s25">JavaScript</span><span class="pill a" style="animation-name:s30">London</span></div>
+    <div class="arrow a" style="animation-name:s40"></div>
+    <div class="lab a" style="animation-name:s45">Senior developer, job hunting</div></div>`
+};
+
+/* ---------- scam patterns: reorder or drop here ---------- */
+const PATTERNS = {
+  'fake-recruiter': {anim:'rec', href:'03-pattern-fake-recruiter.html',
+    lead:'A recruiter offers a dream job, then sends a coding test.', rest:' Running npm install starts hidden code that copies your saved logins and wallets. Run tests in a throwaway sandbox.'},
+  'signup-bombing': {anim:'flood', href:'03-pattern-signup-bombing.html',
+    lead:'Hundreds of welcome emails arrive at once.', rest:' They bury one real alert, like an order you never placed. Search the flood for orders and password resets before you delete it.'},
+  'session-hijack': {anim:'sess', href:'03-pattern-session-hijack.html',
+    lead:'They copy the part of your browser that says you are signed in.', rest:' No password or code needed. Sign out of every session, then change passwords.'}
+};
+const LEAD_PATTERNS  = ['fake-recruiter','signup-bombing'];
+const EXTRA_PATTERNS = ['session-hijack'];
+
+const SOURCES = [['Web','done'],['LinkedIn','done'],['GitHub','done'],['Hudson Rock','hit'],['LeakCheck','hit'],['Have I Been Pwned','hit']];
+const para = (lead, rest) => `<p class="qx"><span class="lead">${lead}</span><span class="rest">${rest}</span></p>`;
+const sec = (inner, mini) => `<section class="sec mk-card${mini?'':' plain'}"><div>${inner}</div>${mini?`<div>${MINI[mini]}</div>`:''}</section>`;
+const patternSec = id => { const p=PATTERNS[id]; return `<a class="sec mk-card" href="${p.href}"><div>${para(p.lead,p.rest)}</div><div>${MINI[p.anim]}</div><span class="go" aria-hidden="true">${LUCIDE['arrow-right']}</span></a>`; };
+function reportParts(showAll){
+  const parts = [
+    sec(para(`Your <span class="nw">${ICON.email}email</span> is in 3 breaches.`, ' The newest was in 2023. Breach names only, never passwords.'), 'breach'),
+    sec(para('In March, a program on your laptop copied 23 saved logins.', ' Two were work tools. They may be for sale now.'), 'steal'),
+    sec(para('To a scammer, you are a senior JavaScript developer, open to work.', ` Your <span class="nw">${ICON.linkedin}LinkedIn</span> and <span class="nw">${ICON.github}GitHub</span> say so. Two scams are built for you.`), 'prof'),
+    ...LEAD_PATTERNS.map(patternSec),
+  ];
+  if (showAll) parts.push(...EXTRA_PATTERNS.map(patternSec));
+  else if (EXTRA_PATTERNS.length) parts.push(`<button type="button" class="more" id="morebtn">One more pattern</button>`);
+  parts.push(sec(para('Tonight, do three things.', ' Sign out everywhere and clean that laptop. Change the three leaked passwords. Run coding tests in a sandbox.')+
+    `<div class="actions"><button class="pill dark" id="mail"><span class="nw">${ICON.email}Email me this report</span></button></div>`));
+  return parts;
+}
+
+/* ---------- consent + submit ---------- */
+const submitBtn = document.getElementById('submit'), consent = document.getElementById('consent'), agreed = document.getElementById('agreed');
+const who = () => document.querySelector('input[name=who]:checked').value;
+function updateSubmit(){
+  const other = who()==='other';
+  consent.classList.toggle('on', other);
+  consent.classList.toggle('agreed', other && agreed.checked);
+  document.getElementById('ctext').textContent = other && agreed.checked ? 'Agreed '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : 'They agreed';
+  submitBtn.disabled = !(chips.length || entry.value.trim()) || (other && !agreed.checked);
+}
+document.querySelectorAll('input[name=who]').forEach(r=>r.addEventListener('change', updateSubmit));
+agreed.addEventListener('change', updateSubmit);
+entry.addEventListener('input', updateSubmit);
+
+const params = new URLSearchParams(location.search);
+const SPEED = +params.get('speed') || 1;
+let timers = [];
+function runResults(){
+  timers.forEach(clearTimeout); timers=[];
+  const srcEl=document.getElementById('sources'), report=document.getElementById('report');
+  report.innerHTML='';
+  srcEl.innerHTML = SOURCES.map(([n])=>`<span class="src"><i></i>${n}</span>`).join('');
+  document.body.classList.add('results');
+  const at=(ms,fn)=>timers.push(setTimeout(fn, ms/SPEED));
+  let t=700;
+  SOURCES.forEach(([n,state],i)=>{ t+=450; at(t, ()=> srcEl.children[i].classList.add(state)); });
+  reportParts(params.has('all')).forEach(html => { t+=450; at(t, ()=>{ report.insertAdjacentHTML('beforeend', html); wire(); }); });
+}
+function wire(){
+  const m=document.getElementById('morebtn');
+  if (m && !m.dataset.w){ m.dataset.w=1; m.onclick=()=>{ m.insertAdjacentHTML('afterend', EXTRA_PATTERNS.map(patternSec).join('')); m.remove(); }; }
+  const mail=document.getElementById('mail');
+  if (mail && !mail.dataset.w){ mail.dataset.w=1; mail.onclick=()=>{const t=document.getElementById('toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}; }
+}
+/* URL as state: ?q= holds the chips, so refresh, share and Back work */
+function stateFromUI(){ return {who:who(), consent: who()==='other' ? new Date().toISOString() : null, chips: chips.map(({raw})=>raw)}; }
+submitBtn.addEventListener('click', () => {
+  commit(); if (!chips.length || submitBtn.disabled) return;
+  entry.blur();
+  history.pushState(null,'','?q='+encodeURIComponent(JSON.stringify(stateFromUI())));
+  runResults();
+});
+function restore(){
+  const q = new URLSearchParams(location.search).get('q');
+  if (!q){ timers.forEach(clearTimeout); document.body.classList.remove('results'); return false; }
+  try { const s=JSON.parse(q); chips=[]; add((s.chips||[]).join(', ')); if (s.who==='other'){ document.querySelector('input[value=other]').checked=true; agreed.checked=!!s.consent; } updateSubmit(); runResults(); return true; } catch(e){ return false; }
+}
+addEventListener('popstate', restore);
+window.__mirror = { get chips(){ return chips.map(c=>({kind:c.kind,label:c.label})); }, detect, tokenize };
+if (!restore()) {
+  if (params.has('demo')) add('Jane Doe, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo');
+  entry.focus();
+}
+</script>
+</body>
+</html>

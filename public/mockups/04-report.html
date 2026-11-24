@@ -19,7 +19,11 @@
   --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
   --font:Inter,"Inter Fallback",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --n900:#171717; --n800:#262626; --n500:#737373; --n200:#e5e5e5; --n50:#fafafa;
-  --amber:#f99c00; --sky:#00a5ef; --red:#fb2c36; --emerald:#009767; --violet:#8e51ff; --li-blue:#0a66c2;
+  --amber:#f99c00;
+  /* manglekuo.com card: grey fill, white 1px inset highlight (surface-shell-glass), Tailwind v4 shadow-sm outside, 4xl radius */
+  --card-bg:#f5f5f5;
+  --card-shadow:inset 0 0 0 1px color-mix(in oklch, white 90%, transparent), 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --card-radius:2rem; --sky:#00a5ef; --red:#fb2c36; --emerald:#009767; --violet:#8e51ff; --li-blue:#0a66c2;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
@@ -62,6 +66,8 @@ a.nw{text-decoration:none;border-bottom:2px solid var(--n200)} a.nw:hover{border
 .pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--n200);background:#fff;padding:6px 12px;font:600 1.0625rem/1.3 var(--font);letter-spacing:-.025em;color:var(--n900)}
 .pill:hover{background:var(--n50)}
 
+.mk-card{background:var(--card-bg);box-shadow:var(--card-shadow);border-radius:var(--card-radius)}
+
 /* Report: Quintex onboarding-page style (S-quintex/qag/reports/hack-style-brief.md + hack-style-ref*.png).
    One paragraph per finding: dark lead sentence, grey continuation, lucide icons inside the sentence. */
 main.col{max-width:672px;margin:0 auto;padding:56px 20px 0}
@@ -85,7 +91,7 @@ h1{font:700 2.125rem/1.15 var(--font);letter-spacing:-.025em;color:var(--n900);m
 </nav>
 <main class="col">
   <h1>Jane's exposure report</h1>
-  <p class="by">Mirror · 24 Nov 2026 · 13 seconds · public sources only</p>
+  
 
   <p class="qx"><span class="lead">A stranger found 6 pages about you without logging in.</span><span class="rest"> Your <span class="nw"><span class="ico t-li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /> <rect width="4" height="12" x="2" y="9" /> <circle cx="4" cy="4" r="2" /></svg></span>LinkedIn</span> says open to work, and your <span class="nw"><span class="ico t-ink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" /> <path d="M9 18c-4.51 2-5-2-7-2" /></svg></span>GitHub</span> shows your email in every commit.</span></p>
 
@@ -105,7 +111,6 @@ h1{font:700 2.125rem/1.15 var(--font);letter-spacing:-.025em;color:var(--n900);m
     <button class="pill dark" id="mail"><span class="nw"><span class="ico t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /> <rect x="2" y="4" width="20" height="16" rx="2" /></svg></span>Email me this report</span></button>
     <a class="pill" href="01-input-chips.html"><span class="nw"><span class="ico t-ink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /></svg></span>Check someone else, with consent</span></a>
   </div>
-  <p class="demo-note" style="text-align:left;padding-left:0">Mockup · "Jane Doe" and every breach name here are made up · nothing is kept after you close the page</p>
 </main>
 <div class="toast" id="toast">Mockup: the app sends this with Resend to your own email</div>
 <script>

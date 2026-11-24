@@ -62,7 +62,6 @@ main.wrap{{padding-top:40px}}
       <div class="next">{prev}{nextlink}</div>
     </article>
   </div>
-  <p class="demo-note">Mockup · abstract illustration · people, companies and repos shown are made up</p>
 </main>
 <script>
 /* Scene player shared by all pattern pages: each scene = [caption, durationMs, enterFn] */
