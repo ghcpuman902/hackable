@@ -1,0 +1,463 @@
+{
+  "valid/01-no-cards-no-profile.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [],
+    "footnotesPerCard": [],
+    "keptTags": [
+      "NoProfile"
+    ]
+  },
+  "valid/02-one-card-tip.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "keptTags": []
+  },
+  "valid/03-two-cards-tags.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      2,
+      1
+    ],
+    "keptTags": [
+      "SameUsername",
+      "PublicCommitEmail",
+      "JustChangedJobs"
+    ]
+  },
+  "valid/04-three-cards-full.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING",
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1,
+      2,
+      1
+    ],
+    "keptTags": [
+      "CryptoWorker",
+      "PasswordsInBreaches"
+    ]
+  },
+  "valid/05-note-and-warning-no-tags.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING",
+      "NOTE"
+    ],
+    "footnotesPerCard": [
+      1,
+      1
+    ],
+    "keptTags": []
+  },
+  "valid/06-one-card-no-footnotes.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION"
+    ],
+    "footnotesPerCard": [
+      0
+    ],
+    "keptTags": [
+      "InTheNews"
+    ]
+  },
+  "valid/07-travel-and-selling.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION",
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1,
+      1,
+      0
+    ],
+    "keptTags": [
+      "TravellingSoon",
+      "SellingOnline"
+    ]
+  },
+  "valid/08-footnote-reused-across-cards.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1,
+      2
+    ],
+    "keptTags": [
+      "HighNetWorthIndividual"
+    ]
+  },
+  "messy/01-fenced-markdown.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      2,
+      1
+    ],
+    "mustNotContain": [
+      "```"
+    ]
+  },
+  "messy/02-headings.md": {
+    "headingsToBold": 3,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "mustNotContain": [
+      "# "
+    ]
+  },
+  "messy/03-unknown-alert-danger.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "NOTE"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "mustNotContain": [
+      "[!DANGER]"
+    ],
+    "_decision": "unknown alert type downgraded to NOTE"
+  },
+  "messy/04-lowercase-alert.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING"
+    ],
+    "footnotesPerCard": [
+      1
+    ]
+  },
+  "messy/05-no-blank-line-between-cards.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1,
+      0
+    ]
+  },
+  "messy/06-five-cards.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 2,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING",
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      1,
+      1,
+      1
+    ],
+    "_decision": "keep 3 cards, the TIP always among them, in original order (first two, then the TIP); footnotes only referenced by dropped cards are removed"
+  },
+  "messy/07-six-sentence-card.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "maxPlainSentencesPerCard": 2,
+    "_decision": "trim to bold plus first 2 plain sentences; footnote markers kept"
+  },
+  "messy/08-footnote-no-definition.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "mustNotContain": [
+      "[^7]"
+    ]
+  },
+  "messy/09-definition-never-used.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "WARNING"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "mustNotContain": [
+      "https://attack.mitre.org/techniques/T1110/004/"
+    ]
+  },
+  "messy/10-link-not-whitelisted.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [
+      "https://evil-scam-news.example/post",
+      "https://totally-legit-security.example/bank"
+    ],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "mustNotContain": [
+      "evil-scam-news.example",
+      "totally-legit-security.example"
+    ],
+    "_decision": "non whitelisted link keeps its text, loses its href; footnote pointing only off whitelist is removed"
+  },
+  "messy/11-bare-url.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [
+      "https://haveibeenpwned-lookalike.example/check"
+    ],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      0
+    ],
+    "mustNotContain": [
+      "haveibeenpwned-lookalike.example"
+    ],
+    "_decision": "bare whitelisted URL may autolink; bare non whitelisted URL is removed"
+  },
+  "messy/12-empty-card.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      0
+    ]
+  },
+  "messy/13-trailing-chatty.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION",
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      2,
+      1
+    ],
+    "mustNotContain": [
+      "Hope this helps",
+      "Let me know"
+    ]
+  },
+  "messy/14-em-dashes-american.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      0
+    ],
+    "mustNotContain": [
+      "—",
+      "–"
+    ],
+    "lintWarnings": [
+      "american-spelling"
+    ],
+    "_decision": "dashes replaced with a comma; spelling is flagged, not rewritten"
+  },
+  "messy/15-json-instead.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": true,
+    "cardKinds": [],
+    "footnotesPerCard": []
+  },
+  "messy/16-empty-string.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": true,
+    "cardKinds": [],
+    "footnotesPerCard": []
+  },
+  "messy/17-unknown-tag.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [
+      "RichPerson",
+      "Hacked"
+    ],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION"
+    ],
+    "footnotesPerCard": [
+      0
+    ],
+    "keptTags": [
+      "InTheNews"
+    ]
+  },
+  "messy/18-html-script.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [
+      "https://evil.example"
+    ],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "TIP"
+    ],
+    "footnotesPerCard": [
+      0
+    ],
+    "mustNotContain": [
+      "<script",
+      "onerror",
+      "<div",
+      "<img",
+      "evil.example"
+    ]
+  },
+  "messy/19-nested-list-in-card.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": false,
+    "cardKinds": [
+      "CAUTION"
+    ],
+    "footnotesPerCard": [
+      1
+    ],
+    "mustNotContain": [
+      "- Friendly"
+    ],
+    "_decision": "list items flattened to steps (or plain text); no raw list markers in output"
+  },
+  "messy/20-only-chatty-and-headings.md": {
+    "headingsToBold": 0,
+    "droppedLinks": [],
+    "droppedCards": 0,
+    "droppedTags": [],
+    "fallback": true,
+    "cardKinds": [],
+    "footnotesPerCard": [],
+    "_decision": "nothing left after clean up, so fall back to rules"
+  }
+}

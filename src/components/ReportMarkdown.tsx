@@ -4,6 +4,7 @@ import { Children, isValidElement, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Info, Lightbulb, ShieldAlert, TriangleAlert } from "lucide-react";
+import { parseReport } from "@/lib/report-md";
 import "./report-markdown.css";
 
 const ALERT = {
@@ -55,10 +56,28 @@ const components: Components = {
   },
 };
 
+const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } };
+
+/* Each blank line separated block is one group: the block, then its references under it, outside the card. */
 export default function ReportMarkdown({ markdown }: { markdown: string }) {
+  const groups = parseReport(markdown).blocks.map((b) => ({ clean: b.markdown, refs: b.refs }));
   return (
     <div className="rm">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>{markdown}</ReactMarkdown>
+      {groups.map((g, i) => (
+        <div className="rm-group" key={i}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>{g.clean}</ReactMarkdown>
+          {g.refs.length > 0 && (
+            <div className="rm-refs">
+              {g.refs.map((r, j) => (
+                <span key={r.url}>
+                  {j > 0 && " · "}
+                  <a href={r.url} target="_blank" rel="noopener noreferrer">{r.label.length > 28 ? host(r.url) : r.label}</a>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

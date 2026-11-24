@@ -361,6 +361,25 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     scrollTo({ top: 0, behavior: "auto" });
   };
 
+  /* The link keeps its slot but fades out once the report is in view. */
+  const [inView, setInView] = useState(false);
+  const reportSeen = done && inView;
+  const [still, setStill] = useState(false);
+  useEffect(() => {
+    const mq = matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setStill(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    const el = document.getElementById("report");
+    if (!done || !el) return;
+    const io = new IntersectionObserver(([en]) => setInView(en.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [done]);
+
   /* Open the report: a smooth scroll that puts the report's first card near the top. */
   const openReport = (e: MouseEvent) => {
     const el = document.getElementById("report");
@@ -566,7 +585,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 {SOURCES.map((s, i) => <span key={s.n} className="sitem" style={{ "--i": i } as CSSProperties}>{pill(s)}</span>)}
               </span>
             </div>
-            <a className="pill report-link" href="#report" onClick={openReport}>Open the report</a>
+            <a className="pill report-link" href="#report" onClick={openReport} aria-hidden={reportSeen} tabIndex={reportSeen ? -1 : undefined}
+              style={{ opacity: reportSeen ? 0 : undefined, visibility: reportSeen ? "hidden" : undefined, pointerEvents: reportSeen ? "none" : undefined, transition: still ? undefined : "opacity 200ms ease-out, visibility 0s linear 200ms" }}>Open the report</a>
           </div>
         </div>
       </div>
