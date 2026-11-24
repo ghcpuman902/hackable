@@ -73,11 +73,11 @@ export const EXAMPLES = [
 
 /* Recent people. `found` = where they were found, shown as small platform tiles under the name. */
 export type Found = "linkedin" | "github" | "breach" | "forum" | "x" | "social" | "phone" | "web";
-export const PEOPLE: { n: string; av: string; found: Found[]; q: string }[] = [
-  { n: "Jane Doe Smith", av: "#fde68a", found: ["linkedin", "github", "breach"], q: "Jane Doe Smith, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo" },
-  { n: "Alex Chen", av: "#bae6fd", found: ["github", "forum", "x"], q: "Alex Chen, @alexchen, github.com/alexchen" },
-  { n: "Priya Kapoor", av: "#fbcfe8", found: ["social", "phone", "breach"], q: "Priya Kapoor, priya.k@example.org, +44 7700 900123" },
-  { n: "Mark Reynolds", av: "#bbf7d0", found: ["linkedin", "web"], q: "Mark Reynolds, linkedin.com/in/markreynolds" },
+export const PEOPLE: { n: string; av: string; img?: string; found: Found[]; q: string }[] = [
+  { n: "Jane Doe Smith", av: "#fde68a", img: "/avatars/jane-doe-smith.webp", found: ["linkedin", "github", "breach"], q: "Jane Doe Smith, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo" },
+  { n: "Alex Chen", av: "#bae6fd", img: "/avatars/alex-chen.webp", found: ["github", "forum", "x"], q: "Alex Chen, @alexchen, github.com/alexchen" },
+  { n: "Priya Kapoor", av: "#fbcfe8", img: "/avatars/priya-kapoor.webp", found: ["social", "phone", "breach"], q: "Priya Kapoor, priya.k@example.org, +44 7700 900123" },
+  { n: "Mark Reynolds", av: "#bbf7d0", img: "/avatars/mark-reynolds.webp", found: ["linkedin", "web"], q: "Mark Reynolds, linkedin.com/in/markreynolds" },
 ];
 
 export const SOURCES: { n: string; c: string; icon: { brand: Brand } | { lucide: string } }[] = [

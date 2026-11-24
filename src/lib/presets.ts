@@ -11,7 +11,7 @@ export const LIVE_DEMO_CHIPS = "manglekuo@gmail.com, ghcpuman902@gmail.com, ghcp
    public role, with no breach or leak claims. The other three are made up. ---- */
 
 export type Preset = {
-  name: string; profile: Profile | null; av: string;
+  name: string; profile: Profile | null; av: string; img?: string;
   results: Partial<Record<ScanTool, ScanResult>>;
   findings: { lead: string; rest: string }[];
   patterns: PatternId[];
@@ -21,7 +21,7 @@ const r = (found: string, hit = false): ScanResult => ({ found, hit });
 const NOT = r("Not checked");
 
 export const PRESETS: Preset[] = [
-  { name: "Tim Cook", profile: "High Value Individual", av: "#e5e5e5",
+  { name: "Tim Cook", profile: "High Value Individual", av: "#e5e5e5", img: "/avatars/tim-cook.webp",
     results: { hibpTest: NOT, github: NOT, linkedin: r("Watch for: fake profiles", true), hudsonRock: NOT,
       web: r("Found: public role at Apple", true), leakCheck: NOT, social: r("Watch for: impersonation", true), forum: r("Watch for: fake giveaways", true) },
     findings: [
@@ -29,7 +29,7 @@ export const PRESETS: Preset[] = [
         rest: " Messages and videos that borrow them can fool staff, suppliers and fans alike." },
     ],
     patterns: [] },
-  { name: "Jensen Huang", profile: "Target of Spies", av: "#d9f99d",
+  { name: "Jensen Huang", profile: "Target of Spies", av: "#d9f99d", img: "/avatars/jensen-huang.webp",
     results: { hibpTest: NOT, github: NOT, linkedin: r("Watch for: fake recruiters", true), hudsonRock: NOT,
       web: r("Found: public role at Nvidia", true), leakCheck: NOT, social: r("Watch for: impersonation", true), forum: r("Watch for: state hackers", true) },
     findings: [
@@ -39,7 +39,7 @@ export const PRESETS: Preset[] = [
         rest: " Anyone who learns early which chips may be sold where can trade on it or pass it on, so attackers look for those plans too." },
     ],
     patterns: [] },
-  { name: "Kai Mercer", profile: "Crypto Worker", av: "#fde68a",
+  { name: "Kai Mercer", profile: "Crypto Worker", av: "#fde68a", img: "/avatars/kai-mercer.webp",
     results: { hibpTest: r("Found: 4 breaches", true), github: r("Found: email in commits", true), linkedin: r("Found: open to work", true),
       hudsonRock: r("Found: wallet logins", true), web: r("Found: conference talks"), leakCheck: r("Found: passwords in 2 leaks", true),
       social: r("Found: wallet address", true), forum: r("Found: Discord and Telegram", true) },
@@ -50,7 +50,7 @@ export const PRESETS: Preset[] = [
         rest: " That tells a fake recruiter exactly which coding test to send." },
     ],
     patterns: ["session-hijack"] },
-  { name: "Ellis Grey", profile: null, av: "#e0e7ff",
+  { name: "Ellis Grey", profile: null, av: "#e0e7ff", img: "/avatars/ellis-grey.webp",
     results: { hibpTest: r("No breaches found"), github: r("No GitHub profile"), linkedin: r("Not in search results"),
       hudsonRock: r("No stealer logs found"), web: r("Found: one old mention"), leakCheck: r("No leaks found"),
       social: r("No public profiles found"), forum: r("No forum profiles found") },
@@ -61,7 +61,7 @@ export const PRESETS: Preset[] = [
         rest: " A separate email for sign ups, private profiles and sign in codes on every account keep it that way." },
     ],
     patterns: [] },
-  { name: "Rose Hart", profile: "Romance Target", av: "#fecdd3",
+  { name: "Rose Hart", profile: "Romance Target", av: "#fecdd3", img: "/avatars/rose-hart.webp",
     results: { hibpTest: r("Found: 1 breach", true), github: r("No GitHub profile"), linkedin: r("Found: public profile"),
       hudsonRock: r("No stealer logs found"), web: r("Found: public photos", true), leakCheck: r("No leaks found"),
       social: r("Found: open profile", true), forum: r("Found: hobby posts") },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
@@ -59,6 +60,18 @@ const PRELOAD_MS = 10 * 60 * 1000;
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
+
+/* The face sits over the initials and only shows once it has loaded, so a missing file leaves the initials. */
+function Avatar({ name, av, img, children }: { name: string; av: string; img?: string; children?: ReactNode }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <span className="av" style={{ "--av": av } as CSSProperties}>
+      {initials(name)}
+      {img && <Image className="av-img" src={img} width={32} height={32} alt="" unoptimized style={{ opacity: loaded ? 1 : 0 }} onLoad={(e) => { if (e.currentTarget.naturalWidth > 0) setLoaded(true); }} />}
+      {children}
+    </span>
+  );
+}
 
 let uid = 0;
 
@@ -371,7 +384,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
         <a className="mark" href="#"><i><Lucide name="shield" /></i>Mirror</a>
-        <div className="links"><a href="#" aria-current="page">Home</a><a href="#">How it works</a><a href="#">Privacy</a></div>
+        <div className="links"><a href={"/"} aria-current="page">Home</a><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a></div>
         <a className="login" href="#">Subscribe</a>
       </nav>
       <div className="app">
@@ -438,13 +451,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
             <div className="people">
               {PEOPLE.map((p, i) => (
                 <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
-                  <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.n)}
+                  <Avatar name={p.n} av={p.av} img={p.img}>
                     <span className={"pb n" + p.found.length} aria-hidden="true" style={{ "--n": p.found.length, "--off": i * 0.55 + "s" } as CSSProperties}>
                       {p.found.map((f, j) => (
                         <span key={f} className="pbi" style={{ "--c": MINI[f].c, "--i": j } as CSSProperties}>{MINI[f].icon}</span>
                       ))}
                     </span>
-                  </span>
+                  </Avatar>
                   <span className="nm">{p.n}</span>
                 </button>
               ))}
@@ -452,7 +465,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
             <div className="people presets">
               {PRESETS.map((p, i) => (
                 <button key={p.name} type="button" className="person preset" onClick={() => pickPreset(i)}>
-                  <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.name)}</span>
+                  <Avatar name={p.name} av={p.av} img={p.img} />
                   <span className="nm">{p.name}</span>
                 </button>
               ))}
