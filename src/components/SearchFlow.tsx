@@ -21,7 +21,7 @@ import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, t
 import { Suggest, type Opt } from "./Suggest";
 import type { Brand } from "./brand-icons";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, fanFor, isDemoQuery, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, EXTRA_PATTERNS, fanFor, isDemoQuery, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 /* Where each recent person was found: one small badge on the avatar cycles through these. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
