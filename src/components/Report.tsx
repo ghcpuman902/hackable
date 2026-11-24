@@ -28,6 +28,15 @@ export function Mini({ name }: { name: MiniName }) {
           <div className="list"><div className="stack"></div><div className="real">Order confirmed: £2,399</div></div>
         </div>
       );
+    case "vish":
+      return (
+        <div className="mini m-flood m-vish" aria-hidden="true">
+          <div className="bar">Inbox<span><b></b></span></div>
+          <div className="list"><div className="stack"></div></div>
+          <div className="call a" style={s("s45")}>Help Desk IT is calling<span>Teams · &quot;We can stop the spam&quot;</span></div>
+          <div className="qa a" style={s("s65")}>Quick Assist: share screen?<b>Allow</b></div>
+        </div>
+      );
     case "sess":
       return (
         <div className="mini m-sess" aria-hidden="true">
@@ -94,7 +103,14 @@ export function PatternSec({ id }: { id: PatternId }) {
   const p = PATTERNS[id];
   return (
     <a className="sec mk-card" href={p.href}>
-      <div><Para lead={p.lead} rest={p.rest} /></div>
+      <div>
+        <Para lead={p.lead} rest={p.rest} />
+        <ol className="chain">
+          {p.chain.map(([n, t]) => <li key={n} tabIndex={0} data-id={t} title={t}>{n}</li>)}
+        </ol>
+        <p className="lesson">{p.lesson}</p>
+        <span className="cite">{p.cite}</span>
+      </div>
       <div><Mini name={p.anim} /></div>
       <span className="go" aria-hidden="true"><Lucide name="arrow-right" /></span>
     </a>
@@ -103,13 +119,28 @@ export function PatternSec({ id }: { id: PatternId }) {
 
 export const FINDINGS = [
   <Sec key="breach" mini="breach">
-    <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> is in 3 breaches.</>} rest=" The newest was in 2023. Breach names only, never passwords." />
+    <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> is in 3 breaches.</>} rest=" The newest was DevForum in 2023. We only saw the breach names." />
   </Sec>,
   <Sec key="steal" mini="steal">
-    <Para lead="In March, a program on your laptop copied 23 saved logins." rest=" Two were work tools. They may be for sale now." />
+    <Para lead="In March, a program on your laptop copied 23 saved logins." rest=" Two were for work tools, and someone may be selling them." />
   </Sec>,
   <Sec key="prof" mini="prof">
-    <Para lead="To a scammer, you are a senior JavaScript developer, open to work."
-      rest={<> Your <span className="nw"><Tile kind="linkedin" />LinkedIn</span> and <span className="nw"><Tile kind="github" />GitHub</span> say so. Two scams are built for you.</>} />
+    <Para lead="To a scammer, you look like a senior JavaScript developer who is open to work."
+      rest={<> Your <span className="nw"><Tile kind="linkedin" />LinkedIn</span> and <span className="nw"><Tile kind="github" />GitHub</span> both say so, and two published scams target people like you.</>} />
   </Sec>,
 ];
+
+export function FinalSec({ onMail }: { onMail: () => void }) {
+  return (
+    <Sec>
+      <Para lead="Every attack here crosses channels." rest=" The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo." />
+      <p className="lesson">When a message pushes you to act fast, reply through a channel you already use with that person or company.</p>
+      <p className="lesson">Stop and check whenever someone asks you to run their code or share your screen.</p>
+      <div className="actions">
+        <button type="button" className="pill dark" onClick={onMail}>
+          <span className="nw"><Tile kind="email" />Email me this report</span>
+        </button>
+      </div>
+    </Sec>
+  );
+}

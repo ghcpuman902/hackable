@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Gitignored agent scratch space.
+    "_agent/**",
   ]),
 ]);
 

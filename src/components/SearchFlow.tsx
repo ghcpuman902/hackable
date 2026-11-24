@@ -1,24 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
-import { FINDINGS, Para, PatternSec, Sec } from "./Report";
+import { Fan, type CardState } from "./Fan";
+import { FINDINGS, FinalSec, PatternSec } from "./Report";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
-import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, LEAD_PATTERNS, SOURCES, type SourceState } from "@/lib/synthetic";
+import type { ScanMessage } from "@/lib/scan-tools";
+import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, FAN, LEAD_PATTERNS, PEOPLE, type ScanTool } from "@/lib/synthetic";
 
 type Who = "me" | "other";
-type Part = { key: string; kind: "finding" | "pattern" | "more" | "final"; i?: number };
 
-function reportParts(showAll: boolean): Part[] {
-  const parts: Part[] = [
-    ...FINDINGS.map((_, i) => ({ key: "f" + i, kind: "finding" as const, i })),
-    ...LEAD_PATTERNS.map((id) => ({ key: id, kind: "pattern" as const })),
-  ];
-  if (showAll) parts.push(...EXTRA_PATTERNS.map((id) => ({ key: id, kind: "pattern" as const })));
-  else if (EXTRA_PATTERNS.length) parts.push({ key: "more", kind: "more" });
-  parts.push({ key: "final", kind: "final" });
-  return parts;
-}
+const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
+const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
+const now = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
 let uid = 0;
 
@@ -31,18 +27,19 @@ export default function SearchFlow() {
   const [editing, setEditing] = useState<number | null>(null);
   const [entry, setEntry] = useState("");
   const [who, setWho] = useState<Who>("me");
+  const [person, setPerson] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [agreedAt, setAgreedAt] = useState("");
-  const [results, setResults] = useState(false);
-  const [src, setSrc] = useState<(SourceState | null)[]>([]);
-  const [parts, setParts] = useState<Part[]>([]);
-  const [shown, setShown] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [extraOpen, setExtraOpen] = useState(false);
   const [toast, setToast] = useState(false);
+  const [ghost, setGhost] = useState(0);
   const entryRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const armed = useRef(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const { messages, sendMessage, setMessages, stop, status } = useChat<ScanMessage>({ transport });
 
   const add = useCallback((text: string, at?: number) => {
     const cur = chipsRef.current;
@@ -63,35 +60,50 @@ export default function SearchFlow() {
 
   useEffect(() => { if (!shake) return; const t = setTimeout(() => setShake(null), 300); return () => clearTimeout(t); }, [shake]);
 
-  const other = who === "other";
-  const disabled = !(chips.length || entry.trim()) || (other && !agreed);
+  /* Empty box: example chips drift upwards. */
+  const empty = !chips.length && !entry && !running;
+  useEffect(() => {
+    if (!empty) return;
+    const t = setInterval(() => setGhost((g) => g + 1), 2800);
+    return () => clearInterval(t);
+  }, [empty]);
 
-  const runResults = useCallback(() => {
-    timers.current.forEach(clearTimeout); timers.current = [];
-    const params = new URLSearchParams(location.search);
-    const speed = +(params.get("speed") ?? "") || 1;
-    const p = reportParts(params.has("all"));
-    setParts(p); setShown(0); setExtraOpen(false);
-    setSrc(SOURCES.map(() => null));
-    setResults(true);
-    const at = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms / speed));
-    let t = 700;
-    SOURCES.forEach(([, state], i) => { t += 450; at(t, () => setSrc((s) => s.map((v, j) => (j === i ? state : v)))); });
-    p.forEach((_, i) => { t += 450; at(t, () => setShown(i + 1)); });
-  }, []);
+  const other = who === "other";
+  const disabled = running || !(chips.length || entry.trim()) || (other && !agreed);
+
+  /* Card states come straight from the typed tool parts of the streaming assistant message. */
+  const assistant = messages.findLast((m) => m.role === "assistant");
+  const states: Partial<Record<ScanTool, CardState>> = {};
+  const found: Partial<Record<ScanTool, string>> = {};
+  for (const p of assistant?.parts ?? []) {
+    if (!isStaticToolUIPart(p)) continue;
+    const name = getStaticToolName(p) as ScanTool;
+    if (p.state === "output-available") { states[name] = p.output.hit ? "hit" : "ok"; found[name] = p.output.found; }
+    else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
+  }
+  const settled = FAN.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
+  const done = running && (status === "error" || (status === "ready" && settled));
+
+  const scan = useCallback((list: Chip[]) => {
+    setExtraOpen(false);
+    setShowAll(new URLSearchParams(location.search).has("all"));
+    setMessages([]);
+    setRunning(true);
+    void sendMessage({ text: list.map((c) => c.raw).join(", ") });
+  }, [sendMessage, setMessages]);
 
   const restore = useCallback(() => {
     const q = new URLSearchParams(location.search).get("q");
-    if (!q) { timers.current.forEach(clearTimeout); setResults(false); return false; }
+    if (!q) { void stop(); setMessages([]); setRunning(false); return false; }
     try {
       const st = JSON.parse(q) as { who?: Who; consent?: string | null; chips?: string[] };
       chipsRef.current = [];
       add((st.chips || []).join(", "));
-      if (st.who === "other") { setWho("other"); setAgreed(!!st.consent); if (st.consent) setAgreedAt(new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })); }
-      runResults();
+      if (st.who === "other") { setWho("other"); setAgreed(!!st.consent); if (st.consent) setAgreedAt(now()); }
+      scan(chipsRef.current);
       return true;
     } catch { return false; }
-  }, [add, runResults]);
+  }, [add, scan, stop, setMessages]);
 
   useEffect(() => {
     const boot = setTimeout(() => {
@@ -100,18 +112,26 @@ export default function SearchFlow() {
       entryRef.current?.focus();
     }, 0);
     addEventListener("popstate", restore);
-    const tm = timers.current;
-    return () => { clearTimeout(boot); removeEventListener("popstate", restore); tm.forEach(clearTimeout); };
-  }, [restore, add]);
+    return () => { clearTimeout(boot); removeEventListener("popstate", restore); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submit = () => {
     commit();
     const list = chipsRef.current;
-    if (!list.length || (other && !agreed)) return;
+    if (!list.length || (other && !agreed) || running) return;
     entryRef.current?.blur();
     const state = { who, consent: other ? new Date().toISOString() : null, chips: list.map((c) => c.raw) };
     history.pushState(null, "", "?q=" + encodeURIComponent(JSON.stringify(state)));
-    runResults();
+    scan(list);
+  };
+
+  const pickPerson = (i: number) => {
+    const p = PEOPLE[i];
+    setChips([]);
+    add(p.q);
+    setWho("other"); setPerson(p.n.split(" ")[0]); setAgreed(false);
+    entryRef.current?.focus();
   };
 
   const onEntryKey = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -157,23 +177,38 @@ export default function SearchFlow() {
     entryRef.current?.focus();
   };
 
-  const visible = parts.slice(0, shown);
-  const sourceCls = (s: SourceState | null) => "src" + (s ? " " + s : "");
+  const mail = () => { setToast(true); setTimeout(() => setToast(false), 2400); };
+  const rise = (i: number) => ({ animationDelay: i * 0.14 + "s" }) as CSSProperties;
+  const report = [
+    ...FINDINGS,
+    ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),
+    ...(showAll || extraOpen
+      ? EXTRA_PATTERNS.map((id) => <PatternSec key={id} id={id} />)
+      : [<button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>One more pattern</button>]),
+    <FinalSec key="final" onMail={mail} />,
+  ];
+
+  const ghostChips = tokenize(EXAMPLES[ghost % EXAMPLES.length]).map((raw) => ({ raw, ...detect(raw) }));
 
   return (
-    <div className={results ? "results" : undefined}>
+    <div className={"landing" + (running ? " run" : "") + (done ? " done" : "")}>
+      <div className="glow" aria-hidden="true"></div>
       <div className="app">
         <div className="top">
-          <section className="hero">
-            <h1 className="qx" style={{ margin: 0 }}><span className="lead">Mirror</span></h1>
-          </section>
+          <h1>See what’s public about you</h1>
           <form className="search" autoComplete="off" onSubmit={(e) => {
             e.preventDefault();
             if ((entryRef.current?.value ?? "").trim()) commit(); else submit();
           }}>
             <div className="field" ref={fieldRef} role="group" aria-label="Who to check"
               onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); entryRef.current?.focus(); } }}>
-              <span className="lens"><Lucide name="search" /></span>
+              {empty && (
+                <div className="ghosts" aria-hidden="true">
+                  <div key={ghost} className="row go">
+                    {ghostChips.map((c) => <span key={c.raw} className="pill"><span className="nw"><Tile kind={c.kind} />{c.label}</span></span>)}
+                  </div>
+                </div>
+              )}
               {chips.map((c, i) =>
                 editing === c.id ? (
                   <EditChip key={c.id} chip={c} onDone={(v, keep) => finishEdit(c.id, v, keep)} />
@@ -203,57 +238,45 @@ export default function SearchFlow() {
               )}
               <input ref={entryRef} className="entry" type="text" spellCheck={false}
                 aria-label="Name, email or link" enterKeyHint="go" autoCapitalize="off" autoCorrect="off"
-                placeholder={chips.length ? "Add more" : "Your name, email, LinkedIn, GitHub, anything"}
+                placeholder={chips.length ? "Add more" : ""}
                 value={entry} onChange={(e) => onEntryInput(e.target.value)} onKeyDown={onEntryKey}
                 onBlur={() => setTimeout(() => {
                   const a = document.activeElement;
                   if (a !== entryRef.current && !a?.classList.contains("chip-edit")) commit();
                 }, 0)} />
               <button type="submit" className="go-btn" aria-label="Check" disabled={disabled}>
-                <Lucide name="arrow-right" />
+                <Lucide name="binoculars" />
               </button>
             </div>
           </form>
           <div className="under">
             <div className="seg" role="radiogroup" aria-label="Who is this for?">
-              <label><input type="radio" name="who" value="me" checked={who === "me"} onChange={() => setWho("me")} /><span>Me</span></label>
+              <label><input type="radio" name="who" value="me" checked={who === "me"} onChange={() => { setWho("me"); setPerson(null); }} /><span>Me</span></label>
               <label><input type="radio" name="who" value="other" checked={other} onChange={() => setWho("other")} /><span>Someone else</span></label>
             </div>
             <label className={"consent" + (other ? " on" : "") + (other && agreed ? " agreed" : "")}>
-              <input type="checkbox" checked={agreed} onChange={(e) => {
-                setAgreed(e.target.checked);
-                setAgreedAt(new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }));
-              }} />
-              <span>{other && agreed ? "Agreed " + agreedAt : "They agreed"}</span>
+              <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setAgreedAt(now()); }} />
+              <span>{other && agreed ? "Agreed " + agreedAt : (person ?? "They") + " agreed"}</span>
             </label>
           </div>
-        </div>
-        <div className="results-area" aria-live="polite">
-          <div className="sources">
-            {SOURCES.map(([n], i) => <span key={n} className={sourceCls(src[i] ?? null)}><i></i>{n}</span>)}
-          </div>
-          <div className="report">
-            {visible.map((p) => {
-              if (p.kind === "finding") return FINDINGS[p.i!];
-              if (p.kind === "pattern") return <PatternSec key={p.key} id={p.key as never} />;
-              if (p.kind === "more") {
-                return extraOpen
-                  ? EXTRA_PATTERNS.map((id) => <PatternSec key={id} id={id} />)
-                  : <button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>One more pattern</button>;
-              }
-              return (
-                <Sec key="final">
-                  <Para lead="Tonight, do three things." rest=" Sign out everywhere and clean that laptop. Change the three leaked passwords. Run coding tests in a sandbox." />
-                  <div className="actions">
-                    <button className="pill dark" onClick={() => { setToast(true); setTimeout(() => setToast(false), 2400); }}>
-                      <span className="nw"><Tile kind="email" />Email me this report</span>
-                    </button>
-                  </div>
-                </Sec>
-              );
-            })}
+          <div className="people">
+            {PEOPLE.map((p, i) => (
+              <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
+                <span className="ring" style={{ "--ring": p.ring } as CSSProperties}>
+                  <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.n)}</span>
+                </span>
+                {p.n}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
+      <div className="stage">
+        <Fan states={running ? states : undefined}
+          label={(c, s) => (s === "checking" ? c.checking : s === "ok" || s === "hit" ? found[c.tool] ?? "" : "")} />
+      </div>
+      <div className="app results-area">
+        {done && <div className="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
       </div>
       <div className={"toast" + (toast ? " on" : "")}>Sent to {DEMO_EMAIL}</div>
     </div>
