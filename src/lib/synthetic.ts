@@ -9,40 +9,41 @@ export type ScanResult = { found: string; hit: boolean };
 export type FanCard = {
   tool: ScanTool;
   title: string;
-  tag: string;
-  dot: string;
   icon: { brand: Brand } | { lucide: string; bg: string };
   checking: string;
   result: ScanResult;
-  delayMs: number;
-  /* shown in the fan on narrow screens */
-  narrow?: boolean;
+  /* shown on phones (the 06 phone scene has six check rows) */
+  phone?: boolean;
 };
 
-/* Order is the fan order, left to right: the reference's order, with the three
-   credential sources after Data breach and Web after Forum. */
+/* Run order, as in 06: each source lights up in turn. Phone sources come first so the phone list fills top to bottom.
+   Keep every status line under about 30 characters so it fits one 13px row at 390px. */
 export const FAN: FanCard[] = [
-  { tool: "linkedin", title: "LinkedIn", tag: "LinkedIn", dot: "#0A66C2", icon: { brand: "linkedin" },
-    checking: "Checking LinkedIn", result: { found: "Found: open to work", hit: true }, delayMs: 900, narrow: true },
-  { tool: "github", title: "GitHub", tag: "username", dot: "#171717", icon: { brand: "github" },
-    checking: "Checking GitHub", result: { found: "Found: email in commits", hit: true }, delayMs: 1300, narrow: true },
-  { tool: "hibpTest", title: "Data breach", tag: "breach", dot: "#2A6379", icon: { brand: "hibp" },
-    checking: "Checking breaches", result: { found: "Found: 3 breaches", hit: true }, delayMs: 1700, narrow: true },
-  { tool: "leakCheck", title: "Leaked passwords", tag: "email", dot: "#8e51ff", icon: { lucide: "lock", bg: "#8e51ff" },
-    checking: "Checking leak lists", result: { found: "Found: 3 passwords", hit: true }, delayMs: 2100 },
-  { tool: "hudsonRock", title: "Stolen logins", tag: "device", dot: "#e5484d", icon: { lucide: "key-round", bg: "#e5484d" },
-    checking: "Checking stealer logs", result: { found: "Found: 23 saved logins", hit: true }, delayMs: 3900, narrow: true },
-  { tool: "forum", title: "Forum", tag: "handle", dot: "#FF4500", icon: { brand: "reddit" },
-    checking: "Checking forums", result: { found: "Found: 6 posts", hit: false }, delayMs: 2500 },
-  { tool: "web", title: "Web", tag: "name", dot: "#00a5ef", icon: { lucide: "globe", bg: "#00a5ef" },
-    checking: "Checking the web", result: { found: "Found: 14 mentions", hit: false }, delayMs: 2800 },
-  { tool: "peopleSearch", title: "People search", tag: "address", dot: "#a855f7", icon: { lucide: "user-search", bg: "#a855f7" },
-    checking: "Checking people sites", result: { found: "Found: home town", hit: true }, delayMs: 3100 },
-  { tool: "publicContact", title: "Public contact", tag: "phone", dot: "#10b981", icon: { lucide: "phone", bg: "#10b981" },
-    checking: "Checking contact lists", result: { found: "Found: mobile number", hit: true }, delayMs: 3400 },
-  { tool: "social", title: "Social", tag: "social", dot: "#dd2a7b", icon: { brand: "instagram" },
-    checking: "Checking Instagram and X", result: { found: "Found: 2 profiles", hit: false }, delayMs: 3650 },
+  { tool: "hibpTest", title: "Data breaches", icon: { lucide: "shield-alert", bg: "#e5484d" },
+    checking: "Checking breaches", result: { found: "Found: 3 breaches", hit: true }, phone: true },
+  { tool: "github", title: "GitHub", icon: { brand: "github" },
+    checking: "Checking GitHub", result: { found: "Found: email in commits", hit: true }, phone: true },
+  { tool: "linkedin", title: "LinkedIn", icon: { brand: "linkedin" },
+    checking: "Checking LinkedIn", result: { found: "Found: open to work", hit: false }, phone: true },
+  { tool: "hudsonRock", title: "Stolen logins", icon: { lucide: "key-round", bg: "#f99c00" },
+    checking: "Checking stealer logs", result: { found: "Found: 23 saved logins", hit: true }, phone: true },
+  { tool: "peopleSearch", title: "People search", icon: { lucide: "user-search", bg: "#8e51ff" },
+    checking: "Checking people search", result: { found: "Found: home town", hit: true }, phone: true },
+  { tool: "publicContact", title: "Phone", icon: { lucide: "phone-call", bg: "#009767" },
+    checking: "Checking your number", result: { found: "Found: mobile number", hit: true }, phone: true },
+  { tool: "web", title: "Web", icon: { lucide: "globe", bg: "#00a5ef" },
+    checking: "Checking the web", result: { found: "Found: 14 mentions", hit: false } },
+  { tool: "leakCheck", title: "Leaked passwords", icon: { lucide: "lock", bg: "#0A66C2" },
+    checking: "Checking leak lists", result: { found: "Found: 3 passwords", hit: true } },
+  { tool: "social", title: "Social", icon: { brand: "instagram" },
+    checking: "Checking social", result: { found: "Found: public profile", hit: false } },
+  { tool: "forum", title: "Forums", icon: { brand: "reddit" },
+    checking: "Checking forums", result: { found: "Found: 3 old posts", hit: false } },
 ];
+/* Timing, as in 06: a new source starts every STEP_MS and each one takes CHECK_MS. */
+export const START_MS = 300;
+export const STEP_MS = 640;
+export const CHECK_MS = 900;
 
 /* ---- landing ---- */
 export const EXAMPLES = [
@@ -53,11 +54,23 @@ export const EXAMPLES = [
   "priya.k@example.org, @priyak",
 ];
 
-export const PEOPLE = [
-  { n: "Jane Doe Smith", av: "linear-gradient(135deg,#fbbf24,#f97316)", ring: "conic-gradient(#0A66C2 0 50%,#171717 50% 100%)", q: "Jane Doe Smith, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo" },
-  { n: "Alex Chen", av: "linear-gradient(135deg,#38bdf8,#6366f1)", ring: "conic-gradient(#171717 0 50%,#FF4500 50% 100%)", q: "Alex Chen, @alexchen, github.com/alexchen" },
-  { n: "Priya Kapoor", av: "linear-gradient(135deg,#f472b6,#a855f7)", ring: "linear-gradient(45deg,#f58529,#dd2a7b,#8134af)", q: "Priya Kapoor, priya.k@example.org, +44 7700 900123" },
-  { n: "Mark Reynolds", av: "linear-gradient(135deg,#34d399,#0ea5e9)", ring: "conic-gradient(#0A66C2 0 33%,#00a5ef 33% 66%,#009767 66% 100%)", q: "Mark Reynolds, linkedin.com/in/markreynolds" },
+/* Recent people. `found` = where they were found, shown as small platform tiles under the name. */
+export type Found = "linkedin" | "github" | "breach" | "forum" | "x" | "social" | "phone" | "web";
+export const PEOPLE: { n: string; av: string; found: Found[]; q: string }[] = [
+  { n: "Jane Doe Smith", av: "#fde68a", found: ["linkedin", "github", "breach"], q: "Jane Doe Smith, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo" },
+  { n: "Alex Chen", av: "#bae6fd", found: ["github", "forum", "x"], q: "Alex Chen, @alexchen, github.com/alexchen" },
+  { n: "Priya Kapoor", av: "#fbcfe8", found: ["social", "phone", "breach"], q: "Priya Kapoor, priya.k@example.org, +44 7700 900123" },
+  { n: "Mark Reynolds", av: "#bbf7d0", found: ["linkedin", "web"], q: "Mark Reynolds, linkedin.com/in/markreynolds" },
+];
+
+export const SOURCES: { n: string; c: string; icon: { brand: Brand } | { lucide: string } }[] = [
+  { n: "Web", c: "#00a5ef", icon: { lucide: "globe" } },
+  { n: "LinkedIn", c: "#0A66C2", icon: { brand: "linkedin" } },
+  { n: "GitHub", c: "#181717", icon: { brand: "github" } },
+  { n: "LeakCheck", c: "#171717", icon: { lucide: "key-round" } },
+  { n: "Have I Been Pwned", c: "#2A6379", icon: { brand: "hibp" } },
+  { n: "Public records", c: "#737373", icon: { lucide: "landmark" } },
+  { n: "Forums", c: "#FF4500", icon: { lucide: "messages-square" } },
 ];
 
 /* ---- report ---- */

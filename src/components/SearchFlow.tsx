@@ -1,16 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
-import { Fan, type CardState } from "./Fan";
+import { Fan, RUN_H, type CardState } from "./Fan";
 import { FINDINGS, FinalSec, PatternSec } from "./Report";
+import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, FAN, LEAD_PATTERNS, PEOPLE, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, FAN, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 type Who = "me" | "other";
+
+/* Small platform tiles under each recent person, as in 06. */
+const MINI: Record<Found, { c: string; icon: ReactNode }> = {
+  linkedin: { c: BRAND_BG.linkedin, icon: <BrandIcon name="linkedin" /> },
+  github: { c: BRAND_BG.github, icon: <BrandIcon name="github" /> },
+  breach: { c: "#e5484d", icon: <Lucide name="shield-alert" w={2} /> },
+  forum: { c: BRAND_BG.reddit, icon: <BrandIcon name="reddit" /> },
+  x: { c: BRAND_BG.x, icon: <BrandIcon name="x" /> },
+  social: { c: BRAND_BG.instagram, icon: <BrandIcon name="instagram" /> },
+  phone: { c: "#009767", icon: <Lucide name="phone-call" w={2} /> },
+  web: { c: "#00a5ef", icon: <Lucide name="globe" w={2} /> },
+};
+const src = (s: (typeof SOURCES)[number]) => (
+  <span key={s.n} className="src">
+    <span className="ti" style={{ "--c": s.c } as CSSProperties}>{"brand" in s.icon ? <BrandIcon name={s.icon.brand} /> : <Lucide name={s.icon.lucide} w={2} />}</span>{s.n}
+  </span>
+);
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
@@ -184,7 +202,7 @@ export default function SearchFlow() {
     ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),
     ...(showAll || extraOpen
       ? EXTRA_PATTERNS.map((id) => <PatternSec key={id} id={id} />)
-      : [<button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>One more pattern</button>]),
+      : [<button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>Show another attack pattern</button>]),
     <FinalSec key="final" onMail={mail} />,
   ];
 
@@ -193,6 +211,7 @@ export default function SearchFlow() {
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "")}>
       <div className="glow" aria-hidden="true"></div>
+      <nav className="nav"><span className="mark"><i><Lucide name="shield" /></i>Mirror</span></nav>
       <div className="app">
         <div className="top">
           <h1>See what’s public about you</h1>
@@ -250,35 +269,45 @@ export default function SearchFlow() {
             </div>
           </form>
           <div className="under">
-            <div className="seg" role="radiogroup" aria-label="Who is this for?">
-              <label><input type="radio" name="who" value="me" checked={who === "me"} onChange={() => { setWho("me"); setPerson(null); }} /><span>Me</span></label>
-              <label><input type="radio" name="who" value="other" checked={other} onChange={() => setWho("other")} /><span>Someone else</span></label>
+            <div className="who-row">
+              <div className="seg" role="radiogroup" aria-label="Who is this for?">
+                <label><input type="radio" name="who" value="me" checked={who === "me"} onChange={() => { setWho("me"); setPerson(null); }} /><span>Me</span></label>
+                <label><input type="radio" name="who" value="other" checked={other} onChange={() => setWho("other")} /><span>Someone else</span></label>
+              </div>
+              <label className={"consent" + (other ? " on" : "") + (other && agreed ? " agreed" : "")}>
+                <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setAgreedAt(now()); }} />
+                <span>{other && agreed ? "Agreed at " + agreedAt : (person ?? "They") + " agreed to this check"}</span>
+              </label>
             </div>
-            <label className={"consent" + (other ? " on" : "") + (other && agreed ? " agreed" : "")}>
-              <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setAgreedAt(now()); }} />
-              <span>{other && agreed ? "Agreed " + agreedAt : (person ?? "They") + " agreed"}</span>
-            </label>
-          </div>
-          <div className="people">
-            {PEOPLE.map((p, i) => (
-              <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
-                <span className="ring" style={{ "--ring": p.ring } as CSSProperties}>
+            <div className="people">
+              {PEOPLE.map((p, i) => (
+                <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
                   <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.n)}</span>
-                </span>
-                {p.n}
-              </button>
-            ))}
+                  <span className="nm">{p.n}</span>
+                  <span className="wallet" aria-hidden="true">
+                    {p.found.map((f, j) => (
+                      <span key={f} className="wc" style={{ "--c": MINI[f].c, "--o": j * 15 + ((i * 3 + j * 5) % 3) + "px", "--rt": 8 + ((i * 5 + j * 3) % 7) + "deg", zIndex: j } as CSSProperties}>{MINI[f].icon}</span>
+                    ))}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="srcs">
+              <div className="srow"><span className="slbl">Sources we check</span>{SOURCES.slice(0, 4).map(src)}</div>
+              <div className="srow">{SOURCES.slice(4).map(src)}</div>
+            </div>
+            <a className="pill report-link" href="#report">Open the report</a>
           </div>
         </div>
       </div>
-      <div className="stage">
+      <div className="stage" aria-live="polite" style={{ "--runh": RUN_H.wide + "px", "--runhm": RUN_H.phone + "px" } as CSSProperties}>
         <Fan states={running ? states : undefined}
           label={(c, s) => (s === "checking" ? c.checking : s === "ok" || s === "hit" ? found[c.tool] ?? "" : "")} />
       </div>
       <div className="app results-area">
-        {done && <div className="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
+        {done && <div className="report" id="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
       </div>
-      <div className={"toast" + (toast ? " on" : "")}>Sent to {DEMO_EMAIL}</div>
+      <div className={"toast" + (toast ? " on" : "")} role="status">Report sent to {DEMO_EMAIL}</div>
     </div>
   );
 }

@@ -119,7 +119,7 @@ export function PatternSec({ id }: { id: PatternId }) {
 
 export const FINDINGS = [
   <Sec key="breach" mini="breach">
-    <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> is in 3 breaches.</>} rest=" The newest was DevForum in 2023. We only saw the breach names." />
+    <Para lead={<>Your <span className="nw"><Tile kind="email" />email</span> is in 3 breaches.</>} rest=" The newest was DevForum in 2023. We can see the names of the breaches, but we cannot tell which of your details each one leaked." />
   </Sec>,
   <Sec key="steal" mini="steal">
     <Para lead="In March, a program on your laptop copied 23 saved logins." rest=" Two were for work tools, and someone may be selling them." />
@@ -133,9 +133,9 @@ export const FINDINGS = [
 export function FinalSec({ onMail }: { onMail: () => void }) {
   return (
     <Sec>
-      <Para lead="Every attack here crosses channels." rest=" The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo." />
+      <Para lead="Each of these attacks starts in one place and finishes in another." rest=" The flood of sign-ups arrives by email, and the request for screen access comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo." />
       <p className="lesson">When a message pushes you to act fast, reply through a channel you already use with that person or company.</p>
-      <p className="lesson">Stop and check whenever someone asks you to run their code or share your screen.</p>
+      <p className="lesson">If someone asks you to run their code or share your screen, check who they are before you do it.</p>
       <div className="actions">
         <button type="button" className="pill dark" onClick={onMail}>
           <span className="nw"><Tile kind="email" />Email me this report</span>

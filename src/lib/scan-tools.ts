@@ -1,6 +1,6 @@
 import { tool, type InferUITools, type UIDataTypes, type UIMessage } from "ai";
 import { z } from "zod";
-import { FAN, type ScanResult, type ScanTool } from "./synthetic";
+import { CHECK_MS, FAN, START_MS, STEP_MS, type ScanResult, type ScanTool } from "./synthetic";
 
 /* One tool per source. Each returns synthetic data after a short delay. No network calls. */
 const input = z.object({ query: z.string().describe("Names, emails, links or handles to check") });
@@ -25,12 +25,14 @@ const sleep = (ms: number, signal?: AbortSignal) =>
   });
 
 export function makeScanTools(startedAt: number) {
+  /* The i-th source settles CHECK_MS after its call starts (calls start every STEP_MS). */
   const make = (card: (typeof FAN)[number]) =>
     tool({
       description: DESCRIPTION[card.tool],
       inputSchema: input,
       execute: async (_args, { abortSignal }): Promise<ScanResult> => {
-        await sleep(card.delayMs - (Date.now() - startedAt), abortSignal);
+        const due = START_MS + FAN.indexOf(card) * STEP_MS + CHECK_MS;
+        await sleep(due - (Date.now() - startedAt), abortSignal);
         return card.result;
       },
     });

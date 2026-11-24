@@ -4,14 +4,14 @@ import {
 } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { makeScanTools } from "@/lib/scan-tools";
-import { FAN } from "@/lib/synthetic";
+import { FAN, START_MS, STEP_MS } from "@/lib/synthetic";
 
 /* Default: a mock model that calls every source tool, so the demo needs no API key.
    Set SCAN_MODEL (an AI Gateway model id) to use a real model later. */
 function mockModel(query: string) {
   const json = JSON.stringify({ query });
-  const ordered = [...FAN].sort((a, b) => a.delayMs - b.delayMs);
-  const chunks = ordered.flatMap((c, i) => {
+  /* Four chunks per call, so a new call starts every STEP_MS. */
+  const chunks = FAN.flatMap((c, i) => {
     const id = "call-" + i;
     return [
       { type: "tool-input-start" as const, id, toolName: c.tool },
@@ -23,8 +23,8 @@ function mockModel(query: string) {
   return new MockLanguageModelV4({
     doStream: async () => ({
       stream: simulateReadableStream({
-        initialDelayInMs: 300,
-        chunkDelayInMs: 120,
+        initialDelayInMs: START_MS,
+        chunkDelayInMs: STEP_MS / 4,
         chunks: [
           ...chunks,
           {
