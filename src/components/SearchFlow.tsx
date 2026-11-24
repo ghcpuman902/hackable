@@ -462,9 +462,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const summary = (
     <section key="sum" className="sum">
       <h2>{first ? `${first}, ` : ""}{hits.length ? `${hits.length} of ${fan.length} checks found something.` : `none of ${fan.length} checks found anything.`}</h2>
-      <ul className="sum-row">
+      {hits.length > 0 && <ul className="sum-row">
         {hits.map((c) => <li key={c.tool}><Logo card={c} /><span>{(found[c.tool] ?? c.title).replace(/^(Found|Watch for):\s*/i, "")}</span></li>)}
-      </ul>
+      </ul>}
     </section>
   );
   const report = preset ? [
@@ -477,9 +477,15 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <FinalSec key="final" both={false} />,
     ]),
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+  ] : live && !demo && hits.length === 0 ? [
+    /* Zero hits: never list web results, which are usually about someone else with the same name. */
+    summary,
+    <p key="none" className="sum-none">We found nothing public tied to you.</p>,
+    <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
+    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
-    <ProfileTag key="profile" profile={null} flags={flags} />,
+    ...(flags.length ? [<ProfileTag key="profile" profile={null} flags={flags} />] : []),
     ...liveFindings(outputs),
     <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
     <FinalSec key="final" both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}

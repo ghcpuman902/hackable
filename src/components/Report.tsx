@@ -151,7 +151,7 @@ export const SELF_FLAGS: SelfFlagId[] = ["recently-moved", "big-life-event", "se
 export function ProfileTag({ profile, flags = [] }: { profile: Profile | null; flags?: FlagId[] }) {
   return (
     <div className="tag-row">
-      {profile ? <span className="badge">{profile}</span> : <span className="badge none"><Lucide name="check" />No profile</span>}
+      {profile ? <span className="badge">{profile}</span> : flags.length ? null : <span className="badge none"><Lucide name="check" />No profile</span>}
       {flags.map((f) => <span key={f} className="badge flag">{FLAG_LABEL[f]}</span>)}
     </div>
   );
