@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>02 · Progress · Mirror (mockup)</title>
+<style>
+/* ===== Shared design tokens (same block in every mockup) =====
+   Refs: manglekuo.com landing tagline (big ink/grey text with inline chips),
+   Quintex "Getting things done with an AI assistant" guide (big lede, inline app icons, bordered cards),
+   Boatlock story frames (one highlighted sentence at a time). */
+:root{
+  --bg:#ffffff; --surface:#f6f6f7; --surface-2:#eeeef0; --line:#e4e4e7;
+  --ink:#111113; --muted:#7c7c84; --faint:#a1a1aa;
+  --danger:#e5484d; --danger-bg:#feebec; --warn:#f5a524; --warn-bg:#fff4d6;
+  --ok:#30a46c; --ok-bg:#e9f9ee; --info:#0b63f6; --info-bg:#e8f0fe;
+  --li:#0a66c2; --gh:#1f2328;
+  --radius:14px; --radius-sm:10px; --pill:999px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{font-size:16px;line-height:1.5}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.mock-nav{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.mock-nav a{text-decoration:none;color:var(--muted)} .mock-nav a:hover{color:var(--ink)}
+.mock-nav b{color:var(--ink);font-weight:600}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.brand-mark{width:20px;height:20px;border-radius:6px;background:var(--ink);display:inline-grid;place-items:center}
+.brand-mark::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink),0 0 0 3.5px #fff}
+.lede{font-size:clamp(28px,4.6vw,52px);line-height:1.12;letter-spacing:-.025em;font-weight:700;margin:0}
+.lede .g{color:var(--muted)}
+.ichip{display:inline-flex;align-items:center;gap:.3em;padding:.04em .38em .04em .28em;border-radius:.4em;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+.ichip svg,.ichip .ico{width:.8em;height:.8em}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:20px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btn{appearance:none;border:0;border-radius:var(--pill);background:var(--ink);color:#fff;font:600 15px/1 var(--font);padding:14px 22px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:var(--surface);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:var(--surface);color:var(--muted)}
+.tag.danger{background:var(--danger-bg);color:#b42318} .tag.warn{background:var(--warn-bg);color:#9a5b00} .tag.ok{background:var(--ok-bg);color:#1a7f4b} .tag.info{background:var(--info-bg);color:#0b4fc4}
+.demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+main{padding:28px 0 0}
+.top{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.top h1{margin:0;font-size:clamp(26px,3.4vw,38px);letter-spacing:-.025em;line-height:1.1}
+.top h1 .g{color:var(--muted)}
+.query{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 22px}
+.qchip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 4px;border-radius:15px;background:var(--surface);border:1px solid var(--line);font-size:13.5px}
+.qchip i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 10px/1 Arial,sans-serif;color:#fff;font-style:normal}
+.consent-badge{font-size:12.5px}
+.clock{font:600 13px var(--mono);color:var(--muted)}
+.bar{height:4px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-bottom:22px}
+.bar b{display:block;height:100%;width:0;background:var(--ink);transition:width .5s ease}
+.grid{display:grid;grid-template-columns:300px 1fr 320px;gap:18px;align-items:start}
+.col h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+/* sources */
+.src{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:var(--radius-sm);margin-bottom:8px;background:#fff;transition:border-color .3s,background .3s}
+.src .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font:700 12px/1 Arial,sans-serif;color:#fff}
+.src b{display:block;font-size:14px} .src span{display:block;font-size:12px;color:var(--muted)}
+.src .st{font-size:11.5px;font-weight:600;color:var(--faint);white-space:nowrap}
+.src.run{border-color:#c8c8ce;background:var(--surface)} .src.run .st{color:var(--ink)}
+.src.run .st::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;border:2px solid var(--ink);border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+.src.hit .st{color:#b42318} .src.clear .st{color:#1a7f4b}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* feed */
+.feed{border:1px solid var(--line);border-radius:var(--radius);padding:6px 18px;min-height:420px;background:#fff}
+.item{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);animation:rise .35s ease-out both}
+.item:last-child{border-bottom:0}
+.item time{font:12px var(--mono);color:var(--faint);padding-top:2px}
+.item p{margin:0;font-size:15px} .item p strong{font-weight:650}
+.item .from{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.item.alert p::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:8px;vertical-align:1px}
+.item.note p{color:var(--muted)}
+.typing{display:flex;gap:4px;padding:14px 0 14px 64px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* profile */
+.profile{border:1px solid var(--line);border-radius:var(--radius);padding:18px;background:#fff}
+.profile .who{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:2px 0 12px;min-height:54px}
+.profile .who .g{color:var(--muted)}
+.trait{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:7px 0;border-top:1px solid var(--line);opacity:.25;transition:opacity .4s}
+.trait.on{opacity:1} .trait span{color:var(--muted)} .trait b{text-align:right;font-weight:600}
+.pats{margin-top:16px}
+.pat{display:block;text-decoration:none;padding:12px;border-radius:var(--radius-sm);border:1px solid var(--line);margin-bottom:8px;opacity:.25;transition:opacity .4s,border-color .2s}
+.pat.on{opacity:1} .pat:hover{border-color:#c8c8ce}
+.pat .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14.5px;font-weight:600}
+.pat .row em{font-style:normal;font:600 13px var(--mono)}
+.pat .meter{height:6px;border-radius:6px;background:var(--surface-2);margin:8px 0 6px;overflow:hidden}
+.pat .meter b{display:block;height:100%;width:0;border-radius:6px;transition:width 1s ease}
+.pat small{color:var(--muted);font-size:12.5px;display:block}
+.cta{display:none;margin-top:14px;text-align:center}
+.cta.on{display:block;animation:rise .4s}
+.cta a{display:inline-block;text-decoration:none}
+.ctrl{display:flex;gap:8px}
+@media (max-width:1100px){.grid{grid-template-columns:1fr 1fr}.col.feedcol{grid-column:1/-1;order:3}}
+@media (max-width:700px){
+  .grid{grid-template-columns:1fr}
+  .col.srccol{order:1}.col.feedcol{order:2}.col.profcol{order:3}
+  .srclist{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .src{grid-template-columns:28px 1fr;margin:0;padding:10px}
+  .src .ic{width:28px;height:28px}
+  .src span{display:none}
+  .src .st{grid-column:1/-1}
+  .feed{min-height:0}
+}
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockup navigation (not part of the app)">
+  <span class="brand"><span class="brand-mark"></span>Mirror</span>
+  <span><a href="01-input-chips.html">← 01</a> · <b>02 Progress</b> · <a href="04-report.html">04 Report →</a> · <a href="index.html">All</a></span>
+</nav>
+<main class="wrap">
+  <div class="top">
+    <h1 id="title">Looking you up <span class="g">like a stranger would.</span></h1>
+    <div class="ctrl"><span class="clock" id="clock">00:00</span><button class="btn ghost" id="replay" style="padding:8px 14px;font-size:13px">Replay</button></div>
+  </div>
+  <div class="query" id="query"></div>
+  <div class="bar"><b id="bar"></b></div>
+
+  <div class="grid">
+    <section class="col srccol" aria-label="Sources">
+      <h2>Searching</h2>
+      <div class="srclist" id="sources"></div>
+    </section>
+
+    <section class="col feedcol" aria-label="What we're learning" aria-live="polite">
+      <h2>What we're learning</h2>
+      <div class="feed" id="feed"></div>
+    </section>
+
+    <section class="col profcol" aria-label="Profile match">
+      <h2>To a scammer, you look like</h2>
+      <div class="profile">
+        <div class="who" id="who"><span class="g">Working it out…</span></div>
+        <div class="trait" data-k="role"><span>Role</span><b>Senior JavaScript developer</b></div>
+        <div class="trait" data-k="status"><span>Status</span><b>Open to work</b></div>
+        <div class="trait" data-k="place"><span>Based</span><b>London</b></div>
+        <div class="trait" data-k="leak"><span>Leaks</span><b>3 breaches · 1 infected laptop</b></div>
+        <div class="pats">
+          <h2 style="margin-top:6px">Scams aimed at this profile</h2>
+          <a class="pat" data-k="p1" href="03-pattern-fake-recruiter.html"><div class="row">Fake recruiter coding test<em>92%</em></div><div class="meter"><b style="background:var(--danger)" data-w="92"></b></div><small>Open to work + JavaScript + public GitHub</small></a>
+          <a class="pat" data-k="p2" href="03-pattern-session-hijack.html"><div class="row">Stolen login sessions<em>81%</em></div><div class="meter"><b style="background:var(--danger)" data-w="81"></b></div><small>Infostealer log with saved logins</small></a>
+          <a class="pat" data-k="p3" href="03-pattern-signup-bombing.html"><div class="row">Sign-up bombing<em>64%</em></div><div class="meter"><b style="background:var(--warn)" data-w="64"></b></div><small>Public email + shopping accounts in breaches</small></a>
+        </div>
+        <div class="cta" id="cta"><a class="btn" href="04-report.html">See my report →</a></div>
+      </div>
+    </section>
+  </div>
+  <p class="demo-note">Mockup · synthetic person "Jane Doe" · breach names are made up · no passwords are fetched or shown</p>
+</main>
+
+<script>
+/* ---------- input from 01 (falls back to the demo person) ---------- */
+let q = {who:'me', chips:[{kind:'name',label:'Jane Doe'},{kind:'email',label:'jane@hibp-integration-tests.com'},{kind:'linkedin',label:'linkedin.com/in/janedoe-demo'},{kind:'github',label:'github.com/janedoe-demo'}]};
+try { const p = new URLSearchParams(location.search).get('q'); if (p) { const j = JSON.parse(p); if (j.chips?.length) q = j; } } catch(e){}
+const COL = {email:'#ea4335',linkedin:'#0a66c2',github:'#1f2328',x:'#000',url:'#0b63f6',handle:'#7c3aed',phone:'#30a46c',name:'#111113',text:'#71717a'};
+const GLY = {email:'@',linkedin:'in',github:'GH',x:'X',url:'↗',handle:'@',phone:'☎',name:'•',text:'T'};
+const qEl = document.getElementById('query');
+qEl.innerHTML = q.chips.map(c=>'<span class="qchip"><i style="background:'+COL[c.kind]+'">'+GLY[c.kind]+'</i></span>').join('');
+qEl.querySelectorAll('.qchip').forEach((n,i)=>n.append(q.chips[i].label));
+if (q.who==='other') qEl.insertAdjacentHTML('beforeend','<span class="tag ok consent-badge">✓ They agreed to this check</span>');
+
+/* ---------- sources ---------- */
+const SOURCES = [
+  {id:'web',  name:'Public web search', what:'Names, profiles, posts', ic:'#111113', g:'W'},
+  {id:'prof', name:'LinkedIn and GitHub', what:'Public profile pages only', ic:'#0a66c2', g:'in'},
+  {id:'hr',   name:'Hudson Rock Cavalier', what:'Infostealer logs', ic:'#d9480f', g:'HR'},
+  {id:'lc',   name:'LeakCheck', what:'Breach names and dates', ic:'#5b21b6', g:'LC'},
+  {id:'hibp', name:'Have I Been Pwned', what:'Breaches (test domain)', ic:'#2a6db0', g:';--'}
+];
+const srcEl = document.getElementById('sources');
+srcEl.innerHTML = SOURCES.map(s=>'<div class="src" id="s-'+s.id+'"><div class="ic" style="background:'+s.ic+'">'+s.g+'</div><div><b>'+s.name+'</b><span>'+s.what+'</span></div><div class="st">Queued</div></div>').join('');
+
+/* ---------- the script of the run (what the real agent would stream) ---------- */
+const T = [
+  [0.4,'src','web','run','Searching'],
+  [0.9,'feed','Searching for <strong>Jane Doe</strong> with your email and links.','web','note'],
+  [2.0,'src','prof','run','Reading'],
+  [2.6,'feed','Found a LinkedIn profile: <strong>Senior JavaScript Developer</strong>, London.','LinkedIn'],
+  [3.3,'trait','role'],[3.4,'trait','place'],
+  [3.9,'feed','The headline says <strong>“Open to work”</strong>. Recruiters can see that. So can fake ones.','LinkedIn','alert'],
+  [4.4,'trait','status'],
+  [5.0,'feed','GitHub: <strong>41 public repos</strong>, mostly TypeScript and React. Your email is in your commits.','GitHub'],
+  [5.4,'src','web','clear','6 pages'],[5.6,'src','prof','clear','2 profiles'],
+  [5.8,'who','A senior JavaScript developer, <span class="g">open to work.</span>'],
+  [6.1,'pat','p1',92],
+  [6.4,'src','hr','run','Checking'],
+  [7.6,'feed','Hudson Rock: <strong>1 infected computer</strong> linked to your email, compromised 14 March 2026.','Hudson Rock Cavalier','alert'],
+  [8.4,'feed','It saved <strong>23 logins</strong> from that browser, including 2 work tools. We only see counts, never passwords.','Hudson Rock Cavalier'],
+  [8.8,'src','hr','hit','1 infected PC'],
+  [9.0,'pat','p2',81],
+  [9.2,'src','lc','run','Checking'],[9.4,'src','hibp','run','Checking'],
+  [10.6,'feed','Your email is in <strong>3 breaches</strong>: DevForum (2023), ShopLane (2021), PixelPrint (2019).','LeakCheck · HIBP','alert'],
+  [11.1,'src','lc','hit','2 breaches'],[11.3,'src','hibp','hit','3 breaches'],
+  [11.4,'trait','leak'],
+  [11.9,'feed','Shopping accounts plus a public email make you easy to <strong>flood with sign-ups</strong>.','Pattern match'],
+  [12.3,'pat','p3',64],
+  [13.0,'feed','Done. <strong>3 scams</strong> match people like you. Here is what they look like.','Mirror','note'],
+  [13.3,'done']
+];
+const END = 13.3;
+const feed = document.getElementById('feed'), bar = document.getElementById('bar'), clock = document.getElementById('clock');
+let timers=[], tick;
+function reset(){
+  timers.forEach(clearTimeout); timers=[]; clearInterval(tick);
+  feed.innerHTML='<div class="typing"><i></i><i></i><i></i></div>';
+  document.querySelectorAll('.src').forEach(n=>{n.className='src';n.querySelector('.st').textContent='Queued';});
+  document.querySelectorAll('.trait,.pat').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.meter b').forEach(b=>b.style.width='0');
+  document.getElementById('who').innerHTML='<span class="g">Working it out…</span>';
+  document.getElementById('cta').classList.remove('on');
+  bar.style.width='0';
+}
+function stamp(t){ const s=Math.round(t); return '00:'+String(s).padStart(2,'0'); }
+function run(speed=1){
+  reset(); const t0=performance.now();
+  tick=setInterval(()=>{ const t=(performance.now()-t0)/1000*speed; clock.textContent=stamp(Math.min(t,END)); bar.style.width=Math.min(100,t/END*100)+'%'; },200);
+  for (const ev of T){
+    timers.push(setTimeout(()=>{
+      const [t,kind,a,b,c]=ev;
+      if (kind==='src'){ const n=document.getElementById('s-'+a); n.className='src '+b; n.querySelector('.st').textContent=c; }
+      if (kind==='feed'){
+        const it=document.createElement('div'); it.className='item '+(c||'');
+        it.innerHTML='<time>'+stamp(t)+'</time><p>'+a+'<span class="from">'+b+'</span></p>';
+        feed.insertBefore(it, feed.querySelector('.typing'));
+      }
+      if (kind==='trait') document.querySelector('.trait[data-k="'+a+'"]').classList.add('on');
+      if (kind==='who') document.getElementById('who').innerHTML=a;
+      if (kind==='pat'){ const p=document.querySelector('.pat[data-k="'+a+'"]'); p.classList.add('on'); const m=p.querySelector('.meter b'); requestAnimationFrame(()=>m.style.width=b+'%'); }
+      if (kind==='done'){ feed.querySelector('.typing')?.remove(); document.getElementById('cta').classList.add('on'); clearInterval(tick); clock.textContent=stamp(END); bar.style.width='100%'; document.getElementById('title').innerHTML='Here is what a stranger <span class="g">can find.</span>'; }
+    }, ev[0]*1000/speed));
+  }
+}
+document.getElementById('replay').onclick=()=>run();
+const sp = +new URLSearchParams(location.search).get('speed') || 1; // ?speed=50 for instant screenshots
+run(sp);
+</script>
+</body>
+</html>

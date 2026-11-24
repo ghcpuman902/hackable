@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mirror · mockups · Retail AI & Agents Hackathon</title>
+<style>
+/* ===== Shared design tokens (same block in every mockup) =====
+   Refs: manglekuo.com landing tagline (big ink/grey text with inline chips),
+   Quintex "Getting things done with an AI assistant" guide (big lede, inline app icons, bordered cards),
+   Boatlock story frames (one highlighted sentence at a time). */
+:root{
+  --bg:#ffffff; --surface:#f6f6f7; --surface-2:#eeeef0; --line:#e4e4e7;
+  --ink:#111113; --muted:#7c7c84; --faint:#a1a1aa;
+  --danger:#e5484d; --danger-bg:#feebec; --warn:#f5a524; --warn-bg:#fff4d6;
+  --ok:#30a46c; --ok-bg:#e9f9ee; --info:#0b63f6; --info-bg:#e8f0fe;
+  --li:#0a66c2; --gh:#1f2328;
+  --radius:14px; --radius-sm:10px; --pill:999px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{font-size:16px;line-height:1.5}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.mock-nav{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.mock-nav a{text-decoration:none;color:var(--muted)} .mock-nav a:hover{color:var(--ink)}
+.mock-nav b{color:var(--ink);font-weight:600}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.brand-mark{width:20px;height:20px;border-radius:6px;background:var(--ink);display:inline-grid;place-items:center}
+.brand-mark::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink),0 0 0 3.5px #fff}
+.lede{font-size:clamp(28px,4.6vw,52px);line-height:1.12;letter-spacing:-.025em;font-weight:700;margin:0}
+.lede .g{color:var(--muted)}
+.ichip{display:inline-flex;align-items:center;gap:.3em;padding:.04em .38em .04em .28em;border-radius:.4em;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+.ichip svg,.ichip .ico{width:.8em;height:.8em}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:20px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btn{appearance:none;border:0;border-radius:var(--pill);background:var(--ink);color:#fff;font:600 15px/1 var(--font);padding:14px 22px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:var(--surface);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:var(--surface);color:var(--muted)}
+.tag.danger{background:var(--danger-bg);color:#b42318} .tag.warn{background:var(--warn-bg);color:#9a5b00} .tag.ok{background:var(--ok-bg);color:#1a7f4b} .tag.info{background:var(--info-bg);color:#0b4fc4}
+.demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+main{padding:48px 0 0}
+.lede{font-size:clamp(30px,4.4vw,48px)}
+p.sub{color:var(--muted);font-size:17px;max-width:640px;margin:16px 0 0}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:34px}
+.list a{display:block;text-decoration:none;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;transition:border-color .2s,box-shadow .2s}
+.list a:hover{border-color:#c8c8ce;box-shadow:var(--shadow)}
+.list img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;background:var(--surface);border-bottom:1px solid var(--line)}
+.list div{padding:14px 16px}
+.list b{display:block;font-size:16px} .list span{display:block;font-size:13.5px;color:var(--muted);margin-top:2px}
+.notes{margin-top:34px;max-width:760px}
+.notes h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.notes li{margin:6px 0}
+code{font:13px var(--mono);background:var(--surface);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<nav class="mock-nav"><span class="brand"><span class="brand-mark"></span>Mirror</span><span><b>Mockups</b> · 24 Nov 2026</span></nav>
+<main class="wrap">
+  <h1 class="lede">Mirror. <span class="g">See yourself the way a scammer does.</span></h1>
+  <p class="sub">Six static mockups for one Next.js app. Build them as one flow: input → live search → patterns → report.</p>
+  <div class="list">
+    <a href="01-input-chips.html"><img src="shots/01-input-chips-1280.png" alt=""><div><b>01 Input</b><span>Search box. Anything typed becomes a chip with an icon. Consent step.</span></div></a>
+    <a href="02-progress.html"><img src="shots/02-progress-1280.png" alt=""><div><b>02 Live search</b><span>Sources, what we're learning, profile match, scam matches.</span></div></a>
+    <a href="03-pattern-fake-recruiter.html"><img src="shots/03-pattern-fake-recruiter-1280.png" alt=""><div><b>03 Fake recruiter</b><span>Contagious Interview: coding test, npm install, stolen logins.</span></div></a>
+    <a href="03-pattern-session-hijack.html"><img src="shots/03-pattern-session-hijack-1280.png" alt=""><div><b>03 Stolen sessions</b><span>Infostealer copies cookies. No password or code needed.</span></div></a>
+    <a href="03-pattern-signup-bombing.html"><img src="shots/03-pattern-signup-bombing-1280.png" alt=""><div><b>03 Sign-up bombing</b><span>Inbox flood buries the one real alert.</span></div></a>
+    <a href="04-report.html"><img src="shots/04-report-1280.png" alt=""><div><b>04 Report</b><span>One big sentence per screen. Story-led.</span></div></a>
+  </div>
+  <section class="notes">
+    <h2>Notes for the builder</h2>
+    <ul>
+      <li>Every file is self-contained. The shared tokens block at the top of each <code>&lt;style&gt;</code> is identical; lift it into globals.</li>
+      <li>The grey top bar (<code>.mock-nav</code>) is for clicking between mockups. Drop it in the app.</li>
+      <li>01 passes chips to 02 as <code>?q=</code> JSON. In the app, send them to the agent route instead.</li>
+      <li>02 is a scripted timeline. In the app, stream the same event types: <code>src</code>, <code>feed</code>, <code>trait</code>, <code>who</code>, <code>pat</code>, <code>done</code>.</li>
+      <li>Screenshot helpers: <code>02-progress.html?speed=50</code>, <code>03-*.html?scene=3</code>, <code>04-report.html?all</code>.</li>
+      <li>All data is synthetic. Live demo subjects: Mangle, or an organiser who has agreed on the day.</li>
+    </ul>
+  </section>
+  <p class="demo-note">Static mockups · nothing deployed or sent</p>
+</main>
+</body>
+</html>

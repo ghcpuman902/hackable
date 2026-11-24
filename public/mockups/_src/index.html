@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mirror · mockups · Retail AI & Agents Hackathon</title>
+<style>
+/*BASE*/
+main{padding:48px 0 0}
+.lede{font-size:clamp(30px,4.4vw,48px)}
+p.sub{color:var(--muted);font-size:17px;max-width:640px;margin:16px 0 0}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:34px}
+.list a{display:block;text-decoration:none;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;transition:border-color .2s,box-shadow .2s}
+.list a:hover{border-color:#c8c8ce;box-shadow:var(--shadow)}
+.list img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;background:var(--surface);border-bottom:1px solid var(--line)}
+.list div{padding:14px 16px}
+.list b{display:block;font-size:16px} .list span{display:block;font-size:13.5px;color:var(--muted);margin-top:2px}
+.notes{margin-top:34px;max-width:760px}
+.notes h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.notes li{margin:6px 0}
+code{font:13px var(--mono);background:var(--surface);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<nav class="mock-nav"><span class="brand"><span class="brand-mark"></span>Mirror</span><span><b>Mockups</b> · 24 Nov 2026</span></nav>
+<main class="wrap">
+  <h1 class="lede">Mirror. <span class="g">See yourself the way a scammer does.</span></h1>
+  <p class="sub">Six static mockups for one Next.js app. Build them as one flow: input → live search → patterns → report.</p>
+  <div class="list">
+    <a href="01-input-chips.html"><img src="shots/01-input-chips-1280.png" alt=""><div><b>01 Input</b><span>Search box. Anything typed becomes a chip with an icon. Consent step.</span></div></a>
+    <a href="02-progress.html"><img src="shots/02-progress-1280.png" alt=""><div><b>02 Live search</b><span>Sources, what we're learning, profile match, scam matches.</span></div></a>
+    <a href="03-pattern-fake-recruiter.html"><img src="shots/03-pattern-fake-recruiter-1280.png" alt=""><div><b>03 Fake recruiter</b><span>Contagious Interview: coding test, npm install, stolen logins.</span></div></a>
+    <a href="03-pattern-session-hijack.html"><img src="shots/03-pattern-session-hijack-1280.png" alt=""><div><b>03 Stolen sessions</b><span>Infostealer copies cookies. No password or code needed.</span></div></a>
+    <a href="03-pattern-signup-bombing.html"><img src="shots/03-pattern-signup-bombing-1280.png" alt=""><div><b>03 Sign-up bombing</b><span>Inbox flood buries the one real alert.</span></div></a>
+    <a href="04-report.html"><img src="shots/04-report-1280.png" alt=""><div><b>04 Report</b><span>One big sentence per screen. Story-led.</span></div></a>
+  </div>
+  <section class="notes">
+    <h2>Notes for the builder</h2>
+    <ul>
+      <li>Every file is self-contained. The shared tokens block at the top of each <code>&lt;style&gt;</code> is identical; lift it into globals.</li>
+      <li>The grey top bar (<code>.mock-nav</code>) is for clicking between mockups. Drop it in the app.</li>
+      <li>01 passes chips to 02 as <code>?q=</code> JSON. In the app, send them to the agent route instead.</li>
+      <li>02 is a scripted timeline. In the app, stream the same event types: <code>src</code>, <code>feed</code>, <code>trait</code>, <code>who</code>, <code>pat</code>, <code>done</code>.</li>
+      <li>Screenshot helpers: <code>02-progress.html?speed=50</code>, <code>03-*.html?scene=3</code>, <code>04-report.html?all</code>.</li>
+      <li>All data is synthetic. Live demo subjects: Mangle, or an organiser who has agreed on the day.</li>
+    </ul>
+  </section>
+  <p class="demo-note">Static mockups · nothing deployed or sent</p>
+</main>
+</body>
+</html>

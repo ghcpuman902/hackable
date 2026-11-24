@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>03 · Pattern: Stolen login sessions · Mirror (mockup)</title>
+<style>
+/*BASE*/
+/* ---- pattern page shell (same in all three) ---- */
+main{padding:40px 0 0}
+.head{max-width:900px}
+.head .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.head .lede{font-size:clamp(30px,4.2vw,48px)}
+.layout{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:28px;margin-top:32px;align-items:start}
+.stage-wrap{position:sticky;top:60px}
+.stage{position:relative;aspect-ratio:4/3;border-radius:18px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+.caption{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px}
+.caption p{margin:0;font-size:16px;font-weight:600;min-height:48px;display:flex;align-items:center}
+.dots{display:flex;gap:6px;flex:none}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .3s,width .3s}
+.dots i.on{background:var(--ink);width:20px;border-radius:4px}
+.replay{border:0;background:none;color:var(--muted);font:600 13px var(--font);cursor:pointer;padding:4px}
+.text h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+.text section{padding:18px 0;border-top:1px solid var(--line)}
+.text section:first-child{border-top:0;padding-top:0}
+.text ol,.text ul{margin:0;padding-left:20px} .text li{margin:6px 0}
+.text p{margin:0 0 8px}
+.why{display:flex;flex-wrap:wrap;gap:6px}
+.do li::marker{color:var(--ok);font-weight:700}
+.refs a{color:var(--info);text-decoration:none;font-size:14px} .refs li{margin:4px 0}
+.next{display:flex;justify-content:space-between;gap:12px;margin:36px 0 0;padding-top:20px;border-top:1px solid var(--line);font-size:15px}
+.next a{text-decoration:none;font-weight:600} .next a span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr} .stage-wrap{position:static}
+  main{padding-top:28px}
+}
+/* ---- stage-specific ---- */
+
+.win{position:absolute;inset:18px;border-radius:12px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+.win .bar{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.win .bar i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.win .bar span{margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel{position:absolute;inset:30px 0 0 0;padding:22px;opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s;pointer-events:none}
+.panel.show{opacity:1;transform:none}
+.fade-in{opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s}
+.fade-in.on{opacity:1;transform:none}
+
+.duo{position:absolute;inset:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.duo .win{position:relative;inset:auto}
+.duo .win .bar{font-size:11.5px}
+.body{padding:16px;display:flex;flex-direction:column;gap:10px;height:calc(100% - 30px)}
+.lbl2{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.jar{display:flex;flex-wrap:wrap;gap:6px}
+.ck{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);transition:opacity .4s}
+.ck.taken{opacity:.35}
+.ck i{width:10px;height:10px;border-radius:50%;background:#d6a15a;box-shadow:inset -2px -2px 0 rgba(0,0,0,.15)}
+.bug{display:flex;gap:8px;align-items:center;font-size:12.5px;padding:8px 10px;border-radius:10px;background:var(--danger-bg);color:#b42318;font-weight:600;opacity:0;transition:opacity .4s}
+.bug.on{opacity:1}
+.login{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}
+.inp{height:30px;border-radius:7px;border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;padding:0 10px;font-size:12px;color:var(--faint);position:relative}
+.inp.x::after{content:"Not needed";position:absolute;right:8px;font-size:11px;font-weight:700;color:#b42318;opacity:0;transition:opacity .3s}
+.inp.x.on{text-decoration:line-through}
+.inp.x.on::after{opacity:1}
+.in-as{display:none;border-radius:10px;padding:14px;background:var(--ok-bg);color:#1a5c38;font-size:14px;font-weight:600}
+.in-as.on{display:block;animation:pop2 .35s}
+@keyframes pop2{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+.fly{position:absolute;z-index:5;top:42%;left:28%;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--ink);color:#fff;opacity:0;pointer-events:none}
+.fly.go{animation:cross 1.8s ease-in-out forwards}
+.fly i{width:10px;height:10px;border-radius:50%;background:#d6a15a}
+@keyframes cross{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translate(150%,-10px)}}
+.them .bar{background:#18181b;color:#a1a1aa;border-color:#27272a}
+@media (max-width:600px){.duo{grid-template-columns:1fr;grid-template-rows:1fr 1fr;inset:10px;gap:8px}.body{padding:10px;gap:6px}.stage{aspect-ratio:3/4}.fly{top:46%;left:40%}@keyframes cross{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translate(0,120%)}}}
+
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockup navigation (not part of the app)">
+  <span class="brand"><span class="brand-mark"></span>Mirror</span>
+  <span><a href="02-progress.html">← 02</a> · <b>03 Pattern 2 of 3</b> · <a href="index.html">All</a></span>
+</nav>
+<main class="wrap">
+  <header class="head">
+    <div class="tags"><span class="tag danger">High match · 81%</span><span class="tag">Also called: session hijack, pass-the-cookie</span></div>
+    <h1 class="lede">They don't need your password. <span class="g">They copied the bit that says</span> you already logged in.</h1>
+  </header>
+  <div class="layout">
+    <div class="stage-wrap">
+      <div class="stage" id="stage" aria-hidden="true"><div class="duo">
+  <div class="win"><div class="bar"><i></i><i></i><i></i><span>Your laptop · browser</span></div>
+    <div class="body">
+      <div class="lbl2">Signed in to</div>
+      <div class="jar"><span class="ck" id="c1"><i></i>Email</span><span class="ck" id="c2"><i></i>GitHub</span><span class="ck" id="c3"><i></i>Slack</span><span class="ck" id="c4"><i></i>Bank</span><span class="ck" id="c5"><i></i>Shop</span></div>
+      <div class="bug" id="bug">⚠ A cracked app you installed is copying these</div>
+    </div>
+  </div>
+  <div class="win them"><div class="bar"><i></i><i></i><i></i><span>Their browser, anywhere</span></div>
+    <div class="body">
+      <div class="login" id="login">
+        <div class="lbl2">github.com · sign in</div>
+        <div class="inp">jane@hibp-integration-tests.com</div>
+        <div class="inp x" id="pw">Password ••••••••</div>
+        <div class="inp x" id="tfa">Two-step code ••••••</div>
+      </div>
+      <div class="in-as" id="inas">✓ Signed in as Jane<br><span style="font-weight:500;font-size:12.5px">No password. No code. No alert.</span></div>
+    </div>
+  </div>
+</div>
+<div class="fly" id="fly"><i></i>GitHub session</div></div>
+      <div class="caption"><p id="cap"></p><div style="display:flex;align-items:center;gap:10px"><div class="dots" id="dots"></div><button class="replay" id="replay">Replay</button></div></div>
+    </div>
+    <article class="text">
+      
+<section><h2>Why you</h2><div class="why"><span class="tag danger">Infostealer log found</span><span class="tag">23 saved logins</span><span class="tag">Work tools on same browser</span></div></section>
+<section><h2>How it works</h2><ol>
+<li>Malware on your computer copies your browser's saved sessions.</li>
+<li>Those sessions get sold in a “stealer log”.</li>
+<li>A buyer loads them and opens your accounts as you.</li>
+<li>Password and two-step codes are skipped. You are already “signed in”.</li></ol></section>
+<section><h2>Signs</h2><ul>
+<li>Your email shows up in an infostealer check, like this one.</li>
+<li>New devices or sessions in account settings you don't recognise.</li></ul></section>
+<section><h2>What to do</h2><ul class="do">
+<li>Clean or reset the infected computer first.</li>
+<li>Sign out of all sessions everywhere, then change passwords.</li>
+<li>Use passkeys where you can. Tell work if work tools were on it.</li></ul></section>
+<section class="refs"><h2>Check yourself</h2><ul><li><a href="https://www.hudsonrock.com/free-tools">Hudson Rock free infostealer check</a></li></ul></section>
+      <div class="next"><a href="03-pattern-fake-recruiter.html"><span>Previous</span>← Fake recruiter coding test</a><a href="03-pattern-signup-bombing.html" style="text-align:right"><span>Next pattern</span>Sign-up bombing →</a></div>
+    </article>
+  </div>
+  <p class="demo-note">Mockup · abstract illustration · people, companies and repos shown are made up</p>
+</main>
+<script>
+/* Scene player shared by all pattern pages: each scene = [caption, durationMs, enterFn] */
+function player(scenes, resetFn){
+  const cap=document.getElementById('cap'), dots=document.getElementById('dots');
+  dots.innerHTML=scenes.map(()=>'<i></i>').join('');
+  let i=0, t=null;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function go(k){
+    clearTimeout(t); i=k;
+    if (k===0) resetFn();
+    const [c,d,fn]=scenes[k]; cap.textContent=c;
+    [...dots.children].forEach((n,j)=>n.classList.toggle('on',j===k));
+    fn && fn();
+    t=setTimeout(()=>go((k+1)%scenes.length), reduce ? d*1.5 : d);
+  }
+  document.getElementById('replay').onclick=()=>go(0);
+  const at=+new URLSearchParams(location.search).get('scene'); // ?scene=3 for screenshots
+  if (at) { resetFn(); for(let k=0;k<=at;k++) { scenes[k][2]&&scenes[k][2](true); } cap.textContent=scenes[at][0]; [...dots.children].forEach((n,j)=>n.classList.toggle('on',j===at)); }
+  else go(0);
+}
+
+const $=id=>document.getElementById(id);
+function reset(){ ['c1','c2','c3','c4','c5'].forEach(c=>$(c).classList.remove('taken')); ['bug','pw','tfa','inas'].forEach(c=>$(c).classList.remove('on')); $('login').style.display=''; $('fly').classList.remove('go'); }
+const later=(fn,ms,now)=> now ? fn() : setTimeout(fn,ms);
+player([
+ ['Your browser remembers that you are signed in.',3000,null],
+ ['An infostealer copies those sessions.',3600,now=>{ $('bug').classList.add('on'); ['c1','c2','c3','c4','c5'].forEach((c,i)=>later(()=>$(c).classList.add('taken'),600+i*350,now)); }],
+ ['Someone else loads one into their browser.',3400,now=>{ if(!now){ $('fly').classList.remove('go'); void $('fly').offsetWidth; $('fly').classList.add('go'); } later(()=>{$('pw').classList.add('on');},1600,now); later(()=>{$('tfa').classList.add('on');},2200,now); }],
+ ['They are in. No password, no code, no alert.',4200,now=>{ $('login').style.display='none'; $('inas').classList.add('on'); }]
+], reset);
+
+</script>
+</body>
+</html>

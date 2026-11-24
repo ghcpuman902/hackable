@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>03 · Pattern: Fake recruiter coding test · Mirror (mockup)</title>
+<style>
+/* ===== Shared design tokens (same block in every mockup) =====
+   Refs: manglekuo.com landing tagline (big ink/grey text with inline chips),
+   Quintex "Getting things done with an AI assistant" guide (big lede, inline app icons, bordered cards),
+   Boatlock story frames (one highlighted sentence at a time). */
+:root{
+  --bg:#ffffff; --surface:#f6f6f7; --surface-2:#eeeef0; --line:#e4e4e7;
+  --ink:#111113; --muted:#7c7c84; --faint:#a1a1aa;
+  --danger:#e5484d; --danger-bg:#feebec; --warn:#f5a524; --warn-bg:#fff4d6;
+  --ok:#30a46c; --ok-bg:#e9f9ee; --info:#0b63f6; --info-bg:#e8f0fe;
+  --li:#0a66c2; --gh:#1f2328;
+  --radius:14px; --radius-sm:10px; --pill:999px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{font-size:16px;line-height:1.5}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.mock-nav{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.mock-nav a{text-decoration:none;color:var(--muted)} .mock-nav a:hover{color:var(--ink)}
+.mock-nav b{color:var(--ink);font-weight:600}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.brand-mark{width:20px;height:20px;border-radius:6px;background:var(--ink);display:inline-grid;place-items:center}
+.brand-mark::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink),0 0 0 3.5px #fff}
+.lede{font-size:clamp(28px,4.6vw,52px);line-height:1.12;letter-spacing:-.025em;font-weight:700;margin:0}
+.lede .g{color:var(--muted)}
+.ichip{display:inline-flex;align-items:center;gap:.3em;padding:.04em .38em .04em .28em;border-radius:.4em;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+.ichip svg,.ichip .ico{width:.8em;height:.8em}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:20px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btn{appearance:none;border:0;border-radius:var(--pill);background:var(--ink);color:#fff;font:600 15px/1 var(--font);padding:14px 22px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:var(--surface);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:var(--surface);color:var(--muted)}
+.tag.danger{background:var(--danger-bg);color:#b42318} .tag.warn{background:var(--warn-bg);color:#9a5b00} .tag.ok{background:var(--ok-bg);color:#1a7f4b} .tag.info{background:var(--info-bg);color:#0b4fc4}
+.demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ---- pattern page shell (same in all three) ---- */
+main{padding:40px 0 0}
+.head{max-width:900px}
+.head .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.head .lede{font-size:clamp(30px,4.2vw,48px)}
+.layout{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:28px;margin-top:32px;align-items:start}
+.stage-wrap{position:sticky;top:60px}
+.stage{position:relative;aspect-ratio:4/3;border-radius:18px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+.caption{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px}
+.caption p{margin:0;font-size:16px;font-weight:600;min-height:48px;display:flex;align-items:center}
+.dots{display:flex;gap:6px;flex:none}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .3s,width .3s}
+.dots i.on{background:var(--ink);width:20px;border-radius:4px}
+.replay{border:0;background:none;color:var(--muted);font:600 13px var(--font);cursor:pointer;padding:4px}
+.text h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+.text section{padding:18px 0;border-top:1px solid var(--line)}
+.text section:first-child{border-top:0;padding-top:0}
+.text ol,.text ul{margin:0;padding-left:20px} .text li{margin:6px 0}
+.text p{margin:0 0 8px}
+.why{display:flex;flex-wrap:wrap;gap:6px}
+.do li::marker{color:var(--ok);font-weight:700}
+.refs a{color:var(--info);text-decoration:none;font-size:14px} .refs li{margin:4px 0}
+.next{display:flex;justify-content:space-between;gap:12px;margin:36px 0 0;padding-top:20px;border-top:1px solid var(--line);font-size:15px}
+.next a{text-decoration:none;font-weight:600} .next a span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr} .stage-wrap{position:static}
+  main{padding-top:28px}
+}
+/* ---- stage-specific ---- */
+
+.win{position:absolute;inset:18px;border-radius:12px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+.win .bar{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.win .bar i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.win .bar span{margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel{position:absolute;inset:30px 0 0 0;padding:22px;opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s;pointer-events:none}
+.panel.show{opacity:1;transform:none}
+.fade-in{opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s}
+.fade-in.on{opacity:1;transform:none}
+
+.msg .who{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.msg .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);display:grid;place-items:center;font-weight:700;color:#3730a3}
+.msg .who b{display:block;font-size:15px} .msg .who span{font-size:12.5px;color:var(--muted)}
+.bubble{background:var(--surface);border-radius:4px 16px 16px 16px;padding:14px 16px;font-size:clamp(14px,1.6vw,17px);line-height:1.45;max-width:92%;margin-bottom:10px}
+.bubble.me{margin-left:auto;background:var(--ink);color:#fff;border-radius:16px 4px 16px 16px;max-width:60%}
+.pill{display:inline-block;font-size:12px;font-weight:600;background:var(--ok-bg);color:#1a7f4b;border-radius:999px;padding:2px 8px;margin-top:4px}
+.repo h4{margin:0 0 12px;font-size:15px} .repo h4 span{color:var(--muted);font-weight:500}
+.file{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-top:0;font:13.5px var(--mono)}
+.file:first-of-type{border-top:1px solid var(--line);border-radius:8px 8px 0 0} .file:last-of-type{border-radius:0 0 8px 8px}
+.file.bad{background:var(--danger-bg);color:#b42318}
+.file .d{width:14px;height:12px;border-radius:2px;background:#8aa4d6}.file .f{width:11px;height:14px;border-radius:2px;border:1.5px solid #a1a1aa}
+.readme{margin-top:14px;font-size:14px;border-left:3px solid var(--line);padding-left:12px;color:var(--muted)}
+.readme b{color:var(--ink)}
+.term{background:#0f1115;color:#d4d4d8;font:clamp(11.5px,1.35vw,14px)/1.65 var(--mono)}
+.term .ln{white-space:pre-wrap;opacity:0} .term .ln.on{opacity:1}
+.term .p{color:#4ade80} .term .r{color:#fb7185} .term .dim{color:#71717a}
+.cursor{display:inline-block;width:8px;height:1.1em;background:#d4d4d8;vertical-align:-2px;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.exfil{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:6px}
+.node{text-align:center;font-size:13px;font-weight:600}
+.node .box{width:clamp(64px,11vw,110px);aspect-ratio:1;margin:0 auto 8px;border-radius:16px;display:grid;place-items:center}
+.node.you .box{background:var(--surface);border:1px solid var(--line)}
+.node.them .box{background:var(--ink)}
+.lane{position:relative;height:200px}
+.loot{position:absolute;left:0;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 9px;border-radius:999px;background:var(--danger-bg);color:#b42318;white-space:nowrap;opacity:0}
+.exfil.go .loot{animation:fly 2.4s ease-in-out forwards}
+@keyframes fly{0%{opacity:0;transform:translateX(-30%)}15%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateX(105%)}}
+.mal{grid-column:1/-1;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.mal span{font:600 12px var(--mono);padding:4px 10px;border-radius:6px;background:var(--ink);color:#fff}
+
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockup navigation (not part of the app)">
+  <span class="brand"><span class="brand-mark"></span>Mirror</span>
+  <span><a href="02-progress.html">← 02</a> · <b>03 Pattern 1 of 3</b> · <a href="index.html">All</a></span>
+</nav>
+<main class="wrap">
+  <header class="head">
+    <div class="tags"><span class="tag danger">High match · 92%</span><span class="tag">Also called: Contagious Interview</span></div>
+    <h1 class="lede">A dream job offer, <span class="g">then a coding test.</span> The test is the trap.</h1>
+  </header>
+  <div class="layout">
+    <div class="stage-wrap">
+      <div class="stage" id="stage" aria-hidden="true"><div class="win"><div class="bar"><i></i><i></i><i></i><span id="bar1">Messages</span></div>
+  <div class="panel msg" id="pA">
+    <div class="who"><div class="av">AM</div><div><b>Alex Morgan</b><span>Talent Partner · Blockvault Labs</span></div></div>
+    <div class="bubble fade-in" id="b1">Hi Jane, loved your React work on GitHub. We have a remote senior role, £140k. Interested?</div>
+    <div class="bubble me fade-in" id="b2">Yes, sounds great!</div>
+    <div class="bubble fade-in" id="b3">Brilliant. First, a short take-home test. Please run it locally today. <br><span class="pill">github.com/blockvault-labs/take-home</span></div>
+  </div>
+  <div class="panel repo" id="pB">
+    <h4>blockvault-labs / <span>take-home</span></h4>
+    <div class="file"><i class="d"></i>src</div>
+    <div class="file"><i class="f"></i>README.md</div>
+    <div class="file"><i class="f"></i>package.json</div>
+    <div class="file bad fade-in" id="bad"><i class="f" style="border-color:#e5484d"></i>scripts/setup.js · runs on install</div>
+    <div class="readme"><b>To start:</b> npm install, then npm start. Send us a screen recording when done.</div>
+  </div>
+  <div class="panel term" id="pC">
+    <div class="ln"><span class="p">jane@laptop</span> ~/take-home $ npm install</div>
+    <div class="ln dim">&gt; take-home@1.0.0 postinstall</div>
+    <div class="ln dim">&gt; node scripts/setup.js</div>
+    <div class="ln">added 214 packages in 6s</div>
+    <div class="ln r">  ↳ quietly downloading a second program…</div>
+    <div class="ln r">  ↳ reading saved browser logins…</div>
+    <div class="ln r">  ↳ reading crypto wallets and SSH keys…</div>
+    <div class="ln"><span class="p">jane@laptop</span> ~/take-home $ <span class="cursor"></span></div>
+  </div>
+  <div class="panel exfil" id="pD">
+    <div class="node you"><div class="box"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.6"><rect x="3" y="5" width="18" height="11" rx="1.5"/><path d="M1.5 19h21"/></svg></div>Your laptop</div>
+    <div class="lane">
+      <div class="loot" style="top:18px;animation-delay:0s">🔑 Saved passwords</div>
+      <div class="loot" style="top:62px;animation-delay:.5s">🍪 Login sessions</div>
+      <div class="loot" style="top:106px;animation-delay:1s">◎ Crypto wallet</div>
+      <div class="loot" style="top:150px;animation-delay:1.5s">⌘ SSH keys</div>
+    </div>
+    <div class="node them"><div class="box"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/><circle cx="8" cy="6.5" r=".8" fill="#fff"/><circle cx="8" cy="17.5" r=".8" fill="#fff"/></svg></div>Their server</div>
+    <div class="mal"><span>BeaverTail steals</span><span>InvisibleFerret stays in</span></div>
+  </div>
+</div></div>
+      <div class="caption"><p id="cap"></p><div style="display:flex;align-items:center;gap:10px"><div class="dots" id="dots"></div><button class="replay" id="replay">Replay</button></div></div>
+    </div>
+    <article class="text">
+      
+<section><h2>Why you</h2><div class="why"><span class="tag">Open to work</span><span class="tag">Senior JavaScript</span><span class="tag">Public GitHub</span><span class="tag">Email in commits</span></div></section>
+<section><h2>How it works</h2><ol>
+<li>A friendly recruiter offers a well-paid remote role.</li>
+<li>They send a coding test as a repo and ask you to run it today.</li>
+<li>Running <code>npm install</code> or opening it in VS Code runs hidden code.</li>
+<li>It steals saved logins and wallets, then leaves a backdoor.</li></ol></section>
+<section><h2>Signs</h2><ul>
+<li>Pay looks too good and the process is very fast.</li>
+<li>The test must run on your own machine, today.</li>
+<li>The repo has install scripts or odd files in <code>.vscode</code>.</li></ul></section>
+<section><h2>What to do</h2><ul class="do">
+<li>Run tests in a throwaway cloud box or container, never your laptop.</li>
+<li>Read <code>package.json</code> scripts before you install.</li>
+<li>Check the recruiter on the company's own careers page.</li></ul></section>
+<section class="refs"><h2>Read more</h2><ul>
+<li><a href="https://www.microsoft.com/en-us/security/blog/2026/03/11/contagious-interview-malware-delivered-through-fake-developer-job-interviews/">Microsoft: Contagious Interview</a></li>
+<li><a href="https://unit42.paloaltonetworks.com/north-korean-threat-actors-lure-tech-job-seekers-as-fake-recruiters/">Unit 42: fake recruiters</a></li>
+<li><a href="https://www.atlassian.com/blog/how-we-build/disrupting-contagious-interview">Atlassian: disrupting it</a></li></ul></section>
+      <div class="next"><a href="02-progress.html"><span>Back to</span>Search results</a><a href="03-pattern-session-hijack.html" style="text-align:right"><span>Next pattern</span>Stolen login sessions →</a></div>
+    </article>
+  </div>
+  <p class="demo-note">Mockup · abstract illustration · people, companies and repos shown are made up</p>
+</main>
+<script>
+/* Scene player shared by all pattern pages: each scene = [caption, durationMs, enterFn] */
+function player(scenes, resetFn){
+  const cap=document.getElementById('cap'), dots=document.getElementById('dots');
+  dots.innerHTML=scenes.map(()=>'<i></i>').join('');
+  let i=0, t=null;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function go(k){
+    clearTimeout(t); i=k;
+    if (k===0) resetFn();
+    const [c,d,fn]=scenes[k]; cap.textContent=c;
+    [...dots.children].forEach((n,j)=>n.classList.toggle('on',j===k));
+    fn && fn();
+    t=setTimeout(()=>go((k+1)%scenes.length), reduce ? d*1.5 : d);
+  }
+  document.getElementById('replay').onclick=()=>go(0);
+  const at=+new URLSearchParams(location.search).get('scene'); // ?scene=3 for screenshots
+  if (at) { resetFn(); for(let k=0;k<=at;k++) { scenes[k][2]&&scenes[k][2](true); } cap.textContent=scenes[at][0]; [...dots.children].forEach((n,j)=>n.classList.toggle('on',j===at)); }
+  else go(0);
+}
+
+const $=id=>document.getElementById(id);
+const panels=['pA','pB','pC','pD'];
+function show(id){ panels.forEach(p=>$(p).classList.toggle('show',p===id)); }
+function reset(){ show(null); document.querySelectorAll('.fade-in,.ln').forEach(n=>n.classList.remove('on')); $('pD').classList.remove('go'); }
+const later=(fn,ms,now)=> now ? fn() : setTimeout(fn,ms);
+player([
+ ['A recruiter messages you about a dream job.',4200,now=>{ show('pA'); $('bar1').textContent='Messages'; later(()=>$('b1').classList.add('on'),200,now); later(()=>$('b2').classList.add('on'),1300,now); later(()=>$('b3').classList.add('on'),2300,now); }],
+ ['They send a coding test to run on your laptop.',3600,now=>{ show('pB'); $('bar1').textContent='github.com/blockvault-labs/take-home'; later(()=>$('bad').classList.add('on'),1500,now); }],
+ ['You type npm install. Hidden code runs too.',4600,now=>{ show('pC'); $('bar1').textContent='Terminal'; document.querySelectorAll('#pC .ln').forEach((l,i)=>later(()=>l.classList.add('on'),300+i*480,now)); }],
+ ['Your logins and wallets go to their server.',4200,now=>{ show('pD'); $('bar1').textContent='What leaves your laptop'; $('pD').classList.remove('go'); void $('pD').offsetWidth; $('pD').classList.add('go'); if(now) document.querySelectorAll('.loot').forEach(l=>{l.style.animation='none';l.style.opacity=1;l.style.left='8%';}); }]
+], reset);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>04 · Report · Mirror (mockup)</title>
+<style>
+/* ===== Shared design tokens (same block in every mockup) =====
+   Refs: manglekuo.com landing tagline (big ink/grey text with inline chips),
+   Quintex "Getting things done with an AI assistant" guide (big lede, inline app icons, bordered cards),
+   Boatlock story frames (one highlighted sentence at a time). */
+:root{
+  --bg:#ffffff; --surface:#f6f6f7; --surface-2:#eeeef0; --line:#e4e4e7;
+  --ink:#111113; --muted:#7c7c84; --faint:#a1a1aa;
+  --danger:#e5484d; --danger-bg:#feebec; --warn:#f5a524; --warn-bg:#fff4d6;
+  --ok:#30a46c; --ok-bg:#e9f9ee; --info:#0b63f6; --info-bg:#e8f0fe;
+  --li:#0a66c2; --gh:#1f2328;
+  --radius:14px; --radius-sm:10px; --pill:999px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{font-size:16px;line-height:1.5}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.mock-nav{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.mock-nav a{text-decoration:none;color:var(--muted)} .mock-nav a:hover{color:var(--ink)}
+.mock-nav b{color:var(--ink);font-weight:600}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.brand-mark{width:20px;height:20px;border-radius:6px;background:var(--ink);display:inline-grid;place-items:center}
+.brand-mark::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink),0 0 0 3.5px #fff}
+.lede{font-size:clamp(28px,4.6vw,52px);line-height:1.12;letter-spacing:-.025em;font-weight:700;margin:0}
+.lede .g{color:var(--muted)}
+.ichip{display:inline-flex;align-items:center;gap:.3em;padding:.04em .38em .04em .28em;border-radius:.4em;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+.ichip svg,.ichip .ico{width:.8em;height:.8em}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:20px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btn{appearance:none;border:0;border-radius:var(--pill);background:var(--ink);color:#fff;font:600 15px/1 var(--font);padding:14px 22px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:var(--surface);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:var(--surface);color:var(--muted)}
+.tag.danger{background:var(--danger-bg);color:#b42318} .tag.warn{background:var(--warn-bg);color:#9a5b00} .tag.ok{background:var(--ok-bg);color:#1a7f4b} .tag.info{background:var(--info-bg);color:#0b4fc4}
+.demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Story report: one big sentence per screen, ink for facts, grey for the joins (landing-page tagline style).
+   Lines light up as they reach the middle of the screen (Boatlock story-frame style). */
+.story{max-width:1000px;margin:0 auto;padding:0 24px}
+.beat{min-height:78svh;display:flex;flex-direction:column;justify-content:center;padding:60px 0}
+.beat:first-child{min-height:calc(88svh - 41px)}
+.big{font-size:clamp(34px,6.2vw,76px);line-height:1.08;letter-spacing:-.035em;font-weight:750;margin:0;transition:opacity .5s,transform .5s;opacity:.16;transform:translateY(8px)}
+.beat.lit .big{opacity:1;transform:none}
+.big .g{color:var(--faint)}
+.big .r{color:var(--danger)}
+.big .ichip{font-size:.82em;vertical-align:.04em;border-radius:.32em;padding:.02em .3em .04em .2em;gap:.22em}
+.big .ichip .ico{width:.78em;height:.78em;border-radius:50%;display:inline-grid;place-items:center;font:700 .42em/1 Arial,sans-serif;color:#fff;flex:none}
+.big a.ichip{text-decoration:none;transition:background .2s} .big a.ichip:hover{background:var(--surface-2)}
+.kicker{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 18px;letter-spacing:.01em}
+.src{margin-top:22px;font-size:13.5px;color:var(--muted);opacity:0;transition:opacity .6s .2s}
+.beat.lit .src{opacity:1}
+.todo{list-style:none;margin:28px 0 0;padding:0;counter-reset:t}
+.todo li{counter-increment:t;display:grid;grid-template-columns:auto 1fr;gap:.5em;align-items:baseline;font-size:clamp(24px,3.6vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.15;padding:.45em 0;border-top:1px solid var(--line)}
+.todo li::before{content:counter(t);font:700 .6em var(--mono);color:var(--ok)}
+.todo li span{color:var(--faint)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.actions .btn{font-size:16px;padding:16px 24px}
+.score{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.score .tag{font-size:13px;padding:6px 12px}
+.scrollcue{margin-top:40px;font-size:13px;color:var(--faint)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.on{opacity:1}
+@media (max-width:600px){.beat{min-height:70svh;padding:44px 0}.big{letter-spacing:-.03em}}
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockup navigation (not part of the app)">
+  <span class="brand"><span class="brand-mark"></span>Mirror</span>
+  <span><a href="03-pattern-signup-bombing.html">← 03</a> · <b>04 Report</b> · <a href="index.html">All</a></span>
+</nav>
+<main class="story">
+  <section class="beat">
+    <p class="kicker">Your exposure report · 24 Nov 2026 · 13 seconds</p>
+    <h1 class="big">Jane, <span class="g">a stranger found</span> 6 pages <span class="g">about you without</span> logging in.</h1>
+    <div class="score"><span class="tag danger">1 infected laptop</span><span class="tag danger">3 breaches</span><span class="tag warn">3 scams match you</span></div>
+    <p class="scrollcue">Scroll ↓</p>
+  </section>
+
+  <section class="beat">
+    <h2 class="big">Your email <span class="g">is in</span> 3 breaches. <span class="g">The newest,</span> DevForum, <span class="g">was in</span> 2023.</h2>
+    <p class="src">From LeakCheck and Have I Been Pwned. Breach names only, never passwords.</p>
+  </section>
+
+  <section class="beat">
+    <h2 class="big"><span class="g">In March, a program on</span> one of your laptops <span class="r">copied 23 saved logins.</span></h2>
+    <p class="src">From Hudson Rock Cavalier. Compromised 14 March 2026. Two were work tools.</p>
+  </section>
+
+  <section class="beat">
+    <h2 class="big"><span class="g">To a scammer, you are</span> a senior <span class="ichip"><span class="ico" style="background:#f7df1e;color:#111">JS</span>JavaScript</span> developer, <span class="g">open to work, with a busy</span> <span class="ichip"><span class="ico" style="background:#1f2328">GH</span>GitHub.</span></h2>
+    <p class="src">From your public LinkedIn and GitHub pages.</p>
+  </section>
+
+  <section class="beat">
+    <h2 class="big"><span class="g">That makes you a target for</span>
+      <a class="ichip" href="03-pattern-fake-recruiter.html"><span class="ico" style="background:var(--danger)">1</span>fake recruiters,</a>
+      <a class="ichip" href="03-pattern-session-hijack.html"><span class="ico" style="background:var(--danger)">2</span>stolen sessions</a>
+      <span class="g">and</span>
+      <a class="ichip" href="03-pattern-signup-bombing.html"><span class="ico" style="background:var(--warn)">3</span>sign-up floods.</a></h2>
+    <p class="src">Tap one to see how it works.</p>
+  </section>
+
+  <section class="beat">
+    <h2 class="big">Tonight, <span class="g">do three things.</span></h2>
+    <ol class="todo">
+      <li><div>Sign out everywhere. <span>Then clean that laptop.</span></div></li>
+      <li><div>Change 3 passwords. <span>Turn on passkeys.</span></div></li>
+      <li><div>Run coding tests in a sandbox. <span>Never on your laptop.</span></div></li>
+    </ol>
+  </section>
+
+  <section class="beat">
+    <h2 class="big">You can't hide from search. <span class="g">You can stop being easy.</span></h2>
+    <div class="actions">
+      <button class="btn" id="mail">Email me this report</button>
+      <a class="btn ghost" href="01-input-chips.html" style="text-decoration:none">Check someone else, with consent</a>
+    </div>
+    <p class="src">Synthetic demo person. Public sources only. Nothing is kept after you close the page.</p>
+  </section>
+</main>
+<p class="demo-note">Mockup · "Jane Doe" and every breach name here are made up</p>
+<div class="toast" id="toast">Mockup: the app sends this with Resend to your own email</div>
+<script>
+const beats=[...document.querySelectorAll('.beat')];
+if (new URLSearchParams(location.search).has('all') || !('IntersectionObserver' in window)) beats.forEach(b=>b.classList.add('lit'));
+else {
+  const io=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('lit', e.isIntersecting)),{rootMargin:'-30% 0px -30% 0px'});
+  beats.forEach(b=>io.observe(b));
+  beats[0].classList.add('lit');
+}
+document.getElementById('mail').onclick=()=>{const t=document.getElementById('toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600);};
+</script>
+</body>
+</html>
