@@ -1,0 +1,7 @@
+_agent
+.env*
+!.env.example
+node_modules
+.next
+eval/run.mjs
+*.raw.json.private
