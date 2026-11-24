@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { ShieldAlert } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
 import { PATTERNS, type PatternId } from "@/lib/patterns";
-import "@/components/report-markdown.css";
 import "./patterns.css";
 
 export const metadata: Metadata = { title: "Scam patterns | Hackable" };
@@ -28,31 +26,29 @@ export default function PatternsPage() {
           <h1 className="m-0 text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-[var(--n900)] sm:text-6xl">Scam patterns</h1>
         </header>
         <div className="pt-groups">
-          {GROUPS.map((g) => (
-            <section key={g.title} className="pt-group" aria-labelledby={"pt-" + g.ids[0]}>
-              <h2 id={"pt-" + g.ids[0]}>{g.title}</h2>
-              <div className="rm">
-                {g.ids.map((id) => PATTERNS[id]).filter(Boolean).map((p) => (
-                  <div className="rm-group" key={p.id}>
-                    <aside className="rm-card rm-scam">
-                      <ShieldAlert className="rm-icon" aria-hidden size={20} />
-                      <div className="rm-card-body">
-                        <p className="rm-lead">{p.name}</p>
-                        <p className="rm-body">{p.oneLine}</p>
-                      </div>
-                    </aside>
-                    {p.sources.length > 0 && (
-                      <div className="rm-refs">
-                        {p.sources.map((url, j) => (
-                          <span key={url}>{j > 0 && " · "}<a href={url} target="_blank" rel="noopener noreferrer">{host(url)}</a></span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+          {GROUPS.map((g) => {
+            const items = g.ids.map((id) => PATTERNS[id]).filter(Boolean);
+            return (
+              <section key={g.title} className="pt-group" aria-labelledby={"pt-" + g.ids[0]}>
+                <h2 id={"pt-" + g.ids[0]}>{g.title} <span className="pt-count">{items.length}</span></h2>
+                <ul className="pt-grid">
+                  {items.map((p) => (
+                    <li key={p.id} id={p.id} className="pt-card">
+                      <h3>{p.name}</h3>
+                      <p>{p.oneLine}</p>
+                      {p.sources.length > 0 && (
+                        <div className="pt-refs">
+                          {p.sources.map((url, j) => (
+                            <span key={url}>{j > 0 && " · "}<a href={url} target="_blank" rel="noopener noreferrer">{host(url)}</a></span>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
         </div>
       </div>
     </main>
