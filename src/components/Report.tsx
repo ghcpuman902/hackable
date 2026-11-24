@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Lucide, Tile } from "./icons";
+import { FLAG_LABEL, type FlagId } from "@/lib/flags";
 import type { Preset } from "@/lib/presets";
 import { DEMO_EMAIL, PATTERNS, type MiniName, type PatternId, type Profile, type ScanResult, type ScanTool } from "@/lib/synthetic";
 
@@ -123,10 +124,12 @@ export function PatternSec({ id, who }: { id: PatternId; who?: string }) {
 }
 
 /* The profile a person has, or a calm No profile. A profile decides which patterns lead the report. */
-export function ProfileTag({ profile }: { profile: Profile | null }) {
+/* The profile label, then what public data shows (flags). Labels a person may or may not have; never a rating. */
+export function ProfileTag({ profile, flags = [] }: { profile: Profile | null; flags?: FlagId[] }) {
   return (
     <div className="tag-row">
       {profile ? <span className="badge">{profile}</span> : <span className="badge none"><Lucide name="check" />No profile</span>}
+      {flags.map((f) => <span key={f} className="badge flag">{FLAG_LABEL[f]}</span>)}
     </div>
   );
 }
@@ -166,15 +169,20 @@ export type Outputs = Partial<Record<ScanTool, ScanResult>>;
 const and = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
 /* A commit email lets a fake recruiter write about your code; any email that is public or leaked can be flooded. */
-export function livePatterns(o: Outputs): PatternId[] {
-  const commitEmail = (o.github?.facts?.emails?.length ?? 0) > 0;
+/* Flags pick the patterns: a public commit email, one username everywhere or a new job all lead to Contagious Interview;
+   being in the news leads to state spearphishing and fake boss payments. */
+export function livePatterns(o: Outputs, flags: FlagId[] = []): PatternId[] {
+  const on = (f: FlagId) => flags.includes(f);
+  const commitEmail = (o.github?.facts?.emails?.length ?? 0) > 0 || on("public-email-in-commits");
   const publicEmail = commitEmail || !!o.social?.facts?.profiles?.includes("Gravatar") || !!o.hibpTest?.hit || !!o.leakCheck?.hit;
   const ids: PatternId[] = [];
-  if (commitEmail) ids.push("contagious-interview");
+  if (commitEmail || on("same-username-everywhere") || on("just-changed-jobs")) ids.push("contagious-interview");
   if (publicEmail) ids.push("email-bomb-vishing");
   /* Stealer logs and combolists with a password point to stolen sessions as well as stolen passwords. */
   const creds = !!o.hibpTest?.facts?.breaches?.some((b) => b.creds) || !!o.hibpTest?.facts?.pastes?.some((p) => p.creds);
-  if (o.hudsonRock?.hit || creds) ids.push("session-hijack");
+  if (o.hudsonRock?.hit || creds || on("stealer-log-hit")) ids.push("session-hijack");
+  if (on("in-the-news")) ids.push("state-spearphish");
+  if (on("in-the-news") && on("just-changed-jobs")) ids.push("ceo-fraud");
   return ids;
 }
 

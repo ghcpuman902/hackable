@@ -230,9 +230,10 @@ html,body{overflow-x:clip}
 @media (prefers-reduced-motion:reduce){.pbi{animation:none!important;opacity:0}.pbi:first-child{opacity:1}}
 .person:hover{background:var(--n50)}
 .run .people,.run .srcs,.run .srcs-m{display:none}
-.tag-row{display:flex;padding:4px 0 0}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 0}
 .badge{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 14px;border-radius:999px;background:var(--n900);color:#fff;font-size:14px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
 .badge.none{background:var(--ok-bg);color:var(--ok);padding-left:10px}
+.badge.flag{background:var(--n50);color:var(--n900);font-weight:600;box-shadow:inset 0 0 0 1px var(--n200)}
 .badge svg{width:14px;height:14px}
 .srcs{display:flex;flex-direction:column;align-items:center;gap:8px}
 .srow{display:flex;align-items:center;gap:8px}

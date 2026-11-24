@@ -9,6 +9,7 @@ import { Fan, runH, type CardState } from "./Fan";
 import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, ProfileTag, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
+import { outputFlags, type FlagHit, type FlagId } from "@/lib/flags";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugExtra, type SugGroup } from "@/lib/suggest";
 import { Suggest, type Opt } from "./Suggest";
@@ -101,6 +102,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const armed = useRef(false);
 
   const { messages, sendMessage, setMessages, stop, status } = useChat<ScanMessage>({ transport });
+  /* Live scans also ask /api/flags for the flags that need their own lookups (same username, in the news, job change). */
+  const [netFlags, setNetFlags] = useState<FlagHit[] | null>(null);
+  const flagsCtl = useRef<AbortController | null>(null);
   /* A preset opens a cached profile on the live card list, in either mode. */
   const preset = running ? presetFor(chips.map((c) => c.raw).join(", ")) : undefined;
   const fan = fanFor(live || !!preset);
@@ -255,7 +259,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
   }
   const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
-  const done = running && (status === "error" || (status === "ready" && settled));
+  const flagsIn = !live || !!preset || netFlags !== null;
+  const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
 
   const scan = useCallback((list: Chip[]) => {
     setExtraOpen(false);
@@ -263,8 +268,19 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     setShowAll(new URLSearchParams(location.search).has("all"));
     setMessages([]);
     setRunning(true);
-    void sendMessage({ text: list.map((c) => c.raw).join(", ") });
-  }, [sendMessage, setMessages]);
+    const text = list.map((c) => c.raw).join(", ");
+    flagsCtl.current?.abort();
+    setNetFlags(null);
+    if (live && !presetFor(text)) {
+      const ctl = new AbortController();
+      flagsCtl.current = ctl;
+      fetch("/api/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: text }), signal: ctl.signal })
+        .then((r) => r.json() as Promise<{ flags?: FlagHit[] }>)
+        .then((j) => { if (flagsCtl.current === ctl) setNetFlags(j.flags ?? []); })
+        .catch(() => { if (flagsCtl.current === ctl && !ctl.signal.aborted) setNetFlags([]); });
+    }
+    void sendMessage({ text });
+  }, [live, sendMessage, setMessages]);
 
   const restore = useCallback(() => {
     const q = new URLSearchParams(location.search).get("q");
@@ -367,7 +383,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   const mail = () => { setToast(true); setTimeout(() => setToast(false), 2400); };
   const rise = (i: number) => ({ animationDelay: i * 0.14 + "s" }) as CSSProperties;
-  const patterns = livePatterns(outputs);
+  /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
+  const flags: FlagId[] = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes").map((f) => f.id);
+  const patterns = livePatterns(outputs, flags);
   const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
@@ -378,7 +396,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     ...reportPatterns(preset.profile, preset.patterns).map((id) => <PatternSec key={id} id={id} who={preset.name.split(" ")[0]} />),
     <FinalSec key="final" onMail={mail} both={false} />,
   ] : live ? [
-    <ProfileTag key="profile" profile={null} />,
+    <ProfileTag key="profile" profile={null} flags={flags} />,
     ...liveFindings(outputs),
     ...patterns.map((id) => <PatternSec key={id} id={id} who={who} />),
     <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")}

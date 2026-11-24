@@ -1,9 +1,12 @@
+import type { FlagId } from "./flags";
 import type { ScanResult, ScanTool } from "./synthetic";
 
 /* The /test QA page: hand written ground truth per source, compared with the raw tool output. No model involved. */
+/* A row is a source tool or a flag; flags come back in the same result shape. */
+export type QaKey = ScanTool | FlagId;
 export type QaState = "found" | "none" | "skip";
 export type QaExpect = { state: QaState; min?: number; includes?: string[]; note?: string };
-export type QaTarget = { id: string; label: string; query: string; kind: "live" | "preset"; expected: Partial<Record<ScanTool, QaExpect>> | null };
+export type QaTarget = { id: string; label: string; query: string; kind: "live" | "preset"; expected: Partial<Record<QaKey, QaExpect>> | null };
 export type QaMatch = "match" | "partial" | "miss" | "none";
 
 export const stateOf = (r: ScanResult): QaState | "error" => {

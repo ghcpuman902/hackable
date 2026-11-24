@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { judge, type QaMatch, type QaTarget } from "@/lib/qa";
-import type { ScanResult, ScanTool } from "@/lib/synthetic";
+import { judge, type QaKey, type QaMatch, type QaTarget } from "@/lib/qa";
+import type { ScanResult } from "@/lib/synthetic";
 
-type Run = { status: "idle" | "running" | "done" | "error"; results?: Partial<Record<ScanTool, ScanResult>>; ms?: number; error?: string };
-type Data = { live: boolean; tools: { tool: ScanTool; title: string }[]; targets: QaTarget[] };
+type Run = { status: "idle" | "running" | "done" | "error"; results?: Partial<Record<QaKey, ScanResult>>; ms?: number; error?: string };
+type Data = { live: boolean; tools: { tool: QaKey; title: string }[]; targets: QaTarget[] };
 
 const MARK: Record<QaMatch, string> = { match: "✓", partial: "◐", miss: "✕", none: "" };
 const LABEL: Record<QaMatch, string> = { match: "Match", partial: "Partial", miss: "Mismatch", none: "No expectation" };
