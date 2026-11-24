@@ -12,6 +12,10 @@ const DESCRIPTION: Record<ScanTool, string> = {
   hudsonRock: "Look up infostealer logs (Hudson Rock)",
   leakCheck: "Look up leaked passwords (LeakCheck)",
   hibpTest: "Look up breaches (Have I Been Pwned test account)",
+  forum: "Search public forum posts (Reddit and similar)",
+  peopleSearch: "Look up people-search listings for address and relatives",
+  publicContact: "Look up public contact listings for phone numbers",
+  social: "Find public social profiles (Instagram, X)",
 };
 
 const sleep = (ms: number, signal?: AbortSignal) =>
@@ -34,6 +38,7 @@ export function makeScanTools(startedAt: number) {
   return {
     web: by("web"), linkedin: by("linkedin"), github: by("github"),
     hudsonRock: by("hudsonRock"), leakCheck: by("leakCheck"), hibpTest: by("hibpTest"),
+    forum: by("forum"), peopleSearch: by("peopleSearch"), publicContact: by("publicContact"), social: by("social"),
   };
 }
 

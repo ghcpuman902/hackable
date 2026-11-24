@@ -199,16 +199,24 @@ html,body{overflow-x:clip}
 .stage{position:relative;z-index:1;height:400px;overflow:hidden;
   -webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
 .done .stage{display:none}
-.fan{position:relative;height:100%;--step:150px;--w:168px;--k:16px;--top:64px}
-.fs{position:absolute;left:50%;width:var(--w);top:calc(var(--top) + var(--oa) * var(--oa) * var(--k));
-  transform:translateX(calc(-50% + var(--o) * var(--step)));opacity:calc(.8 - var(--oa) * .12);transition:opacity .4s}
-.fs .ln{position:absolute;left:50%;top:-24px;height:0;border-top:1.5px dotted rgba(229,72,77,.4);transform-origin:0 0;pointer-events:none;
-  --dx:calc(var(--o) * var(--step) * -1);--dy:calc((var(--top) + var(--oa) * var(--oa) * var(--k) - 22px) * -1);
-  width:hypot(var(--dx),var(--dy));rotate:atan2(var(--dy),var(--dx))}
+/* --x/--xa/--xs: offset, |offset| and hub side. Wide screens use the full fan, narrow ones the narrow subset. */
+.fan{position:relative;height:100%;--w:168px;--k:9px;--top:64px;--rot:4.5deg;--pad:14px;
+  --step:min(126px,calc((100vw - 120px) / (var(--n) - 1)))}
+.fs{--x:var(--o);--xa:var(--oa);--xs:var(--s);
+  position:absolute;left:50%;width:var(--w);top:calc(var(--top) + var(--xa) * var(--xa) * var(--k));
+  transform:translateX(calc(-50% + var(--x) * var(--step)));opacity:calc(.8 - var(--xa) * .1);transition:opacity .4s}
+/* curved dotted connector: a quarter ellipse from the card's top centre up to the hub, mirrored for cards right of centre */
+.fs .ln{position:absolute;left:50%;pointer-events:none;box-sizing:border-box;
+  --dy:calc(var(--top) + var(--xa) * var(--xa) * var(--k) - 22px);
+  top:calc(-24px - var(--dy));height:var(--dy);width:calc(var(--xa) * var(--step));
+  border:0 dotted rgba(229,72,77,.4);border-top-width:1.5px;border-left-width:1.5px;border-top-left-radius:100% 100%;
+  transform-origin:0 0;scale:var(--xs) 1}
 .ftag{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
   padding:3px 9px;border-radius:999px;border:1px solid var(--n200);background:#fff;font:600 12px/1.2 var(--font);color:var(--n500)}
 .ftag i{width:6px;height:6px;border-radius:50%}
-.fc{position:relative;display:block;min-height:150px;padding:14px;border-radius:22px;transform:rotate(calc(var(--o) * 6deg));
+/* right padding keeps text clear of the next card, which covers (--w - --step) of this one */
+.fc{position:relative;display:block;min-height:150px;padding:var(--pad);padding-right:max(var(--pad),calc(var(--w) - var(--step) + var(--pad)));
+  border-radius:22px;transform:rotate(calc(var(--x) * var(--rot)));
   background:linear-gradient(180deg,#fff,#fff7f7);border:1px solid rgba(229,72,77,.14);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.9),0 1px 3px rgba(120,0,0,.08),0 10px 26px rgba(160,20,30,.08);
   transition:translate .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s,background .4s}
@@ -221,7 +229,7 @@ html,body{overflow-x:clip}
 .fc .bars i+i{width:70%}
 .run .fc .bars{opacity:0}
 .run .fs{opacity:.45}
-.run .fs.checking{opacity:1}
+.run .fs.checking{opacity:1;z-index:2}
 .run .fs.checking .fc{translate:0 -10px;background:#fff;box-shadow:inset 0 0 0 1px #fff,0 0 0 2px var(--n900),0 10px 26px rgba(0,0,0,.1)}
 .run .fs.checking .st::after{content:"";display:inline-block;width:9px;height:9px;margin-left:6px;border-radius:50%;border:2px solid #d4d4d4;border-top-color:var(--n900);vertical-align:-1px;animation:spin .7s linear infinite}
 .run .fs.ok{opacity:.9}
@@ -233,11 +241,16 @@ html,body{overflow-x:clip}
 .rise .sec{animation:none}
 @media (max-width:640px){
   .stage{height:320px}
-  .fan{--step:62px;--w:132px;--k:10px;--top:52px}
-  .fc{min-height:128px;padding:12px;border-radius:18px}
-  .fc .lg{width:38px;height:38px;border-radius:11px} .fc .lg svg{width:20px;height:20px}
-  .fc b{font-size:14px}
-  .fc .st{font-size:12px}
+  .fan{--w:96px;--k:14px;--top:52px;--rot:3deg;--pad:10px;
+    --step:min(100px,calc((100vw - 32px - var(--w)) / (var(--nn) - 1)))}
+  .fs{--x:var(--om);--xa:var(--oma);--xs:var(--sm)}
+  .fs.wide{display:none}
+  .fc{min-height:132px;border-radius:16px}
+  .fc .lg{width:30px;height:30px;border-radius:9px} .fc .lg svg{width:17px;height:17px}
+  .fc b{margin-top:8px;font-size:13px}
+  .fc .st{min-height:3.9em;font-size:11px}
+  .fc .bars{left:10px;bottom:14px;gap:6px} .fc .bars i{height:6px}
+  .ftag{padding:2px 7px;font-size:11px}
   .landing h1{margin-bottom:24px}
 }
 @media (prefers-reduced-motion:reduce){

@@ -2,7 +2,8 @@
 import type { Brand } from "@/components/brand-icons";
 
 /* ---- scan sources: one AI SDK tool each, one fan card each ---- */
-export type ScanTool = "web" | "linkedin" | "github" | "hudsonRock" | "leakCheck" | "hibpTest";
+export type ScanTool = "web" | "linkedin" | "github" | "hudsonRock" | "leakCheck" | "hibpTest"
+  | "forum" | "peopleSearch" | "publicContact" | "social";
 export type ScanResult = { found: string; hit: boolean };
 
 export type FanCard = {
@@ -14,22 +15,33 @@ export type FanCard = {
   checking: string;
   result: ScanResult;
   delayMs: number;
+  /* shown in the fan on narrow screens */
+  narrow?: boolean;
 };
 
-/* Order is the fan order, left to right. */
+/* Order is the fan order, left to right: the reference's order, with the three
+   credential sources after Data breach and Web after Forum. */
 export const FAN: FanCard[] = [
   { tool: "linkedin", title: "LinkedIn", tag: "LinkedIn", dot: "#0A66C2", icon: { brand: "linkedin" },
-    checking: "Checking LinkedIn", result: { found: "Found: open to work", hit: true }, delayMs: 900 },
+    checking: "Checking LinkedIn", result: { found: "Found: open to work", hit: true }, delayMs: 900, narrow: true },
   { tool: "github", title: "GitHub", tag: "username", dot: "#171717", icon: { brand: "github" },
-    checking: "Checking GitHub", result: { found: "Found: email in commits", hit: true }, delayMs: 1500 },
-  { tool: "hibpTest", title: "Data breach", tag: "email", dot: "#2A6379", icon: { brand: "hibp" },
-    checking: "Checking breaches", result: { found: "Found: 3 breaches", hit: true }, delayMs: 2100 },
-  { tool: "web", title: "Web", tag: "name", dot: "#00a5ef", icon: { lucide: "globe", bg: "#00a5ef" },
-    checking: "Checking the web", result: { found: "Found: 14 mentions", hit: false }, delayMs: 2700 },
-  { tool: "hudsonRock", title: "Stolen logins", tag: "device", dot: "#e5484d", icon: { lucide: "key-round", bg: "#e5484d" },
-    checking: "Checking stealer logs", result: { found: "Found: 23 saved logins", hit: true }, delayMs: 3300 },
+    checking: "Checking GitHub", result: { found: "Found: email in commits", hit: true }, delayMs: 1300, narrow: true },
+  { tool: "hibpTest", title: "Data breach", tag: "breach", dot: "#2A6379", icon: { brand: "hibp" },
+    checking: "Checking breaches", result: { found: "Found: 3 breaches", hit: true }, delayMs: 1700, narrow: true },
   { tool: "leakCheck", title: "Leaked passwords", tag: "email", dot: "#8e51ff", icon: { lucide: "lock", bg: "#8e51ff" },
-    checking: "Checking leak lists", result: { found: "Found: 3 passwords", hit: true }, delayMs: 3900 },
+    checking: "Checking leak lists", result: { found: "Found: 3 passwords", hit: true }, delayMs: 2100 },
+  { tool: "hudsonRock", title: "Stolen logins", tag: "device", dot: "#e5484d", icon: { lucide: "key-round", bg: "#e5484d" },
+    checking: "Checking stealer logs", result: { found: "Found: 23 saved logins", hit: true }, delayMs: 3900, narrow: true },
+  { tool: "forum", title: "Forum", tag: "handle", dot: "#FF4500", icon: { brand: "reddit" },
+    checking: "Checking forums", result: { found: "Found: 6 posts", hit: false }, delayMs: 2500 },
+  { tool: "web", title: "Web", tag: "name", dot: "#00a5ef", icon: { lucide: "globe", bg: "#00a5ef" },
+    checking: "Checking the web", result: { found: "Found: 14 mentions", hit: false }, delayMs: 2800 },
+  { tool: "peopleSearch", title: "People search", tag: "address", dot: "#a855f7", icon: { lucide: "user-search", bg: "#a855f7" },
+    checking: "Checking people sites", result: { found: "Found: home town", hit: true }, delayMs: 3100 },
+  { tool: "publicContact", title: "Public contact", tag: "phone", dot: "#10b981", icon: { lucide: "phone", bg: "#10b981" },
+    checking: "Checking contact lists", result: { found: "Found: mobile number", hit: true }, delayMs: 3400 },
+  { tool: "social", title: "Social", tag: "social", dot: "#dd2a7b", icon: { brand: "instagram" },
+    checking: "Checking Instagram and X", result: { found: "Found: 2 profiles", hit: false }, delayMs: 3650 },
 ];
 
 /* ---- landing ---- */

@@ -15,14 +15,20 @@ function Logo({ card }: { card: FanCard }) {
 /* The same fan is the landing scene and the loading state. Position comes from --o (offset from centre). */
 export function Fan({ states, label }: { states?: Partial<Record<ScanTool, CardState>>; label?: (c: FanCard, s: CardState) => string }) {
   const mid = (FAN.length - 1) / 2;
+  const narrow = FAN.filter((c) => c.narrow);
+  const nmid = (narrow.length - 1) / 2;
   return (
-    <div className="fan" aria-live="polite">
+    <div className="fan" aria-live="polite" style={{ "--n": FAN.length, "--nn": narrow.length } as CSSProperties}>
       {FAN.map((c, i) => {
         const o = i - mid;
+        const j = narrow.indexOf(c);
+        const om = j < 0 ? 0 : j - nmid;
         const s = states?.[c.tool] ?? "idle";
         const st = label?.(c, s) ?? "";
+        /* --o/--om: offset from centre (wide/narrow). --s/--sm: which side the hub is on, for the curved connector. */
+        const vars = { "--o": o, "--oa": Math.abs(o), "--s": o < 0 ? 1 : -1, "--om": om, "--oma": Math.abs(om), "--sm": om < 0 ? 1 : -1 };
         return (
-          <div key={c.tool} className={"fs " + s} style={{ "--o": o, "--oa": Math.abs(o) } as CSSProperties}>
+          <div key={c.tool} className={"fs " + s + (c.narrow ? "" : " wide")} style={vars as CSSProperties}>
             <i className="ln" aria-hidden="true"></i>
             <span className="ftag"><i style={{ background: c.dot }}></i>{c.tag}</span>
             <div className="fc">
