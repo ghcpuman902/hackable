@@ -12,7 +12,7 @@ import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import type { ScanMessage } from "@/lib/scan-tools";
 import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, reportPatterns, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
-/* Small platform tiles under each recent person, as in 06. */
+/* Where each recent person was found: one small badge on the avatar cycles through these. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
   linkedin: { c: BRAND_BG.linkedin, icon: <BrandIcon name="linkedin" /> },
   github: { c: BRAND_BG.github, icon: <BrandIcon name="github" /> },
@@ -297,13 +297,14 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
             <div className="people">
               {PEOPLE.map((p, i) => (
                 <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
-                  <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.n)}</span>
-                  <span className="nm">{p.n}</span>
-                  <span className="wallet" aria-hidden="true">
-                    {p.found.map((f, j) => (
-                      <span key={f} className="wc" style={{ "--c": MINI[f].c, "--o": j * 15 + ((i * 3 + j * 5) % 3) + "px", "--rt": 8 + ((i * 5 + j * 3) % 7) + "deg", zIndex: j } as CSSProperties}>{MINI[f].icon}</span>
-                    ))}
+                  <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.n)}
+                    <span className={"pb n" + p.found.length} aria-hidden="true" style={{ "--n": p.found.length, "--off": i * 0.55 + "s" } as CSSProperties}>
+                      {p.found.map((f, j) => (
+                        <span key={f} className="pbi" style={{ "--c": MINI[f].c, "--i": j } as CSSProperties}>{MINI[f].icon}</span>
+                      ))}
+                    </span>
                   </span>
+                  <span className="nm">{p.n}</span>
                 </button>
               ))}
             </div>
