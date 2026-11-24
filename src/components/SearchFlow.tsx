@@ -104,7 +104,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   /* What the person ticks themselves (moved home, big life event, selling online, travelling soon). Never inferred. */
   const [selfFlags, setSelfFlags] = useState<SelfFlagId[]>([]);
   const [scanId, setScanId] = useState(0);
-  const [toast, setToast] = useState(false);
   const entryRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const armed = useRef(false);
@@ -456,7 +455,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const patterns = patternsFor({ profile: null, flags: [...flags, ...selfFlags] });
   const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
-  const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
   /* Live scans get No profile for now: nothing they return is a cheap, reliable sign of one. */
   /* First thing in the report: who this is about and what the checks found, as icons, before any prose. */
   const hits = fan.filter((c) => states[c.tool] === "hit");
@@ -606,7 +604,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <div className="app results-area">
         {done && <div className="report" id="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
       </div>
-      <div className={"toast" + (toast ? " on" : "")} role="status">Sent to {mailTo}</div>
     </div>
   );
 }
