@@ -1,0 +1,18 @@
+.badge.hashtag-pill {
+  max-width: 100%;
+  height: auto;
+  min-height: 30px;
+  white-space: normal;
+}
+
+.hashtag-label {
+  overflow-wrap: anywhere;
+}
+
+.badge.hashtag-pill > svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
