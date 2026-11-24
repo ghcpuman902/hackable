@@ -79,6 +79,18 @@ a.sec{padding-right:64px}
   .field{border-radius:22px;padding-left:44px} .field .lens{left:15px}
   .chip .lbl{max-width:190px}
 }
+
+.pname{font:700 13px var(--font);letter-spacing:.01em;color:var(--n900);margin:0 0 8px;display:block}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 0;padding:0;list-style:none}
+.chain li{position:relative;font:600 13px/1 var(--font);color:var(--n800);background:#fff;border-radius:999px;padding:7px 10px;cursor:help}
+.chain li+li::before{content:"";position:absolute;left:-6px;top:50%;width:6px;height:1px;background:#d4d4d4}
+.chain li[data-id]:hover::after,.chain li[data-id]:focus::after{content:attr(data-id);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;font:600 11px var(--mono);background:var(--n900);color:#fff;padding:4px 7px;border-radius:6px}
+.lesson{margin:14px 0 0;font:600 16px/1.4 var(--font);letter-spacing:-.01em;color:var(--n900)}
+.cite{display:block;margin-top:8px;font:500 12px/1.4 var(--font);color:#a3a3a3}
+.m-vish .call{position:absolute;left:11%;right:11%;top:44px;background:var(--n900);color:#fff;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.m-vish .call span{display:block;font-weight:500;color:#a3a3a3;font-size:11px}
+.m-vish .qa{position:absolute;left:11%;right:11%;bottom:14px;background:#fff;border:1px solid var(--n200);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--n900);display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.m-vish .qa b{background:var(--danger);color:#fff;border-radius:999px;padding:3px 9px;font-size:11px}
 /* mini animations: CSS only, 8s loop, scaled-down versions of the 03 pages */
 .mini{position:relative;height:190px;border-radius:1.25rem;background:#fff;overflow:hidden;font-family:var(--font)}
 .mini *{box-sizing:border-box}
@@ -336,6 +348,11 @@ const MINI = {
   flood: `<div class="mini m-flood" aria-hidden="true">
     <div class="bar">Inbox<span><b></b></span></div>
     <div class="list"><div class="stack"></div><div class="real">Order confirmed: £2,399</div></div></div>`,
+  vish: `<div class="mini m-flood m-vish" aria-hidden="true">
+    <div class="bar">Inbox<span><b></b></span></div>
+    <div class="list"><div class="stack"></div></div>
+    <div class="call a" style="animation-name:s45">Help Desk IT is calling<span>Teams · "We can stop the spam"</span></div>
+    <div class="qa a" style="animation-name:s65">Quick Assist: share screen?<b>Allow</b></div></div>`,
   sess: `<div class="mini m-sess" aria-hidden="true">
     <div class="w you"><span class="ck"></span>GitHub<br><span class="ck"></span>Email<br><span class="ck"></span>Slack</div>
     <div class="fly"></div>
@@ -354,30 +371,42 @@ const MINI = {
 
 /* ---------- scam patterns: reorder or drop here ---------- */
 const PATTERNS = {
-  'fake-recruiter': {anim:'rec', href:'03-pattern-fake-recruiter.html',
-    lead:'A recruiter offers a dream job, then sends a coding test.', rest:' Running npm install starts hidden code that copies your saved logins and wallets. Run tests in a throwaway sandbox.'},
-  'signup-bombing': {anim:'flood', href:'03-pattern-signup-bombing.html',
-    lead:'Hundreds of welcome emails arrive at once.', rest:' They bury one real alert, like an order you never placed. Search the flood for orders and password resets before you delete it.'},
-  'session-hijack': {anim:'sess', href:'03-pattern-session-hijack.html',
-    lead:'They copy the part of your browser that says you are signed in.', rest:' No password or code needed. Sign out of every session, then change passwords.'}
+  'contagious-interview': {name:'Contagious Interview', anim:'rec', href:'03-pattern-fake-recruiter.html',
+    lead:'A fake recruiter sends you a coding test, and running it infects your laptop.', rest:' When you run npm install, the repo starts BeaverTail. It copies your saved logins and crypto wallets, then installs a backdoor called InvisibleFerret.',
+    chain:[['Recruiter message','T1566.003 Spearphishing via Service'],['Coding test repo','T1204 User Execution'],['npm install','T1059.007 JavaScript'],['Browser logins','T1555.003 Credentials from Web Browsers'],['Wallets and sessions','T1539 Steal Web Session Cookie']],
+    lesson:'Run take-home tests from recruiters you have not met in a GitHub Codespace or on a spare machine.',
+    cite:'Contagious Interview · Microsoft Threat Intelligence · Unit 42 (CL-STA-0240) · MITRE ATT&CK'},
+  'email-bomb-vishing': {name:'Email bomb, then a help-desk call', anim:'vish', href:'03-pattern-signup-bombing.html',
+    lead:'Hundreds of sign-up emails hit your inbox, and then someone from "IT" calls to help.', rest:' The caller asks you to open Quick Assist and share your screen. Once you allow it, they can take your logins and later install ransomware.',
+    chain:[['Inbox flood','T1667 Email Bombing'],['Call on Teams or phone','T1566.004 Spearphishing Voice'],['Quick Assist','T1219 Remote Access Tools'],['Logins, then ransomware','T1486 Data Encrypted for Impact']],
+    lesson:'If IT calls you about spam, hang up and ring the help desk on the number from your company intranet.',
+    cite:'Black Basta email bomb · Microsoft Threat Intelligence (Storm-1811) · CISA AA24-131A · MITRE ATT&CK'},
+  'session-hijack': {name:'Pass-the-cookie', anim:'sess', href:'03-pattern-session-hijack.html',
+    lead:'A copied browser cookie lets someone into your accounts without your password or code.', rest:' Infostealers take the cookie that keeps you signed in, and the attacker loads it in their own browser.',
+    chain:[['Infostealer','T1555.003 Credentials from Web Browsers'],['Session cookie','T1539 Steal Web Session Cookie'],['Replay it','T1550.004 Web Session Cookie']],
+    lesson:'After a leak, press Sign out of all sessions in each account\'s security settings, then change the password.',
+    cite:'Pass-the-cookie · MITRE ATT&CK T1539 · Hudson Rock Cavalier'}
 };
-const LEAD_PATTERNS  = ['fake-recruiter','signup-bombing'];
+const LEAD_PATTERNS  = ['contagious-interview','email-bomb-vishing'];
 const EXTRA_PATTERNS = ['session-hijack'];
 
 const SOURCES = [['Web','done'],['LinkedIn','done'],['GitHub','done'],['Hudson Rock','hit'],['LeakCheck','hit'],['Have I Been Pwned','hit']];
 const para = (lead, rest) => `<p class="qx"><span class="lead">${lead}</span><span class="rest">${rest}</span></p>`;
 const sec = (inner, mini) => `<section class="sec mk-card${mini?'':' plain'}"><div>${inner}</div>${mini?`<div>${MINI[mini]}</div>`:''}</section>`;
-const patternSec = id => { const p=PATTERNS[id]; return `<a class="sec mk-card" href="${p.href}"><div>${para(p.lead,p.rest)}</div><div>${MINI[p.anim]}</div><span class="go" aria-hidden="true">${LUCIDE['arrow-right']}</span></a>`; };
+const patternSec = id => { const p=PATTERNS[id];
+  const chain = '<ol class="chain">'+p.chain.map(([n,t])=>`<li tabindex="0" data-id="${t}" title="${t}">${n}</li>`).join('')+'</ol>';
+  return `<a class="sec mk-card" href="${p.href}"><div>${para(p.lead,p.rest)}${chain}<p class="lesson">${p.lesson}</p><span class="cite">${p.cite}</span></div><div>${MINI[p.anim]}</div><span class="go" aria-hidden="true">${LUCIDE['arrow-right']}</span></a>`; };
 function reportParts(showAll){
   const parts = [
-    sec(para(`Your <span class="nw">${ICON.email}email</span> is in 3 breaches.`, ' The newest was in 2023. Breach names only, never passwords.'), 'breach'),
-    sec(para('In March, a program on your laptop copied 23 saved logins.', ' Two were work tools. They may be for sale now.'), 'steal'),
-    sec(para('To a scammer, you are a senior JavaScript developer, open to work.', ` Your <span class="nw">${ICON.linkedin}LinkedIn</span> and <span class="nw">${ICON.github}GitHub</span> say so. Two scams are built for you.`), 'prof'),
+    sec(para(`Your <span class="nw">${ICON.email}email</span> is in 3 breaches.`, ' The newest was DevForum in 2023. We only saw the breach names.'), 'breach'),
+    sec(para('In March, a program on your laptop copied 23 saved logins.', ' Two were for work tools, and someone may be selling them.'), 'steal'),
+    sec(para('To a scammer, you look like a senior JavaScript developer who is open to work.', ` Your <span class="nw">${ICON.linkedin}LinkedIn</span> and <span class="nw">${ICON.github}GitHub</span> both say so, and two published scams target people like you.`), 'prof'),
     ...LEAD_PATTERNS.map(patternSec),
   ];
   if (showAll) parts.push(...EXTRA_PATTERNS.map(patternSec));
   else if (EXTRA_PATTERNS.length) parts.push(`<button type="button" class="more" id="morebtn">One more pattern</button>`);
-  parts.push(sec(para('Tonight, do three things.', ' Sign out everywhere and clean that laptop. Change the three leaked passwords. Run coding tests in a sandbox.')+
+  parts.push(sec(para('Both scams start in one channel and make the request in another.', ' The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo.')+
+    '<p class="lesson">When a message pushes you to act fast, reply through a channel you already use with that person or company.</p><p class="lesson">Stop and check whenever someone asks you to run their code or share your screen.</p>'+
     `<div class="actions"><button class="pill dark" id="mail"><span class="nw">${ICON.email}Email me this report</span></button></div>`));
   return parts;
 }

@@ -33,17 +33,21 @@ h1{font:700 2.125rem/1.15 var(--font);letter-spacing:-.025em;color:var(--n900);m
 
   <p class="qx"><span class="lead">A stranger found 6 pages about you without logging in.</span><span class="rest"> Your <span class="nw"><span class="ico t-li">{{i:linkedin}}</span>LinkedIn</span> says open to work, and your <span class="nw"><span class="ico t-ink">{{i:github}}</span>GitHub</span> shows your email in every commit.</span></p>
 
-  <p class="qx"><span class="lead">Your <span class="nw"><span class="ico t-amber">{{i:mail}}</span>email</span> is in 3 breaches.</span><span class="rest"> The newest, DevForum, was in 2023. We saw breach names only, never passwords.</span></p>
+  <p class="qx"><span class="lead">Your <span class="nw"><span class="ico t-amber">{{i:mail}}</span>email</span> is in 3 breaches.</span><span class="rest"> The newest was DevForum in 2023. We only saw the breach names.</span></p>
   <span class="src">LeakCheck · Have I Been Pwned (test domain)</span>
 
-  <p class="qx"><span class="lead">In March, a program on your <span class="nw"><span class="ico t-red">{{i:laptop}}</span>laptop</span> copied 23 saved <span class="nw"><span class="ico t-red">{{i:key-round}}</span>logins.</span></span><span class="rest"> Two were work tools. Someone may already be selling them.</span></p>
+  <p class="qx"><span class="lead">In March, a program on your <span class="nw"><span class="ico t-red">{{i:laptop}}</span>laptop</span> copied 23 saved <span class="nw"><span class="ico t-red">{{i:key-round}}</span>logins.</span></span><span class="rest"> Two were for work tools, and someone may be selling them.</span></p>
   <span class="src">Hudson Rock Cavalier · compromised 14 March 2026</span>
 
-  <p class="qx"><span class="lead">To a scammer, you are a senior <span class="nw"><span class="ico t-sky">{{i:code-xml}}</span>JavaScript</span> developer, open to work.</span><span class="rest"> Three scams are built for exactly you: <a class="nw" href="03-pattern-fake-recruiter.html"><span class="ico t-red">{{i:briefcase}}</span>fake recruiters,</a> <a class="nw" href="03-pattern-session-hijack.html"><span class="ico t-red">{{i:cookie}}</span>stolen sessions</a> and <a class="nw" href="03-pattern-signup-bombing.html"><span class="ico t-amber">{{i:inbox}}</span>sign-up floods.</a></span></p>
+  <p class="qx"><span class="lead">To a scammer, you look like a senior <span class="nw"><span class="ico t-sky">{{i:code-xml}}</span>JavaScript</span> developer who is open to work.</span><span class="rest"> Two published scams target people like you.</span></p>
 
-  <p class="qx"><span class="lead">Tonight, do three things.</span><span class="rest"> <span class="nw"><span class="ico t-emerald">{{i:log-out}}</span>Sign out</span> everywhere, then clean that laptop. Change the three leaked <span class="nw"><span class="ico t-emerald">{{i:lock-keyhole}}</span>passwords</span> and turn on passkeys. Run coding tests in a <span class="nw"><span class="ico t-emerald">{{i:terminal}}</span>sandbox,</span> never on your own machine.</span></p>
+  <p class="qx"><a class="lead" href="03-pattern-fake-recruiter.html">A fake recruiter sends you a coding test, and running it infects your laptop.</a><span class="rest"> When you run npm install, the repo starts BeaverTail, which copies your saved logins and crypto wallets. Run take-home tests from recruiters you have not met in a GitHub Codespace or on a spare machine.</span></p>
+  <span class="src">Contagious Interview · Microsoft Threat Intelligence · Unit 42 (CL-STA-0240)</span>
 
-  <p class="qx"><span class="lead">You can't hide from search.</span><span class="rest"> You can stop being easy.</span></p>
+  <p class="qx"><a class="lead" href="03-pattern-signup-bombing.html">Hundreds of sign-up emails hit your inbox, and then someone from "IT" calls to help.</a><span class="rest"> The caller asks you to open Quick Assist and share your screen. If IT calls you about spam, hang up and ring the help desk on the number from your company intranet.</span></p>
+  <span class="src">Black Basta email bomb · Microsoft Threat Intelligence (Storm-1811) · CISA AA24-131A</span>
+
+  <p class="qx"><span class="lead">Both scams start in one channel and make the request in another.</span><span class="rest"> When a message pushes you to act fast, reply through a channel you already use with that person or company. Stop and check whenever someone asks you to run their code or share your screen.</span></p>
 
   <div class="actions">
     <button class="pill dark" id="mail"><span class="nw"><span class="ico t-amber">{{i:mail}}</span>Email me this report</span></button>

@@ -32,3 +32,15 @@ Synthetic only: "Jane Doe", hibp-integration-tests.com, made-up breach and compa
 
 ## Screenshot helpers
 `05-search-flow.html?demo=1` prefills chips. `?q=...&speed=20` jumps to results. `02-progress.html?speed=50`. `03-*.html?scene=3`.
+
+## Attack patterns: sources and naming (checked 24 Nov 2026)
+Cards follow the published names and MITRE ATT&CK technique IDs. IDs appear on hover/focus of each stage pill, not in the body text.
+- Contagious Interview (lead 1). Recruiter message T1566.003 → coding-test repo T1204 → npm install T1059.007 → browser logins T1555.003 → wallets and sessions T1539. Malware names BeaverTail (stealer and loader) and InvisibleFerret (Python backdoor); Microsoft also reports OtterCookie and VS Code task abuse.
+  - Microsoft Security Blog, "Contagious Interview: Malware delivered through fake developer job interviews", 11 Mar 2026: https://www.microsoft.com/en-us/security/blog/2026/03/11/contagious-interview-malware-delivered-through-fake-developer-job-interviews/
+  - Unit 42, "Contagious Interview: DPRK Threat Actors Lure Tech Industry Job Seekers to Install New Variants of BeaverTail and InvisibleFerret Malware" (CL-STA-0240): https://unit42.paloaltonetworks.com/north-korean-threat-actors-lure-tech-job-seekers-as-fake-recruiters/
+- Email bomb, then a help-desk call (lead 2; replaces plain sign-up flood). Email Bombing T1667 → Spearphishing Voice T1566.004 (phone or Teams as "Help Desk IT") → Quick Assist / AnyDesk, Remote Access Tools T1219 → credential theft, then Black Basta ransomware T1486.
+  - Microsoft Security Blog, "Threat actors misusing Quick Assist in social engineering attacks leading to ransomware" (Storm-1811), 15 May 2024: https://www.microsoft.com/en-us/security/blog/2024/05/15/threat-actors-misusing-quick-assist-in-social-engineering-attacks-leading-to-ransomware/
+  - CISA, "#StopRansomware: Black Basta" AA24-131A (Nov 2024 update on spam then fake tech-support calls): https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-131a
+  - MITRE ATT&CK T1667 Email Bombing: https://attack.mitre.org/techniques/T1667/ and Storm-1811 G1046: https://attack.mitre.org/groups/G1046/
+- Pass-the-cookie (extra). T1555.003 → T1539 → T1550.004. IDs from MITRE ATT&CK (not re-fetched today); infostealer evidence from Hudson Rock Cavalier.
+- Meta-lessons (final card): urgency in one channel, the ask in another; trust moves, so check out of band; reading is safe, run/allow/approve is where it happens.
