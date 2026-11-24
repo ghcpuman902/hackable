@@ -1,8 +1,11 @@
 import { tool, type InferUITools, type UIDataTypes, type UIMessage } from "ai";
 import { z } from "zod";
+import { makeLiveContext } from "./live-sources";
 import { CHECK_MS, FAN, type ScanResult, type ScanTool } from "./synthetic";
 
-/* One tool per source. Each returns synthetic data after a short delay. No network calls. */
+/* One tool per source. By default each returns synthetic data after a short delay, with no network calls.
+   With SCAN_MODE=live, sources that have a free public API call it instead (see live-sources.ts);
+   the rest stay on their synthetic result. */
 const input = z.object({ query: z.string().describe("Names, emails, links or handles to check") });
 
 const DESCRIPTION: Record<ScanTool, string> = {
@@ -26,11 +29,14 @@ const sleep = (ms: number, signal?: AbortSignal) =>
 
 export function makeScanTools() {
   /* Each source settles CHECK_MS after its call; the next call starts once it has. */
+  const live = process.env.SCAN_MODE === "live" ? makeLiveContext() : null;
   const make = (card: (typeof FAN)[number]) =>
     tool({
       description: DESCRIPTION[card.tool],
       inputSchema: input,
-      execute: async (_args, { abortSignal }): Promise<ScanResult> => {
+      execute: async ({ query }, { abortSignal }): Promise<ScanResult> => {
+        const check = live?.check(card.tool, query, abortSignal);
+        if (check) return (await Promise.all([check, sleep(CHECK_MS, abortSignal)]))[0];
         await sleep(CHECK_MS, abortSignal);
         return card.result;
       },

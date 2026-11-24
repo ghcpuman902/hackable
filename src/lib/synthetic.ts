@@ -4,7 +4,8 @@ import type { Brand } from "@/components/brand-icons";
 /* ---- scan sources: one AI SDK tool each, one fan card each ---- */
 export type ScanTool = "web" | "linkedin" | "github" | "hudsonRock" | "leakCheck" | "hibpTest"
   | "forum" | "peopleSearch" | "publicContact" | "social";
-export type ScanResult = { found: string; hit: boolean };
+/* source and detail are set only by live checks (SCAN_MODE=live); synthetic results leave them out. */
+export type ScanResult = { found: string; hit: boolean; source?: "live" | "skipped" | "unavailable"; detail?: string };
 
 export type FanCard = {
   tool: ScanTool;

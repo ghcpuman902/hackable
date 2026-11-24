@@ -16,7 +16,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Inputs are at least 17px.
 - No layout shift: content that appears later has reserved space or animates in without moving what is already there.
 - The mockups in `public/mockups/` are the design source of truth. Port them; don't restyle them.
-- Synthetic data only until real APIs are approved. No network calls to breach APIs.
+- Synthetic data by default. `SCAN_MODE=live` (approved by Mangle on 24 Nov) calls free public sources only: LeakCheck public, Hudson Rock Cavalier OSINT, GitHub public REST, and HIBP only when `HIBP_API_KEY` is set. See `src/lib/live-sources.ts`. Test live only on Mangle's own details, and add no paid keys without his OK.
 - Never push, add a remote or deploy.
 
 ## Copy style (all user-facing text)
