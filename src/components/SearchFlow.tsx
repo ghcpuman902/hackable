@@ -15,6 +15,10 @@ import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/f
 import { patternsFor } from "@/lib/patterns";
 import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
+import EmptyResult from "./EmptyResult";
+
+/* The one lesson shown when no check found a risk. */
+const SAFE_ANYWAY = "> [!TIP]\n> **Stay safe anyway.** Treat any unexpected message that asks you to log in, pay or install something as fake until you check it another way. Use a different password for every account and turn on two step sign in.";
 import { SubscribeCard } from "./SubscribeCard";
 import { DEMO_REPORT, PRESET_REPORTS } from "@/lib/preset-reports";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
@@ -495,9 +499,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo && hits.length === 0 ? [
     /* Zero hits: never list web results, which are usually about someone else with the same name. */
-    summary,
-    <p key="none" className="sum-none">We found nothing public tied to you.</p>,
-    <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
+    /* Says what was found and that no check turned up a risk, then one lesson at normal card size. */
+    <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} pivots={pivots} />,
+    <ReportMarkdown key="safe" markdown={SAFE_ANYWAY} />,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo && mdNow !== "" ? [
     summary,
