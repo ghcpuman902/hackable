@@ -14,6 +14,7 @@ export type Opt =
   | { kind: "prefix"; cat: SugCat | null; brand: Brand | null; value: string; insert: boolean }
   | { kind: "all" }
   | { kind: "empty" }
+  | { kind: "searching" }
   | { kind: "done" };
 
 const BRAND_OF: Record<SugCat, Brand | null> = { linkedin: "linkedin", github: "github", instagram: "instagram", web: null };
@@ -42,10 +43,10 @@ export function Suggest({ opts, active, added, loading, onPick, onHover }: {
   onPick: (i: number) => void; onHover: (i: number) => void;
 }) {
   const row = (o: Opt, body: ReactNode, i: number, cls = "") => (
-    <li key={i} id={`sg-${i}`} role="option" aria-selected={i === active} aria-disabled={o.kind === "empty" || undefined}
+    <li key={i} id={`sg-${i}`} role="option" aria-selected={i === active} aria-disabled={o.kind === "empty" || o.kind === "searching" || undefined}
       className={`sg-row ${cls}${i === active ? " on" : ""}`}
       onPointerDown={(e) => e.preventDefault()} onMouseMove={() => onHover(i)}
-      onClick={() => o.kind !== "empty" && onPick(i)}>
+      onClick={() => o.kind !== "empty" && o.kind !== "searching" && onPick(i)}>
       {body}
     </li>
   );
@@ -75,6 +76,8 @@ export function Suggest({ opts, active, added, loading, onPick, onHover }: {
             return row(o, <><span className="sg-ic plain"><Lucide name="plus" /></span><span className="sg-tx"><b>Add all</b></span></>, i, "util");
           case "done":
             return row(o, <span className="sg-tx"><b>Done</b></span>, i, "util done");
+          case "searching":
+            return row(o, <span className="sg-tx quiet" role="status">Searching</span>, i, "quiet");
           case "empty":
             return row(o, <span className="sg-tx quiet">Press Enter to search the name only</span>, i, "quiet");
         }

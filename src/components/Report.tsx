@@ -146,23 +146,6 @@ export function PatternList({ ids, who, max = 3, open = false }: { ids: PatternI
 
 /* Things no public source shows. Only the person can tick them, and we never guess them. */
 export const SELF_FLAGS: SelfFlagId[] = ["recently-moved", "big-life-event", "selling-online", "travelling-soon"];
-export function SelfTicks({ on, onChange }: { on: SelfFlagId[]; onChange: (next: SelfFlagId[]) => void }) {
-  return (
-    <section className="sec mk-card plain ticks">
-      <div>
-        <Para lead="Is any of this true for you right now?" rest=" No public source shows these, so they only count if you tick them." />
-        <div className="tick-row">
-          {SELF_FLAGS.map((f) => (
-            <label key={f} className="tick">
-              <input type="checkbox" checked={on.includes(f)} onChange={(e) => onChange(e.target.checked ? [...on, f] : on.filter((x) => x !== f))} />
-              <span><Lucide name="check" />{FLAG_LABEL[f]}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* The profile label, then what public data shows (flags). Labels a person may or may not have; never a rating. */
 export function ProfileTag({ profile, flags = [] }: { profile: Profile | null; flags?: FlagId[] }) {
@@ -189,17 +172,17 @@ export const FINDINGS = [
 
 const FINAL_REST = " The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo.";
 
-export function FinalSec({ onMail, both = true, rest = FINAL_REST }: { onMail: () => void; both?: boolean; rest?: string }) {
+export function FinalSec({ onMail, both = true, rest = FINAL_REST }: { onMail?: () => void; both?: boolean; rest?: string }) {
   return (
     <Sec>
       {both && <Para lead="Both scams start in one channel and make the request in another." rest={rest} />}
       <p className="lesson">When a message pushes you to act fast, reply through a channel you already use with that person or company.</p>
       <p className="lesson">Stop and check whenever someone asks you to run their code or share your screen.</p>
-      <div className="actions">
+      {onMail && <div className="actions">
         <button type="button" className="pill dark" onClick={onMail}>
           <span className="nw"><Tile kind="email" />Email me this report</span>
         </button>
-      </div>
+      </div>}
     </Sec>
   );
 }

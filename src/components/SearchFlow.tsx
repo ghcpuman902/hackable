@@ -8,12 +8,13 @@ import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai"
 import { Lucide, Tile } from "./icons";
 import { Logo, type CardState } from "./Fan";
 import { ScanRows } from "./ScanRows";
-import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, SelfTicks, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
 import { patternsFor } from "@/lib/patterns";
 import ReportMarkdown from "./ReportMarkdown";
+import { SubscribeCard } from "./SubscribeCard";
 import { DEMO_REPORT, PRESET_REPORTS } from "@/lib/preset-reports";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugExtra, type SugGroup } from "@/lib/suggest";
@@ -185,7 +186,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     if (!plan) return [];
     if (plan.kind === "sites") return plan.sites.map((x) => ({ kind: "site", brand: brandOf(x.key), title: x.n, prefix: x.prefix }));
     if (plan.kind === "complete") return [{ kind: "prefix", cat: null, brand: plan.brand, value: plan.value, insert: false }];
-    if (groups === undefined) return [];
+    if (groups === undefined) return plan.kind === "search" ? [{ kind: "searching" }] : [];
     /* A group that failed or timed out falls back quietly to its prefix (or, after a prefix, to the typed profile). */
     const fallback = (c: SugCat): Opt[] => plan.prefix ? [{ kind: "prefix", cat: c, brand: brandOf(c), value: plan.prefix + plan.q, insert: false }]
       : CAT_PREFIX[c] ? [{ kind: "prefix", cat: c, brand: brandOf(c), value: CAT_PREFIX[c], insert: true }] : [];
@@ -449,7 +450,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     entryRef.current?.focus();
   };
 
-  const mail = () => { setToast(true); setTimeout(() => setToast(false), 2400); };
   const rise = (i: number) => ({ animationDelay: i * (quick ? 0.04 : 0.14) + "s" }) as CSSProperties;
   /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
   const flags: FlagId[] = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes").map((f) => f.id);
@@ -469,36 +469,40 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       </ul>
     </section>
   );
-  const ticks = <SelfTicks key="ticks" on={selfFlags} onChange={setSelfFlags} />;
   const report = preset ? [
     summary,
     <ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />,
-    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />] : presetFindings(preset)),
-    <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
-    <FinalSec key="final" onMail={mail} both={false} />,
+    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />] : [
+      ...presetFindings(preset),
+      <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
+      <FinalSec key="final" both={false} />,
+    ]),
+    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
     <ProfileTag key="profile" profile={null} flags={flags} />,
     ...liveFindings(outputs),
-    ticks,
     <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
-    <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
+    <FinalSec key="final" both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
       rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
         ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
+    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : [
     summary,
     <ProfileTag key="profile" profile={null} />,
-    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />] : FINDINGS),
-    ticks,
-    <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
-    <FinalSec key="final" onMail={mail} />,
+    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />] : [
+      ...FINDINGS,
+      <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
+      <FinalSec key="final" />,
+    ]),
+    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ];
 
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "") + (quick ? " quick" : "")}>
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
-        <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Mirror</Link>
+        <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
         <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a></div>
         <a className="login" href="#">Subscribe</a>
       </nav>
@@ -558,7 +562,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 <Lucide name="binoculars" />
               </button>
             </div>
-            {open && <Suggest opts={opts} active={active} added={added} loading={false} onPick={pick} onHover={setActive} />}
+            {open && <Suggest opts={opts} active={active} added={added} loading={opts[0]?.kind === "searching"} onPick={pick} onHover={setActive} />}
           </form>
           <div className="under">
             {/* One set: the famous presets sit in among the made up people. */}
