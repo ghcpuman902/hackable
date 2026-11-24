@@ -45,6 +45,7 @@ css=COMMON_CSS + r'''
 @keyframes fly{0%{opacity:0;transform:translateX(-30%)}15%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateX(105%)}}
 .mal{grid-column:1/-1;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px}
 .mal span{font:600 12px var(--mono);padding:4px 10px;border-radius:6px;background:var(--ink);color:#fff}
+@media (max-width:600px){.panel{padding:14px}.msg .who{margin-bottom:10px}.msg .av{width:36px;height:36px}.bubble{font-size:13.5px;padding:9px 12px;margin-bottom:7px}.file{padding:7px 10px;font-size:12px}.lane{height:180px}.loot{font-size:11px}}
 ''',
 stage=r'''<div class="win"><div class="bar"><i></i><i></i><i></i><span id="bar1">Messages</span></div>
   <div class="panel msg" id="pA">
@@ -143,7 +144,7 @@ css=COMMON_CSS + r'''
 .pinned.on{opacity:1}
 @media (max-width:600px){.mail{grid-template-columns:1fr}.side{display:none}.row{grid-template-columns:14px 92px 1fr}.row time{display:none}}
 ''',
-stage=r'''<div class="win"><div class="bar"><i></i><i></i><i></i><span>Inbox · jane@hibp-integration-tests.com</span></div>
+stage=r'''<div class="win"><div class="bar"><i></i><i></i><i></i><span>Inbox (<b id="cnt2">1</b>) · jane@hibp-integration-tests.com</span></div>
   <div class="mail">
     <div class="side"><div class="in">Inbox <span class="count" id="cnt">2</span></div><div>Starred</div><div>Sent</div><div>Spam <span class="count" id="spam">0</span></div></div>
     <div class="list" id="list">
@@ -180,14 +181,14 @@ function row(real){
   r.innerHTML= real ? $('pin').innerHTML : '<i class="dot"></i><b>'+s+'</b><span><em>'+m+'</em> · '+s.toLowerCase()+'.com</span><time>09:0'+Math.min(9,2+Math.floor(k/30))+'</time>';
   list.insertBefore(r, list.children[1] || null);
   while (list.children.length>16) list.lastChild.remove();
-  n++; $('cnt').textContent=n.toLocaleString('en-GB');
+  n++; $('cnt').textContent=n.toLocaleString('en-GB'); $('cnt2').textContent=$('cnt').textContent;
 }
 function reset(){ clearInterval(iv); list.querySelectorAll('.row:not(#pin)').forEach(r=>r.remove()); n=1; k=0; $('cnt').textContent='1'; $('pin').classList.remove('on'); $('found').classList.remove('on'); $('spam').textContent='0'; }
 function flood(ms, total, now){ if(now){ for(let i=0;i<14;i++) row(); n+=total-14; $('cnt').textContent=n.toLocaleString('en-GB'); return; } let c=0; clearInterval(iv); iv=setInterval(()=>{ row(); if(++c>=total) clearInterval(iv); }, ms); }
 player([
  ['09:02. An order alert arrives. You didn\'t buy anything.',3200,now=>{ row(true); $('cnt').textContent='2'; }],
  ['09:03. Then the flood starts.',4200,now=>flood(110,36,now)],
- ['Hundreds of sites send a welcome email. All real, all automatic.',4600,now=>{ flood(45,90,now); if(!now) setTimeout(()=>{ n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('spam').textContent='212'; },3800); else { n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('spam').textContent='212'; } }],
+ ['Hundreds of sites send a welcome email. All real, all automatic.',4600,now=>{ flood(45,90,now); if(!now) setTimeout(()=>{ n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('cnt2').textContent=$('cnt').textContent; $('spam').textContent='212'; },3800); else { n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('cnt2').textContent=$('cnt').textContent; $('spam').textContent='212'; } }],
  ['That is the point. The real alert is buried.',4400,now=>{ $('found').classList.add('on'); $('pin').classList.add('on'); }]
 ], reset);
 ''')

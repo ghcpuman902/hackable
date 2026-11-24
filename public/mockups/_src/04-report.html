@@ -6,33 +6,20 @@
 <title>04 · Report · Mirror (mockup)</title>
 <style>
 /*BASE*/
-/* Story report: one big sentence per screen, ink for facts, grey for the joins (landing-page tagline style).
-   Lines light up as they reach the middle of the screen (Boatlock story-frame style). */
-.story{max-width:1000px;margin:0 auto;padding:0 24px}
-.beat{min-height:78svh;display:flex;flex-direction:column;justify-content:center;padding:60px 0}
-.beat:first-child{min-height:calc(88svh - 41px)}
-.big{font-size:clamp(34px,6.2vw,76px);line-height:1.08;letter-spacing:-.035em;font-weight:750;margin:0;transition:opacity .5s,transform .5s;opacity:.16;transform:translateY(8px)}
-.beat.lit .big{opacity:1;transform:none}
-.big .g{color:var(--faint)}
-.big .r{color:var(--danger)}
-.big .ichip{font-size:.82em;vertical-align:.04em;border-radius:.32em;padding:.02em .3em .04em .2em;gap:.22em}
-.big .ichip .ico{width:.78em;height:.78em;border-radius:50%;display:inline-grid;place-items:center;font:700 .42em/1 Arial,sans-serif;color:#fff;flex:none}
-.big a.ichip{text-decoration:none;transition:background .2s} .big a.ichip:hover{background:var(--surface-2)}
-.kicker{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 18px;letter-spacing:.01em}
-.src{margin-top:22px;font-size:13.5px;color:var(--muted);opacity:0;transition:opacity .6s .2s}
-.beat.lit .src{opacity:1}
-.todo{list-style:none;margin:28px 0 0;padding:0;counter-reset:t}
-.todo li{counter-increment:t;display:grid;grid-template-columns:auto 1fr;gap:.5em;align-items:baseline;font-size:clamp(24px,3.6vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.15;padding:.45em 0;border-top:1px solid var(--line)}
-.todo li::before{content:counter(t);font:700 .6em var(--mono);color:var(--ok)}
-.todo li span{color:var(--faint)}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
-.actions .btn{font-size:16px;padding:16px 24px}
-.score{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
-.score .tag{font-size:13px;padding:6px 12px}
-.scrollcue{margin-top:40px;font-size:13px;color:var(--faint)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none}
+/* Report: Quintex onboarding-page style (S-quintex/qag/reports/hack-style-brief.md + hack-style-ref*.png).
+   One paragraph per finding: dark lead sentence, grey continuation, lucide icons inside the sentence. */
+main.col{max-width:672px;margin:0 auto;padding:56px 20px 0}
+h1{font:700 2.125rem/1.15 var(--font);letter-spacing:-.025em;color:var(--n900);margin:0 0 6px;text-wrap:balance}
+.by{color:var(--n500);font-size:1rem;margin:0 0 36px}
+.qx .ico.logo{background:none;padding:0;width:1.05em;height:1.05em;transform:rotate(-6deg);vertical-align:-.15em}
+.src{display:block;margin:-1.75rem 0 2.5rem;font:500 .875rem/1.5 var(--font);color:#a3a3a3;letter-spacing:0}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px}
+.actions .pill{cursor:pointer;text-decoration:none}
+.actions .pill.dark{background:var(--n900);color:#fff;border-color:var(--n900)} .actions .pill.dark .nw{color:#fff}
+.actions .pill.dark:hover{background:#262626}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--n900);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
-@media (max-width:600px){.beat{min-height:70svh;padding:44px 0}.big{letter-spacing:-.03em}}
+@media (max-width:600px){main.col{padding-top:32px}h1{font-size:1.75rem}}
 </style>
 </head>
 <body>
@@ -40,66 +27,32 @@
   <span class="brand"><span class="brand-mark"></span>Mirror</span>
   <span><a href="03-pattern-signup-bombing.html">← 03</a> · <b>04 Report</b> · <a href="index.html">All</a></span>
 </nav>
-<main class="story">
-  <section class="beat">
-    <p class="kicker">Your exposure report · 24 Nov 2026 · 13 seconds</p>
-    <h1 class="big">Jane, <span class="g">a stranger found</span> 6 pages <span class="g">about you without</span> logging in.</h1>
-    <div class="score"><span class="tag danger">1 infected laptop</span><span class="tag danger">3 breaches</span><span class="tag warn">3 scams match you</span></div>
-    <p class="scrollcue">Scroll ↓</p>
-  </section>
+<main class="col">
+  <h1>Jane's exposure report</h1>
+  <p class="by">Mirror · 24 Nov 2026 · 13 seconds · public sources only</p>
 
-  <section class="beat">
-    <h2 class="big">Your email <span class="g">is in</span> 3 breaches. <span class="g">The newest,</span> DevForum, <span class="g">was in</span> 2023.</h2>
-    <p class="src">From LeakCheck and Have I Been Pwned. Breach names only, never passwords.</p>
-  </section>
+  <p class="qx"><span class="lead">A stranger found 6 pages about you without logging in.</span><span class="rest"> Your <span class="nw"><span class="ico t-li">{{i:linkedin}}</span>LinkedIn</span> says open to work, and your <span class="nw"><span class="ico t-ink">{{i:github}}</span>GitHub</span> shows your email in every commit.</span></p>
 
-  <section class="beat">
-    <h2 class="big"><span class="g">In March, a program on</span> one of your laptops <span class="r">copied 23 saved logins.</span></h2>
-    <p class="src">From Hudson Rock Cavalier. Compromised 14 March 2026. Two were work tools.</p>
-  </section>
+  <p class="qx"><span class="lead">Your <span class="nw"><span class="ico t-amber">{{i:mail}}</span>email</span> is in 3 breaches.</span><span class="rest"> The newest, DevForum, was in 2023. We saw breach names only, never passwords.</span></p>
+  <span class="src">LeakCheck · Have I Been Pwned (test domain)</span>
 
-  <section class="beat">
-    <h2 class="big"><span class="g">To a scammer, you are</span> a senior <span class="ichip"><span class="ico" style="background:#f7df1e;color:#111">JS</span>JavaScript</span> developer, <span class="g">open to work, with a busy</span> <span class="ichip"><span class="ico" style="background:#1f2328">GH</span>GitHub.</span></h2>
-    <p class="src">From your public LinkedIn and GitHub pages.</p>
-  </section>
+  <p class="qx"><span class="lead">In March, a program on your <span class="nw"><span class="ico t-red">{{i:laptop}}</span>laptop</span> copied 23 saved <span class="nw"><span class="ico t-red">{{i:key-round}}</span>logins.</span></span><span class="rest"> Two were work tools. Someone may already be selling them.</span></p>
+  <span class="src">Hudson Rock Cavalier · compromised 14 March 2026</span>
 
-  <section class="beat">
-    <h2 class="big"><span class="g">That makes you a target for</span>
-      <a class="ichip" href="03-pattern-fake-recruiter.html"><span class="ico" style="background:var(--danger)">1</span>fake recruiters,</a>
-      <a class="ichip" href="03-pattern-session-hijack.html"><span class="ico" style="background:var(--danger)">2</span>stolen sessions</a>
-      <span class="g">and</span>
-      <a class="ichip" href="03-pattern-signup-bombing.html"><span class="ico" style="background:var(--warn)">3</span>sign-up floods.</a></h2>
-    <p class="src">Tap one to see how it works.</p>
-  </section>
+  <p class="qx"><span class="lead">To a scammer, you are a senior <span class="nw"><span class="ico t-sky">{{i:code-xml}}</span>JavaScript</span> developer, open to work.</span><span class="rest"> Three scams are built for exactly you: <a class="nw" href="03-pattern-fake-recruiter.html"><span class="ico t-red">{{i:briefcase}}</span>fake recruiters,</a> <a class="nw" href="03-pattern-session-hijack.html"><span class="ico t-red">{{i:cookie}}</span>stolen sessions</a> and <a class="nw" href="03-pattern-signup-bombing.html"><span class="ico t-amber">{{i:inbox}}</span>sign-up floods.</a></span></p>
 
-  <section class="beat">
-    <h2 class="big">Tonight, <span class="g">do three things.</span></h2>
-    <ol class="todo">
-      <li><div>Sign out everywhere. <span>Then clean that laptop.</span></div></li>
-      <li><div>Change 3 passwords. <span>Turn on passkeys.</span></div></li>
-      <li><div>Run coding tests in a sandbox. <span>Never on your laptop.</span></div></li>
-    </ol>
-  </section>
+  <p class="qx"><span class="lead">Tonight, do three things.</span><span class="rest"> <span class="nw"><span class="ico t-emerald">{{i:log-out}}</span>Sign out</span> everywhere, then clean that laptop. Change the three leaked <span class="nw"><span class="ico t-emerald">{{i:lock-keyhole}}</span>passwords</span> and turn on passkeys. Run coding tests in a <span class="nw"><span class="ico t-emerald">{{i:terminal}}</span>sandbox,</span> never on your own machine.</span></p>
 
-  <section class="beat">
-    <h2 class="big">You can't hide from search. <span class="g">You can stop being easy.</span></h2>
-    <div class="actions">
-      <button class="btn" id="mail">Email me this report</button>
-      <a class="btn ghost" href="01-input-chips.html" style="text-decoration:none">Check someone else, with consent</a>
-    </div>
-    <p class="src">Synthetic demo person. Public sources only. Nothing is kept after you close the page.</p>
-  </section>
+  <p class="qx"><span class="lead">You can't hide from search.</span><span class="rest"> You can stop being easy.</span></p>
+
+  <div class="actions">
+    <button class="pill dark" id="mail"><span class="nw"><span class="ico t-amber">{{i:mail}}</span>Email me this report</span></button>
+    <a class="pill" href="01-input-chips.html"><span class="nw"><span class="ico t-ink">{{i:user}}</span>Check someone else, with consent</span></a>
+  </div>
+  <p class="demo-note" style="text-align:left;padding-left:0">Mockup · "Jane Doe" and every breach name here are made up · nothing is kept after you close the page</p>
 </main>
-<p class="demo-note">Mockup · "Jane Doe" and every breach name here are made up</p>
 <div class="toast" id="toast">Mockup: the app sends this with Resend to your own email</div>
 <script>
-const beats=[...document.querySelectorAll('.beat')];
-if (new URLSearchParams(location.search).has('all') || !('IntersectionObserver' in window)) beats.forEach(b=>b.classList.add('lit'));
-else {
-  const io=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('lit', e.isIntersecting)),{rootMargin:'-30% 0px -30% 0px'});
-  beats.forEach(b=>io.observe(b));
-  beats[0].classList.add('lit');
-}
 document.getElementById('mail').onclick=()=>{const t=document.getElementById('toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600);};
 </script>
 </body>

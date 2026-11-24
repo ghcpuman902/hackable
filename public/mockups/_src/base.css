@@ -10,7 +10,9 @@
   --li:#0a66c2; --gh:#1f2328;
   --radius:14px; --radius-sm:10px; --pill:999px;
   --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
-  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font:Inter,"Inter Fallback",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --n900:#171717; --n800:#262626; --n500:#737373; --n200:#e5e5e5; --n50:#fafafa;
+  --amber:#f99c00; --sky:#00a5ef; --red:#fb2c36; --emerald:#009767; --violet:#8e51ff; --li-blue:#0a66c2;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
@@ -38,3 +40,17 @@ a{color:inherit}
 .tag.danger{background:var(--danger-bg);color:#b42318} .tag.warn{background:var(--warn-bg);color:#9a5b00} .tag.ok{background:var(--ok-bg);color:#1a7f4b} .tag.info{background:var(--info-bg);color:#0b4fc4}
 .demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ===== Quintex inline-icon text style (baseline for 01 and 04; from S-quintex/qag/reports/hack-style-brief.md) ===== */
+.qx{font-family:var(--font);font-weight:600;font-size:1.375rem;line-height:1.5;letter-spacing:-.025em;text-wrap:pretty;margin:0 0 2.5rem}
+@media (min-width:640px){.qx{font-size:1.75rem;line-height:1.45}}
+.qx .lead{color:var(--n900)} .qx .rest{color:var(--n500)}
+.ico{display:inline-flex;align-items:center;justify-content:center;width:.95em;height:.95em;padding:.16em;border-radius:.25em;vertical-align:.06em;margin-inline:.15em .2em;color:#fff;flex:none;box-sizing:border-box}
+.ico svg{width:100%;height:100%;display:block}
+.nw{white-space:nowrap;color:var(--n900)}
+a.nw{text-decoration:none;border-bottom:2px solid var(--n200)} a.nw:hover{border-color:var(--n900)}
+.t-amber{background:var(--amber)} .t-sky{background:var(--sky)} .t-red{background:var(--red)} .t-emerald{background:var(--emerald)}
+.t-ink{background:var(--n900)} .t-grey{background:var(--n500)} .t-violet{background:var(--violet)} .t-li{background:var(--li-blue)}
+/* pill = icon tile + label, same style */
+.pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--n200);background:#fff;padding:6px 12px;font:600 1.0625rem/1.3 var(--font);letter-spacing:-.025em;color:var(--n900)}
+.pill:hover{background:var(--n50)}

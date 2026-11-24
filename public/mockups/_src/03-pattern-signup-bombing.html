@@ -7,7 +7,7 @@
 <style>
 /*BASE*/
 /* ---- pattern page shell (same in all three) ---- */
-main{padding:40px 0 0}
+main.wrap{padding-top:40px}
 .head{max-width:900px}
 .head .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
 .head .lede{font-size:clamp(30px,4.2vw,48px)}
@@ -32,7 +32,8 @@ main{padding:40px 0 0}
 .next a{text-decoration:none;font-weight:600} .next a span{display:block;font-size:12px;color:var(--muted);font-weight:500}
 @media (max-width:860px){
   .layout{grid-template-columns:1fr} .stage-wrap{position:static}
-  main{padding-top:28px}
+  main.wrap{padding-top:28px}
+  .stage{aspect-ratio:1/1}
 }
 /* ---- stage-specific ---- */
 
@@ -79,7 +80,7 @@ main{padding:40px 0 0}
   </header>
   <div class="layout">
     <div class="stage-wrap">
-      <div class="stage" id="stage" aria-hidden="true"><div class="win"><div class="bar"><i></i><i></i><i></i><span>Inbox · jane@hibp-integration-tests.com</span></div>
+      <div class="stage" id="stage" aria-hidden="true"><div class="win"><div class="bar"><i></i><i></i><i></i><span>Inbox (<b id="cnt2">1</b>) · jane@hibp-integration-tests.com</span></div>
   <div class="mail">
     <div class="side"><div class="in">Inbox <span class="count" id="cnt">2</span></div><div>Starred</div><div>Sent</div><div>Spam <span class="count" id="spam">0</span></div></div>
     <div class="list" id="list">
@@ -142,14 +143,14 @@ function row(real){
   r.innerHTML= real ? $('pin').innerHTML : '<i class="dot"></i><b>'+s+'</b><span><em>'+m+'</em> · '+s.toLowerCase()+'.com</span><time>09:0'+Math.min(9,2+Math.floor(k/30))+'</time>';
   list.insertBefore(r, list.children[1] || null);
   while (list.children.length>16) list.lastChild.remove();
-  n++; $('cnt').textContent=n.toLocaleString('en-GB');
+  n++; $('cnt').textContent=n.toLocaleString('en-GB'); $('cnt2').textContent=$('cnt').textContent;
 }
 function reset(){ clearInterval(iv); list.querySelectorAll('.row:not(#pin)').forEach(r=>r.remove()); n=1; k=0; $('cnt').textContent='1'; $('pin').classList.remove('on'); $('found').classList.remove('on'); $('spam').textContent='0'; }
 function flood(ms, total, now){ if(now){ for(let i=0;i<14;i++) row(); n+=total-14; $('cnt').textContent=n.toLocaleString('en-GB'); return; } let c=0; clearInterval(iv); iv=setInterval(()=>{ row(); if(++c>=total) clearInterval(iv); }, ms); }
 player([
  ['09:02. An order alert arrives. You didn\'t buy anything.',3200,now=>{ row(true); $('cnt').textContent='2'; }],
  ['09:03. Then the flood starts.',4200,now=>flood(110,36,now)],
- ['Hundreds of sites send a welcome email. All real, all automatic.',4600,now=>{ flood(45,90,now); if(!now) setTimeout(()=>{ n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('spam').textContent='212'; },3800); else { n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('spam').textContent='212'; } }],
+ ['Hundreds of sites send a welcome email. All real, all automatic.',4600,now=>{ flood(45,90,now); if(!now) setTimeout(()=>{ n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('cnt2').textContent=$('cnt').textContent; $('spam').textContent='212'; },3800); else { n+=1100; $('cnt').textContent=n.toLocaleString('en-GB'); $('cnt2').textContent=$('cnt').textContent; $('spam').textContent='212'; } }],
  ['That is the point. The real alert is buried.',4400,now=>{ $('found').classList.add('on'); $('pin').classList.add('on'); }]
 ], reset);
 

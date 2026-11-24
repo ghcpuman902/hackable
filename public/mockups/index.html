@@ -17,7 +17,9 @@
   --li:#0a66c2; --gh:#1f2328;
   --radius:14px; --radius-sm:10px; --pill:999px;
   --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);
-  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font:Inter,"Inter Fallback",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --n900:#171717; --n800:#262626; --n500:#737373; --n200:#e5e5e5; --n50:#fafafa;
+  --amber:#f99c00; --sky:#00a5ef; --red:#fb2c36; --emerald:#009767; --violet:#8e51ff; --li-blue:#0a66c2;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
@@ -46,7 +48,21 @@ a{color:inherit}
 .demo-note{font-size:12px;color:var(--faint);text-align:center;padding:24px 16px 40px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
-main{padding:48px 0 0}
+/* ===== Quintex inline-icon text style (baseline for 01 and 04; from S-quintex/qag/reports/hack-style-brief.md) ===== */
+.qx{font-family:var(--font);font-weight:600;font-size:1.375rem;line-height:1.5;letter-spacing:-.025em;text-wrap:pretty;margin:0 0 2.5rem}
+@media (min-width:640px){.qx{font-size:1.75rem;line-height:1.45}}
+.qx .lead{color:var(--n900)} .qx .rest{color:var(--n500)}
+.ico{display:inline-flex;align-items:center;justify-content:center;width:.95em;height:.95em;padding:.16em;border-radius:.25em;vertical-align:.06em;margin-inline:.15em .2em;color:#fff;flex:none;box-sizing:border-box}
+.ico svg{width:100%;height:100%;display:block}
+.nw{white-space:nowrap;color:var(--n900)}
+a.nw{text-decoration:none;border-bottom:2px solid var(--n200)} a.nw:hover{border-color:var(--n900)}
+.t-amber{background:var(--amber)} .t-sky{background:var(--sky)} .t-red{background:var(--red)} .t-emerald{background:var(--emerald)}
+.t-ink{background:var(--n900)} .t-grey{background:var(--n500)} .t-violet{background:var(--violet)} .t-li{background:var(--li-blue)}
+/* pill = icon tile + label, same style */
+.pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--n200);background:#fff;padding:6px 12px;font:600 1.0625rem/1.3 var(--font);letter-spacing:-.025em;color:var(--n900)}
+.pill:hover{background:var(--n50)}
+
+main.wrap{padding-top:48px}
 .lede{font-size:clamp(30px,4.4vw,48px)}
 p.sub{color:var(--muted);font-size:17px;max-width:640px;margin:16px 0 0}
 .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:34px}
@@ -72,7 +88,7 @@ code{font:13px var(--mono);background:var(--surface);padding:1px 5px;border-radi
     <a href="03-pattern-fake-recruiter.html"><img src="shots/03-pattern-fake-recruiter-1280.png" alt=""><div><b>03 Fake recruiter</b><span>Contagious Interview: coding test, npm install, stolen logins.</span></div></a>
     <a href="03-pattern-session-hijack.html"><img src="shots/03-pattern-session-hijack-1280.png" alt=""><div><b>03 Stolen sessions</b><span>Infostealer copies cookies. No password or code needed.</span></div></a>
     <a href="03-pattern-signup-bombing.html"><img src="shots/03-pattern-signup-bombing-1280.png" alt=""><div><b>03 Sign-up bombing</b><span>Inbox flood buries the one real alert.</span></div></a>
-    <a href="04-report.html"><img src="shots/04-report-1280.png" alt=""><div><b>04 Report</b><span>One big sentence per screen. Story-led.</span></div></a>
+    <a href="04-report.html"><img src="shots/04-report-1280.png" alt=""><div><b>04 Report</b><span>Story-led findings: dark lead, grey follow-on, icons inside sentences.</span></div></a>
   </div>
   <section class="notes">
     <h2>Notes for the builder</h2>
@@ -81,7 +97,8 @@ code{font:13px var(--mono);background:var(--surface);padding:1px 5px;border-radi
       <li>The grey top bar (<code>.mock-nav</code>) is for clicking between mockups. Drop it in the app.</li>
       <li>01 passes chips to 02 as <code>?q=</code> JSON. In the app, send them to the agent route instead.</li>
       <li>02 is a scripted timeline. In the app, stream the same event types: <code>src</code>, <code>feed</code>, <code>trait</code>, <code>who</code>, <code>pat</code>, <code>done</code>.</li>
-      <li>Screenshot helpers: <code>02-progress.html?speed=50</code>, <code>03-*.html?scene=3</code>, <code>04-report.html?all</code>.</li>
+      <li>Screenshot helpers: <code>02-progress.html?speed=50</code>, <code>03-*.html?scene=3</code>.</li>
+      <li>01 and 04 follow the Quintex inline-icon text style (S-quintex/qag/reports/hack-style-brief.md): Inter 600, -0.025em, 22px/1.5 then 28px/1.45 from 640px, dark lead #171717 then grey #737373, white lucide glyphs (stroke 2.5) in solid 0.95em tiles. Icons are inlined SVG, no network.</li>
       <li>All data is synthetic. Live demo subjects: Mangle, or an organiser who has agreed on the day.</li>
     </ul>
   </section>
