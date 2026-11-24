@@ -320,6 +320,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
               <div className="srow"><span className="slbl">Sources we check</span>{SOURCES.slice(0, 4).map(src)}</div>
               <div className="srow">{SOURCES.slice(4).map(src)}</div>
             </div>
+            {/* Phones: one source at a time beside the label. Every pill shares one grid cell, so the slot is as wide as the widest. */}
+            <div className="srcs-m">
+              <span className="slbl">Sources we check</span>
+              <span className="sslot">
+                {SOURCES.map((s, i) => <span key={s.n} className="sitem" style={{ "--i": i } as CSSProperties}>{src(s)}</span>)}
+              </span>
+            </div>
             <a className="pill report-link" href="#report">Open the report</a>
           </div>
         </div>
