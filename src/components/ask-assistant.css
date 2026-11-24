@@ -1,0 +1,39 @@
+.sec.ask-assistant {
+  animation: none;
+}
+
+.ask-assistant-text {
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+.ask-assistant-text h2 {
+  margin: 0;
+  color: var(--n900);
+  font-weight: 700;
+}
+
+.ask-assistant-text p {
+  margin: 4px 0 0;
+  color: var(--n500);
+}
+
+.ask-assistant-copy {
+  justify-self: start;
+  justify-content: center;
+  inline-size: 8rem;
+  min-block-size: 44px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ask-assistant-hidden {
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  font-size: 17px;
+}
