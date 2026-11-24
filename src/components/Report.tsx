@@ -130,10 +130,12 @@ export const FINDINGS = [
   </Sec>,
 ];
 
-export function FinalSec({ onMail, both = true }: { onMail: () => void; both?: boolean }) {
+const FINAL_REST = " The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo.";
+
+export function FinalSec({ onMail, both = true, rest = FINAL_REST }: { onMail: () => void; both?: boolean; rest?: string }) {
   return (
     <Sec>
-      {both && <Para lead="Both scams start in one channel and make the request in another." rest=" The flood comes by email and the request comes by phone. The recruiter writes on LinkedIn, and the malware sits in a GitHub repo." />}
+      {both && <Para lead="Both scams start in one channel and make the request in another." rest={rest} />}
       <p className="lesson">When a message pushes you to act fast, reply through a channel you already use with that person or company.</p>
       <p className="lesson">Stop and check whenever someone asks you to run their code or share your screen.</p>
       <div className="actions">

@@ -197,7 +197,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const report = live ? [
     ...liveFindings(outputs),
     ...patterns.map((id) => <PatternSec key={id} id={id} who={who} />),
-    <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")} />,
+    <FinalSec key="final" onMail={mail} both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-vishing")}
+      rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
+        ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
   ] : [
     ...FINDINGS,
     ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),

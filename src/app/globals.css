@@ -191,7 +191,8 @@ html,body{overflow-x:clip}
 .landing .field .chip .ico{vertical-align:middle}
 .landing .field .chip-edit{height:56px;border-radius:28px}
 .landing .field input.entry{height:56px;padding:0 12px;font-size:1.0625rem}
-.landing .go-btn{width:56px;height:56px;right:10px;padding:15px}
+/* Anchored bottom right, level with the last chip row or the Add more line. In the one-row empty bar this is the same spot as centred. */
+.landing .go-btn{width:56px;height:56px;right:10px;padding:15px;top:auto;bottom:10px;transform:none}
 .ghosts{position:absolute;left:10px;right:76px;top:0;bottom:0;pointer-events:none;overflow:hidden}
 .ghosts .row{position:absolute;left:0;top:50%;display:flex;gap:6px;white-space:nowrap;opacity:0;transform:translateY(-10%)}
 .ghosts .row.go{animation:drift 2.8s cubic-bezier(.3,.7,.3,1) forwards}
@@ -262,7 +263,7 @@ html,body{overflow-x:clip}
 .mc.sms{width:176px;border-radius:18px 18px 18px 6px}
 .lrow{display:none}
 .run .stage{height:var(--runh)}
-.run .pc.ck{animation:none;left:var(--sl);top:var(--st);opacity:1;filter:none;z-index:1;transform:translate(-50%,0) rotate(var(--sr))}
+.run .pc.ck{animation:none;left:var(--sl);top:var(--st);opacity:1;filter:none;z-index:1;transform:translate(-50%,0)}
 .run .pc.ck .art{display:none}
 .run .pc.ck .lrow{display:flex}
 .lrow{align-items:center;gap:12px;width:272px;padding:10px 14px 10px 10px;border-radius:18px;background:var(--card-bg);box-shadow:var(--card-shadow);transition:box-shadow .4s, background .4s}
@@ -275,7 +276,7 @@ html,body{overflow-x:clip}
 .run .pc.ck:not(.chk):not(.ok):not(.bad) .lrow .lg{background:#d4d4d4!important}
 .run .pc.ck.chk{z-index:2}
 .run .pc.ck.chk .lrow{background:#fff;box-shadow:inset 0 0 0 1px #fff,0 0 0 2px var(--n900),0 10px 26px rgba(0,0,0,.1)}
-.run .pc.ck.chk .st::after{content:"";display:inline-block;width:9px;height:9px;margin-left:6px;border-radius:50%;border:2px solid #d4d4d4;border-top-color:var(--n900);vertical-align:-1px;animation:spin .7s linear infinite}
+.run .pc.ck.chk .st::after{content:"";display:inline-block;box-sizing:border-box;width:15px;height:15px;margin-left:7px;border-radius:50%;border:2.5px solid #d4d4d4;border-top-color:var(--n900);vertical-align:-3px;animation:spin .7s linear infinite}
 .run .pc.ck.bad .lrow{background:#fff1f1}
 .pc.bad .st{color:#c4262d}
 .results-area{padding-bottom:64px}

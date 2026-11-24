@@ -83,7 +83,6 @@ export function Fan({ fan = FAN, states, label }: {
           vars["--sl"] = `calc(50% ${col ? "+" : "-"} 146px)`;
           vars["--st"] = 12 + row * 74 + (col ? 30 : 0) + "px";
           vars["--stm"] = 12 + Math.max(pi, 0) * 66 + "px";
-          vars["--sr"] = (((di * 37) % 5) - 2) * 0.5 + "deg";
           s = states?.[card.tool] ?? "idle";
         }
         const st = card ? label?.(card, s) ?? "" : "";
