@@ -1,7 +1,7 @@
 import { tool, type InferUITools, type UIDataTypes, type UIMessage } from "ai";
 import { z } from "zod";
 import { makeLiveContext } from "./live-sources";
-import { CHECK_MS, FAN, type ScanResult, type ScanTool } from "./synthetic";
+import { CHECK_MS, FAN, QUICK, type ScanResult, type ScanTool } from "./synthetic";
 
 /* One tool per source. By default each returns synthetic data after a short delay, with no network calls.
    With SCAN_MODE=live, every tool calls a free public source instead (see live-sources.ts) and never
@@ -38,7 +38,7 @@ export function makeScanTools(fixedQuery?: string, cached?: Partial<Record<ScanT
       description: DESCRIPTION[card.tool],
       inputSchema: input,
       execute: async ({ query }, { abortSignal }): Promise<ScanResult> => {
-        if (cached) { await sleep(CHECK_MS, abortSignal); return cached[card.tool] ?? { found: "Not checked", hit: false }; }
+        if (cached) { await sleep(QUICK.check, abortSignal); return cached[card.tool] ?? { found: "Not checked", hit: false }; }
         const check = live?.check(card.tool, fixedQuery ?? query, abortSignal);
         if (check) return fast ? check : (await Promise.all([check, sleep(CHECK_MS, abortSignal)]))[0];
         await sleep(CHECK_MS, abortSignal);

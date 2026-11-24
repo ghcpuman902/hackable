@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
-import { Fan, runH, type CardState } from "./Fan";
+import { Fan, Logo, runH, type CardState } from "./Fan";
 import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, SelfTicks, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
@@ -16,7 +16,7 @@ import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, t
 import { Suggest, type Opt } from "./Suggest";
 import type { Brand } from "./brand-icons";
 import type { ScanMessage } from "@/lib/scan-tools";
-import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, fanFor, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
+import { DEMO_CHIPS, DEMO_EMAIL, EXTRA_PATTERNS, fanFor, isDemoQuery, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
 /* Where each recent person was found: one small badge on the avatar cycles through these. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
@@ -110,7 +110,10 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const flagsCtl = useRef<AbortController | null>(null);
   /* A preset opens a cached profile on the live card list, in either mode. */
   const preset = running ? presetFor(chips.map((c) => c.raw).join(", ")) : undefined;
-  const fan = fanFor(live || !!preset);
+  /* Jane Doe Smith (the demo person) is cached as well. Cached reports run the same steps, compressed (QUICK). */
+  const demo = running && !preset && isDemoQuery(chips.map((c) => c.raw).join(", "));
+  const quick = !!preset || demo;
+  const fan = fanFor(!demo && (live || !!preset));
 
   const add = useCallback((text: string, at?: number) => {
     const cur = chipsRef.current;
@@ -262,7 +265,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
   }
   const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
-  const flagsIn = !live || !!preset || netFlags !== null;
+  const flagsIn = !live || quick || netFlags !== null;
   const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
 
   const scan = useCallback((list: Chip[]) => {
@@ -275,7 +278,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     const text = list.map((c) => c.raw).join(", ");
     flagsCtl.current?.abort();
     setNetFlags(null);
-    if (live && !presetFor(text)) {
+    if (live && !presetFor(text) && !isDemoQuery(text)) {
       const ctl = new AbortController();
       flagsCtl.current = ctl;
       fetch("/api/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: text }), signal: ctl.signal })
@@ -325,11 +328,22 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     scan(chipsRef.current);
   };
 
+  /* Jane Doe Smith is the cached demo, so she opens straight away like a preset; the others fill the box. */
   const pickPerson = (i: number) => {
     const p = PEOPLE[i];
     setChips([]);
     add(p.q);
+    if (isDemoQuery(p.q)) { scan(chipsRef.current); return; }
     entryRef.current?.focus();
+  };
+
+  /* Open the report: a smooth scroll that puts the report's first card near the top. */
+  const openReport = (e: MouseEvent) => {
+    const el = document.getElementById("report");
+    if (!el) return;
+    e.preventDefault();
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY - 16, behavior: still ? "auto" : "smooth" });
   };
 
   const onEntryKey = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -386,7 +400,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   };
 
   const mail = () => { setToast(true); setTimeout(() => setToast(false), 2400); };
-  const rise = (i: number) => ({ animationDelay: i * 0.14 + "s" }) as CSSProperties;
+  const rise = (i: number) => ({ animationDelay: i * (quick ? 0.04 : 0.14) + "s" }) as CSSProperties;
   /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
   const flags: FlagId[] = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes").map((f) => f.id);
   const patterns = patternsFor({ profile: null, flags: [...flags, ...selfFlags] });
@@ -394,13 +408,26 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   const mailTo = live ? chips.find((c) => c.kind === "email")?.label ?? DEMO_EMAIL : DEMO_EMAIL;
   /* Live scans get No profile for now: nothing they return is a cheap, reliable sign of one. */
+  /* First thing in the report: who this is about and what the checks found, as icons, before any prose. */
+  const hits = fan.filter((c) => states[c.tool] === "hit");
+  const first = preset ? preset.name.split(" ")[0] : demo || !live ? "Jane" : who === "there" ? null : who;
+  const summary = (
+    <section key="sum" className="sum">
+      <h2>{first ? `${first}, ` : ""}{hits.length ? `${hits.length} of ${fan.length} checks found something.` : `none of ${fan.length} checks found anything.`}</h2>
+      <ul className="sum-row">
+        {hits.map((c) => <li key={c.tool}><Logo card={c} /><span>{(found[c.tool] ?? c.title).replace(/^(Found|Watch for):\s*/i, "")}</span></li>)}
+      </ul>
+    </section>
+  );
   const ticks = <SelfTicks key="ticks" on={selfFlags} onChange={setSelfFlags} />;
   const report = preset ? [
+    summary,
     <ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />,
     ...presetFindings(preset),
     <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
     <FinalSec key="final" onMail={mail} both={false} />,
-  ] : live ? [
+  ] : live && !demo ? [
+    summary,
     <ProfileTag key="profile" profile={null} flags={flags} />,
     ...liveFindings(outputs),
     ticks,
@@ -409,6 +436,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
         ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
   ] : [
+    summary,
     <ProfileTag key="profile" profile={null} />,
     ...FINDINGS,
     ticks,
@@ -417,7 +445,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ];
 
   return (
-    <div className={"landing" + (running ? " run" : "") + (done ? " done" : "")}>
+    <div className={"landing" + (running ? " run" : "") + (done ? " done" : "") + (quick ? " quick" : "")}>
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
         <a className="mark" href="#"><i><Lucide name="shield" /></i>Mirror</a>
@@ -514,7 +542,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 {SOURCES.map((s, i) => <span key={s.n} className="sitem" style={{ "--i": i } as CSSProperties}>{pill(s)}</span>)}
               </span>
             </div>
-            <a className="pill report-link" href="#report">Open the report</a>
+            <a className="pill report-link" href="#report" onClick={openReport}>Open the report</a>
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { FAN, type FanCard, type ScanTool } from "@/lib/synthetic";
 
 export type CardState = "idle" | "checking" | "ok" | "hit";
 
-function Logo({ card }: { card: FanCard }) {
+export function Logo({ card }: { card: FanCard }) {
   if ("brand" in card.icon) {
     return <span className="lg" style={{ "--c": BRAND_BG[card.icon.brand] } as CSSProperties}><BrandIcon name={card.icon.brand} /></span>;
   }

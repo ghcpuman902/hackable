@@ -374,3 +374,17 @@ button.src:hover{background:var(--n50)}
   .landing .top,.landing h1,.pc,.stage{transition:none}
 }
 @media (prefers-reduced-motion:reduce) and (max-width:640px){.pc{top:var(--tm)}}
+
+/* ---- p23: once the checks finish, the loading card folds away and the report moves up; cached reports fold faster ---- */
+.landing.done .stage{height:0;opacity:0;transition:height .6s cubic-bezier(.2,.8,.2,1) .2s,opacity .3s .2s}
+.landing.quick.done .stage{transition:height .3s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.quick .rise{animation-duration:.3s}
+/* the report opens with who it is about and what was found, as icons */
+.sum{display:grid;gap:14px;padding:4px 0 0}
+.sum h2{margin:0;font:700 26px/1.2 var(--font);letter-spacing:-.02em;color:var(--n900)}
+.sum-row{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.sum-row li{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 4px;border-radius:999px;background:#fff1f1;font:600 14px/1 var(--font);color:var(--n900);white-space:nowrap}
+.sum-row .lg{width:32px;height:32px;border-radius:999px;box-shadow:none;flex:none}
+.sum-row .lg svg{width:17px;height:17px}
+@media (max-width:640px){.sum h2{font-size:22px}}
+@media (prefers-reduced-motion:reduce){.landing.done .stage{transition:none}}

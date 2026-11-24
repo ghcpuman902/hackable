@@ -61,6 +61,8 @@ export const fanFor = (live: boolean): FanCard[] => (live ? LIVE_FAN : FAN);
 /* Timing, as in 06: sources are checked one at a time. A new one starts every STEP_MS and
    each takes CHECK_MS, which is shorter, so only one card is checking at any moment. */
 export const START_MS = 300;
+/* Cached reports (presets and the Jane Doe Smith demo) run the same steps, compressed so the report is settled within 2s of the click. */
+export const QUICK = { start: 60, step: 120, check: 90 };
 export const STEP_MS = 720;
 export const CHECK_MS = 640;
 
@@ -94,3 +96,6 @@ export const EXTRA_PATTERNS: PatternId[] = ["pass-the-cookie"];
 
 export const DEMO_EMAIL = "jane@hibp-integration-tests.com";
 export const DEMO_CHIPS = "Jane Doe, jane@hibp-integration-tests.com, linkedin.com/in/janedoe-demo";
+/* The synthetic demo person (Jane Doe Smith, or the /?demo chips in synthetic mode): her report is cached, never live. */
+const norm = (q: string) => q.split(/[,;\n]+/).map((s) => s.trim().toLowerCase()).filter(Boolean).join(",");
+export const isDemoQuery = (q: string) => [PEOPLE[0].q, DEMO_CHIPS].some((d) => norm(d) === norm(q));
