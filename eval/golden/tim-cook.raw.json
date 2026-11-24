@@ -1,0 +1,92 @@
+{
+  "person": "Tim Cook",
+  "identifiers": [
+    "Tim Cook",
+    "Apple"
+  ],
+  "collected": "2026-11-24 (Europe/London)",
+  "policy": "Public role facts only. No breach or leak lookups run.",
+  "items": [
+    {
+      "field": "public_email",
+      "snippet": "Tim Cook, Chief Executive Officer, One Apple Park ... tcook@apple.com (signature block of a letter to Sen. Maria Cantwell, 10 June 2022)",
+      "source_url": "https://9to5mac.com/wp-content/uploads/sites/6/2022/06/061022-Apple-Privacy-Letter-TC-1.pdf",
+      "query": "Tim Cook Apple email tcook@apple.com",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Signed letter on Apple letterhead in his own name."
+    },
+    {
+      "field": "public_email",
+      "snippet": "\"It's tcook@apple.com,\" Cook said ... \"it seems like everyone else in the world knows it.\" (shareholder meeting, Feb 2016)",
+      "source_url": "https://www.businessinsider.com/apple-ceo-tim-cook-addresses-shareholders-on-fbi-case-2016-2",
+      "query": "Tim Cook Apple email tcook@apple.com",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Direct quote from him at Apple's shareholder meeting."
+    },
+    {
+      "field": "public_contact",
+      "snippet": "One Apple Park, MS 927-4CEO, Cupertino CA 95014. Tel: 408 974 0100",
+      "source_url": "https://9to5mac.com/wp-content/uploads/sites/6/2022/06/061022-Apple-Privacy-Letter-TC-1.pdf",
+      "query": "Tim Cook Apple email tcook@apple.com",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Same signed letter; office address and switchboard, not a home address."
+    },
+    {
+      "field": "role",
+      "snippet": "Tim Cook will become executive chairman of Apple's board ... John Ternus ... next CEO effective on September 1, 2026.",
+      "source_url": "https://www.apple.com/newsroom/2026/04/tim-cook-to-become-apple-executive-chairman-john-ternus-to-become-apple-ceo/",
+      "query": "Tim Cook executive chairman Apple September 2026",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Apple's own newsroom."
+    },
+    {
+      "field": "role_change",
+      "snippet": "Cook will become executive chairman on September 1, guiding Apple's dealings with policymakers",
+      "source_url": "https://www.reuters.com/legal/transactional/cook-hands-apple-ternus-bigger-richer-catching-up-ai-race-2026-09-01/",
+      "query": "Tim Cook executive chairman Apple September 2026",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Reuters, matches Apple release."
+    },
+    {
+      "field": "social",
+      "snippet": "Tim Cook (@tim_cook) / X, about 20.4 million followers",
+      "source_url": "https://x.com/tim_cook",
+      "query": "Tim Cook X account @tim_cook followers",
+      "source": "x.com + https://xholic.ai/tools/x-profile-analytics/tim_cook/",
+      "isThisPerson": true,
+      "reason": "Verified account long linked to Apple; follower count from xholic.ai snapshot."
+    },
+    {
+      "field": "tip_sheet",
+      "snippet": "Cook's Apple email address is public and he's known to read and respond to emails regularly.",
+      "source_url": "https://www.wikihow.com/Contact-Tim-Cook",
+      "query": "Tim Cook Apple email tcook@apple.com",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Secondary source repeating the same address; weak on the reading claim."
+    },
+    {
+      "field": "namesake",
+      "snippet": "Tim Cook ... Australian rules footballer who played for Adelaide in 1997 to 1998",
+      "source_url": "https://en.wikipedia.org/wiki/Tim_Cook_(footballer)",
+      "query": "\"Tim Cook\" namesake",
+      "source": "web search",
+      "isThisPerson": false,
+      "reason": "Different person: Australian footballer, no Apple link."
+    },
+    {
+      "field": "namesake",
+      "snippet": "Tim Cook, Canadian military historian and author (Penguin Random House)",
+      "source_url": "https://www.penguinrandomhouse.com/authors/255679/tim-cook/",
+      "query": "\"Tim Cook\" namesake",
+      "source": "web search",
+      "isThisPerson": false,
+      "reason": "Different person: Canadian historian."
+    }
+  ]
+}

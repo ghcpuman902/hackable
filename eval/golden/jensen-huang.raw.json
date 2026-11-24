@@ -1,0 +1,119 @@
+{
+  "person": "Jensen Huang",
+  "identifiers": [
+    "Jensen Huang",
+    "NVIDIA"
+  ],
+  "collected": "2026-11-24 (Europe/London)",
+  "policy": "Public role facts only. No breach or leak lookups run. Personal life reporting deliberately left out.",
+  "items": [
+    {
+      "field": "role",
+      "snippet": "NVIDIA today announced that effective immediately, Jensen Huang has been reinstated as President and Chief Executive Officer (23 Nov 2026)",
+      "source_url": "https://nvidianews.nvidia.com/news/nvidia-board-reinstates-jensen-huang-as-president-ceo-and-board-director",
+      "query": "Jensen Huang news November 2026",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "NVIDIA's own newsroom."
+    },
+    {
+      "field": "in_the_news",
+      "snippet": "in light of recent reporting that Mr. Huang has been the target of a foreign intelligence effort, the Board formed a committee ... to investigate",
+      "source_url": "https://nvidianews.nvidia.com/news/nvidia-board-reinstates-jensen-huang-as-president-ceo-and-board-director",
+      "query": "Jensen Huang news November 2026",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "NVIDIA's own statement; reported, not proven."
+    },
+    {
+      "field": "upcoming_event",
+      "snippet": "Huang is scheduled to speak with three House committees ... Dec. 1; Senate Banking Committee hearing Dec. 3",
+      "source_url": "https://www.cnbc.com/2026/11/24/jensen-huang-nvidia-congress-gtc.html",
+      "query": "Jensen Huang news November 2026",
+      "source": "web + https://chinaselectcommittee.house.gov/media/press-releases/jensen-huang-and-nvidia-agree-to-appear-before-congress",
+      "isThisPerson": true,
+      "reason": "CNBC, consistent with House committee release."
+    },
+    {
+      "field": "in_the_news",
+      "snippet": "Nvidia reinstated Jensen Huang as CEO on Monday ... stock closed up 31.5%",
+      "source_url": "https://www.reuters.com/3fec1b0a85a0/technology/nvidia-reinstates-jensen-huang-ceo-2026-11-23/",
+      "query": "Jensen Huang news November 2026",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Reuters."
+    },
+    {
+      "field": "guessed_email",
+      "snippet": "Jensen Huang ... jhuang@nvidia.com (listed by data broker Clay as 'Verified')",
+      "source_url": "https://www.clay.com/dossier/nvidia-ceo",
+      "query": "Jensen Huang NVIDIA CEO public email",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Third party guess, not published by NVIDIA. Treat as likely, unconfirmed."
+    },
+    {
+      "field": "email_format",
+      "snippet": "NVIDIA uses the firstinitiallast format, so Jane Smith would be jsmith@nvidia.com.",
+      "source_url": "https://www.clay.com/dossier/nvidia-email-format",
+      "query": "Jensen Huang NVIDIA CEO public email",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Company level fact that lets anyone guess his address."
+    },
+    {
+      "field": "public_contact",
+      "snippet": "2788 San Tomas Expressway Santa Clara, CA 95051. Tel: +1 (408) 486-2000 info@nvidia.com; press@nvidia.com",
+      "source_url": "https://www.nvidia.com/en-us/contact/",
+      "query": "Jensen Huang NVIDIA CEO public email",
+      "source": "web + https://nvidianews.nvidia.com/contacts",
+      "isThisPerson": true,
+      "reason": "Company routes, not his personal ones."
+    },
+    {
+      "field": "location_city",
+      "snippet": "Lives in Los Altos Hills, California",
+      "source_url": "https://en.wikipedia.org/wiki/Jensen_Huang",
+      "query": "Jensen Huang lives Los Altos Hills",
+      "source": "web + https://www.forbes.com/profile/jensen-huang/",
+      "isThisPerson": true,
+      "reason": "City level only; Forbes profile agrees."
+    },
+    {
+      "field": "education",
+      "snippet": "BSEE Oregon State University, MSEE Stanford University",
+      "source_url": "https://nvidianews.nvidia.com/bios/jensen-huang",
+      "query": "Jensen Huang Oregon State Stanford",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "NVIDIA official bio."
+    },
+    {
+      "field": "social",
+      "snippet": "LinkedIn: linkedin.com/in/jenhsunhuang",
+      "source_url": "https://www.clay.com/dossier/nvidia-ceo",
+      "query": "Jensen Huang NVIDIA CEO public email",
+      "source": "web search",
+      "isThisPerson": true,
+      "reason": "Handle listed by Clay; not independently opened."
+    },
+    {
+      "field": "namesake",
+      "snippet": "NUS student Jensen Huang's AI startup gets a boost after people mistake him for the Nvidia CEO",
+      "source_url": "https://www.8days.sg/entertainment/local/jensen-huang-nus-student-same-name-866111",
+      "query": "\"Jensen Huang\" namesake",
+      "source": "web search",
+      "isThisPerson": false,
+      "reason": "Different person: Singapore student, founder of Lycana."
+    },
+    {
+      "field": "namesake",
+      "snippet": "Jensen Huang, not the Nvidia one",
+      "source_url": "https://cs.jensenhshoots.com/",
+      "query": "\"Jensen Huang\" namesake",
+      "source": "web search",
+      "isThisPerson": false,
+      "reason": "Self declared namesake site."
+    }
+  ]
+}

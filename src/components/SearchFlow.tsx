@@ -12,6 +12,8 @@ import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
 import { patternsFor } from "@/lib/patterns";
+import ReportMarkdown from "./ReportMarkdown";
+import { DEMO_REPORT, PRESET_REPORTS } from "@/lib/preset-reports";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugExtra, type SugGroup } from "@/lib/suggest";
 import { Suggest, type Opt } from "./Suggest";
@@ -445,7 +447,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const report = preset ? [
     summary,
     <ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />,
-    ...presetFindings(preset),
+    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />] : presetFindings(preset)),
     <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
     <FinalSec key="final" onMail={mail} both={false} />,
   ] : live && !demo ? [
@@ -460,7 +462,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ] : [
     summary,
     <ProfileTag key="profile" profile={null} />,
-    ...FINDINGS,
+    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />] : FINDINGS),
     ticks,
     <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
     <FinalSec key="final" onMail={mail} />,
