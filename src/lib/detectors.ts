@@ -75,7 +75,9 @@ const has = (h: Hit, s: string) => `${h.title} ${h.content ?? ""}`.toLowerCase()
 async function inTheNews(x: Ids, signal: AbortSignal): Promise<FlagHit> {
   const name = x.names[0];
   if (!name) return { id: "in-the-news", state: "skip", evidence: "No name in the query" };
-  const hits = (await tavily({ query: `"${name}"`, topic: "news", time_range: "year" }, signal)).filter((h) => has(h, name));
+  /* Tavily's news topic can still return app store and product pages; an article has a published date and is not a store listing. */
+  const hits = (await tavily({ query: `"${name}"`, topic: "news", time_range: "year" }, signal))
+    .filter((h) => has(h, name) && !!h.published_date && !STORE.test(h.url) && !ownSite(h.url, x));
   /* A second identifier from the other chips (a handle, or an email's local part) rules out a namesake. */
   const second = [...x.handles.keys()];
   const sure = hits.filter((h) => second.some((s) => has(h, s)));
@@ -84,6 +86,9 @@ async function inTheNews(x: Ids, signal: AbortSignal): Promise<FlagHit> {
   return { id: "in-the-news", state: "no", evidence: "No recent news article uses the name" };
 }
 
+/* The person's own site (a handle in the host name) is not news about them. */
+const ownSite = (url: string, x: Ids) => { try { const host = new URL(url).hostname.toLowerCase(); return [...x.handles.keys()].some((h) => host.includes(h)); } catch { return false; } };
+const STORE = /\/\/(chromewebstore\.google\.com|chrome\.google\.com\/webstore|apps\.apple\.com|play\.google\.com|addons\.mozilla\.org|marketplace\.visualstudio\.com|www\.npmjs\.com|github\.com)\//i;
 const NEW_ROLE = /(started a new position|starting a new position|new position as|new role|joined [^.]{0,40} as|excited to (announce|share)[^.]{0,60}(joined|joining|role)|happy to share that i.?m starting)/i;
 async function jobChange(x: Ids, signal: AbortSignal): Promise<FlagHit> {
   const name = x.names[0];
