@@ -11,7 +11,7 @@ const pagePaths = {
 export default function SiteNav({ activePage }: { activePage: PageName }) {
   return (
     <nav className="nav" aria-label="Main navigation">
-      <Link className="mark" href="/"><i><Lucide name="shield" /></i>Mirror</Link>
+      <Link className="mark" href="/"><i><Lucide name="shield" /></i>Hackable</Link>
       <div className="links">
         <Link href="/">Home</Link>
         <Link href={pagePaths["how-it-works"]} aria-current={activePage === "how-it-works" ? "page" : undefined}>How it works</Link>

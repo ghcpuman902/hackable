@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 
 export const metadata: Metadata = {
-  title: "How it works | Mirror",
+  title: "How it works | Hackable",
 };
 
 const steps = [
   {
     title: "Add the details you know",
-    text: "Add a name, email address, handle or profile link. Mirror turns each one into a separate chip, so it can use the right public checks for that detail.",
+    text: "Add a name, email address, handle or profile link. Hackable turns each one into a separate chip, so it can use the right public checks for that detail.",
   },
   {
     title: "Check the matching sources",
@@ -42,7 +42,7 @@ export default function HowItWorksPage() {
       <SiteNav activePage="how-it-works" />
       <div className="app max-w-5xl">
         <header className="mx-auto max-w-2xl pt-12 text-center sm:pt-20">
-          <h1 className="m-0 text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-[var(--n900)] sm:text-6xl">How Mirror builds a report</h1>
+          <h1 className="m-0 text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-[var(--n900)] sm:text-6xl">How Hackable builds a report</h1>
         </header>
 
         <ol className="mx-auto mt-10 grid max-w-4xl gap-4 p-0 sm:mt-14 sm:gap-5">
