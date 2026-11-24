@@ -16,6 +16,7 @@ import { patternsFor } from "@/lib/patterns";
 import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
 import EmptyResult from "./EmptyResult";
+import LandingBadge from "./LandingBadge";
 
 /* The one lesson shown when no check found a risk. */
 const SAFE_ANYWAY = "> [!TIP]\n> **Stay safe anyway.** Treat any unexpected message that asks you to log in, pay or install something as fake until you check it another way. Use a different password for every account and turn on two step sign in.";
@@ -532,6 +533,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "") + (quick ? " quick" : "")}>
+      {!running && <LandingBadge />}
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
         <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
