@@ -469,7 +469,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   );
   const report = preset ? [
     summary,
-    <ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />,
+    /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
+    ...(PRESET_REPORTS[preset.name] ? [] : [<ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />]),
     ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />] : [
       ...presetFindings(preset),
       <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
@@ -487,7 +488,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : [
     summary,
-    <ProfileTag key="profile" profile={null} />,
+    ...(demo ? [] : [<ProfileTag key="profile" profile={null} />]),
     ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />] : [
       ...FINDINGS,
       <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,

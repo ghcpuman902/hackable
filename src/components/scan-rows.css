@@ -38,3 +38,6 @@
     animation: none;
   }
 }
+
+/* Landing only: fade the drifting floats out before the scene edge, so none is cut off against the footer. */
+.landing:not(.run) .stage.scan-rows{-webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent)}
