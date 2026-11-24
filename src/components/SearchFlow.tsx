@@ -14,6 +14,7 @@ import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
 import { patternsFor } from "@/lib/patterns";
 import ReportMarkdown from "./ReportMarkdown";
+import PatternCards from "./PatternCards";
 import { SubscribeCard } from "./SubscribeCard";
 import { DEMO_REPORT, PRESET_REPORTS } from "@/lib/preset-reports";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
@@ -486,7 +487,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
     ...(PRESET_REPORTS[preset.name] ? [] : [<ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />]),
-    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />] : [
+    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />, <PatternCards key="pcards" markdown={PRESET_REPORTS[preset.name]} />] : [
       ...presetFindings(preset),
       <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
       <FinalSec key="final" both={false} />,
@@ -503,6 +504,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     mdNow === null
       ? <p key="writing" className="sum-none">Reading what we found…</p>
       : <ReportMarkdown key="md" markdown={mdNow} />,
+    mdNow ? <PatternCards key="pcards" markdown={mdNow} /> : null,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
@@ -516,7 +518,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ] : [
     summary,
     ...(demo ? [] : [<ProfileTag key="profile" profile={null} />]),
-    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />] : [
+    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />, <PatternCards key="pcards" markdown={DEMO_REPORT} />] : [
       ...FINDINGS,
       <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
       <FinalSec key="final" />,
