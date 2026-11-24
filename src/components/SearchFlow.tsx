@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
@@ -337,6 +338,27 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     entryRef.current?.focus();
   };
 
+  /* The logo and Home go back to a clean landing, as a refresh would: no chips, empty box, no report, floats back,
+     top of the page, and no ?q or #report in the address. */
+  const home = (e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    void stop();
+    flagsCtl.current?.abort();
+    setMessages([]);
+    setRunning(false);
+    setNetFlags(null);
+    setSelfFlags([]);
+    setChips([]);
+    setEditing(null);
+    setSel(null);
+    setEntry("");
+    if (entryRef.current) entryRef.current.value = "";
+    closeSug();
+    if (location.search || location.hash) history.pushState(null, "", "/");
+    scrollTo({ top: 0, behavior: "auto" });
+  };
+
   /* Open the report: a smooth scroll that puts the report's first card near the top. */
   const openReport = (e: MouseEvent) => {
     const el = document.getElementById("report");
@@ -448,8 +470,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "") + (quick ? " quick" : "")}>
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
-        <a className="mark" href="#"><i><Lucide name="shield" /></i>Mirror</a>
-        <div className="links"><a href={"/"} aria-current="page">Home</a><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a></div>
+        <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Mirror</Link>
+        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a></div>
         <a className="login" href="#">Subscribe</a>
       </nav>
       <div className="app">
