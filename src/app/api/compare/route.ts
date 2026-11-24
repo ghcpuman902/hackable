@@ -3,13 +3,13 @@ import { join } from "node:path";
 import { z } from "zod";
 import { generateReportMarkdown, reportWhitelist } from "@/lib/reason";
 
+/* Public samples only. Never read the private _agent goldens here (Mangle t157u). */
 const people = {
   "tim-cook": { name: "Tim Cook", directory: "eval/golden" },
   "jensen-huang": { name: "Jensen Huang", directory: "eval/golden" },
-  "mangle-kuo": { name: "Mangle Kuo", directory: "_agent/eval/golden" },
 };
 
-const personId = z.enum(["tim-cook", "jensen-huang", "mangle-kuo"]);
+const personId = z.enum(["tim-cook", "jensen-huang"]);
 const compareRequest = z.object({ person: personId });
 const rawReport = z.object({
   items: z.array(z.object({
