@@ -7,10 +7,10 @@
 
 ## Synthetic people
 
-- Jane Doe Smith: synthetic, AI generated face required. Status: missing (`jane-doe-smith.webp`).
-- Alex Chen: synthetic, AI generated face required. Status: missing (`alex-chen.webp`).
-- Priya Kapoor: synthetic, AI generated face required. Status: missing (`priya-kapoor.webp`).
-- Mark Reynolds: synthetic, AI generated face required. Status: missing (`mark-reynolds.webp`).
-- Kai Mercer: synthetic, AI generated face required. Status: missing (`kai-mercer.webp`).
-- Ellis Grey: synthetic, AI generated face required. Status: missing (`ellis-grey.webp`).
-- Rose Hart: synthetic, AI generated face required. Status: missing (`rose-hart.webp`).
+- Jane Doe Smith (`jane-doe-smith.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
+- Alex Chen (`alex-chen.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
+- Priya Kapoor (`priya-kapoor.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
+- Mark Reynolds (`mark-reynolds.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
+- Kai Mercer (`kai-mercer.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
+- Ellis Grey (`ellis-grey.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
+- Rose Hart (`rose-hart.webp`): Synthetic: AI generated face, not a real person. Cropped and resized to 96 × 96 WebP.
