@@ -529,7 +529,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
         <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
-        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a></div>
+        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a><a href="/patterns">Patterns</a></div>
         <a className="login" href="#">Subscribe</a>
       </nav>
       <div className="app">
