@@ -66,7 +66,7 @@ export const LEARN: Record<LearnKey, Learn> = {
     thumb: "https://i.ytimg.com/vi/4HbCyW1ljRE/hqdefault.jpg",
   },
   "email-bomb-fake-it-support": {
-    title: "Recognise and avoid social engineering schemes including phishing messages, phony support calls and other scams – Apple Support (UK)",
+    title: "Recognise and avoid social engineering schemes including phishing messages, phony support calls and other scams, Apple Support (UK)",
     source: "Apple",
     url: "https://support.apple.com/en-gb/102568",
     kind: "article",

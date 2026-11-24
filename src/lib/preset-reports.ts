@@ -64,9 +64,31 @@ Your email appears in public code commits, and you use the same username on seve
 [^4]: [FBI: paid tasks job scams](https://www.ic3.gov/PSA/2024/PSA240604)
 `;
 
+const MANGLE_KUO = `**You are The Open Builder: easy to find, easy to hire and easy to copy.**
+
+Your GitHub says design engineer, London and available for hire[^1], and your site lists your work and your CV[^2]. You use manglekuo as your name on GitHub, Hacker News and X, so one search finds all of them.
+
+> [!CAUTION]
+> **A recruiter who sends a coding test may be after your computer.** Developers who are open to work are the main target of this scam[^3]. The project hides software that steals passwords and wallets when you run it.
+
+> [!NOTE]
+> **manglekuo@gmail.com did not turn up in the breach lists we checked.** No infected device was found for it either, so the risk here comes from what you publish, not from a leak.
+
+> [!TIP]
+> **Give your email its own strong password that you use nowhere else.** Whoever gets into your email can reset almost every other account you have[^4].
+
+#SameUsername #PublicCommitEmail #CryptoWorker
+
+[^1]: [GitHub profile](https://github.com/ghcpuman902)
+[^2]: [manglekuo.com](https://manglekuo.com/)
+[^3]: [Unit 42: fake job campaigns](https://unit42.paloaltonetworks.com/two-campaigns-by-north-korea-bad-actors-target-job-hunters/)
+[^4]: [NCSC: a separate password for your email](https://www.ncsc.gov.uk/collection/top-tips-for-staying-secure-online/use-a-strong-and-separate-password-for-email)
+`;
+
 export const PRESET_REPORTS: Record<string, string> = {
   "Tim Cook": TIM_COOK,
   "Jensen Huang": JENSEN_HUANG,
+  "Mangle Kuo": MANGLE_KUO,
 };
 
 export const DEMO_REPORT = JANE_DOE_SMITH;
