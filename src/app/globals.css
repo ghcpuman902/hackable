@@ -41,7 +41,7 @@ a{color:inherit}
 .ico svg{width:100%;height:100%;display:block}
 .nw{white-space:nowrap;color:var(--n900)}
 .t-amber{background:var(--amber)} .t-sky{background:var(--sky)} .t-red{background:var(--red)} .t-emerald{background:var(--emerald)}
-.t-ink{background:var(--n900)} .t-grey{background:var(--n500)} .t-violet{background:var(--violet)} .t-li{background:var(--li-blue)}
+.t-ink{background:var(--n900)} .t-grey{background:var(--n500)} .t-violet{background:var(--violet)} .t-li{background:var(--li-blue)} .t-ig{background:linear-gradient(45deg,#f58529,#dd2a7b,#8134af)}
 .pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--n200);background:#fff;padding:6px 12px;font:600 1.0625rem/1.3 var(--font);letter-spacing:-.025em;color:var(--n900)}
 .pill:hover{background:var(--n50)}
 .mk-card{background:var(--card-bg);box-shadow:var(--card-shadow);border-radius:var(--card-radius)}
