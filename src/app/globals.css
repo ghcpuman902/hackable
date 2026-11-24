@@ -214,13 +214,17 @@ html,body{overflow-x:clip}
 .person{position:relative;display:inline-flex;align-items:center;gap:9px;height:42px;padding:4px 16px 4px 4px;border-radius:999px;border:1px solid var(--n200);background:#fff;
   font:600 14px/1 var(--font);letter-spacing:-.02em;color:var(--n900);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .person .nm{white-space:nowrap}
+.person .avw{position:relative;width:32px;height:32px;flex:none}
+/* The badge sits in a round notch cut out of the photo, app icon style: no ring, no shadow. Notch centre = badge centre (28px, 26px), radius = badge radius + 2px gap. */
+.person .avw.notch .av{-webkit-mask:radial-gradient(circle at 28px 26px,transparent 9px,#000 9.5px);mask:radial-gradient(circle at 28px 26px,transparent 9px,#000 9.5px)}
 .person .av{position:relative;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--n900);font-size:11px;font-weight:700;background:var(--av);flex:none}
 .person .av-img{position:absolute;inset:0;width:32px;height:32px;border-radius:50%;object-fit:cover}
-.pb{position:absolute;right:-6px;bottom:-4px;width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 2px #fff;overflow:hidden}
+/* 14px, kept inside the chip: its bottom sits 3px above the chip's inner edge. */
+.pb{position:absolute;right:-3px;bottom:-1px;width:14px;height:14px;border-radius:50%;overflow:hidden}
 .pbi{position:absolute;inset:0;display:grid;place-items:center;background:var(--c);color:#fff;opacity:0;
   animation:var(--pbk,pb3) calc(var(--n) * 1.5s) linear infinite;animation-delay:calc(var(--i) * 1.5s - var(--n) * 1.5s - var(--off))}
 .pb.n2 .pbi{--pbk:pb2}
-.pbi svg{width:9px;height:9px}
+.pbi svg{width:8px;height:8px}
 @keyframes pb2{0%,40%{opacity:1}50%,90%{opacity:0}100%{opacity:1}}
 @keyframes pb3{0%,26.67%{opacity:1}33.33%,93.33%{opacity:0}100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.pbi{animation:none!important;opacity:0}.pbi:first-child{opacity:1}}
@@ -333,9 +337,6 @@ button.src:hover{background:var(--n50)}
   .nav{padding:12px 16px}
   .srcs{display:none}
   .landing:not(.run) .srcs-m{display:flex}
-  .people.presets{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;width:calc(100% + 40px);margin:0 -20px;padding:2px 20px;scrollbar-width:none}
-  .people.presets::-webkit-scrollbar{display:none}
-  .people.presets .person{flex:none}
   .stage{height:340px;--travel:340px}
   .pc{left:var(--lm);animation-duration:30s;animation-delay:var(--dm)}
   .z0{--sc:.82}

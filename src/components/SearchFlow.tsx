@@ -57,6 +57,11 @@ function planFor(text: string | null, live: boolean): Plan | null {
 const BRANDS: string[] = ["linkedin", "github", "instagram", "x"];
 const brandOf = (key: string) => (BRANDS.includes(key) ? (key as Brand) : null);
 const PASTE = ["Paste your name", "Paste your phone number", "Paste your email", "Paste your LinkedIn"];
+/* Chip order: people and presets alternate, so the famous ones are mixed in. */
+const CHIP_ORDER = Array.from({ length: Math.max(PEOPLE.length, PRESETS.length) }, (_, i) => [
+  ...(i < PEOPLE.length ? [{ kind: "person" as const, i }] : []),
+  ...(i < PRESETS.length ? [{ kind: "preset" as const, i }] : []),
+]).flat();
 const PRELOAD_MS = 10 * 60 * 1000;
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
@@ -66,9 +71,11 @@ const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("
 function Avatar({ name, av, img, children }: { name: string; av: string; img?: string; children?: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <span className="av" style={{ "--av": av } as CSSProperties}>
-      {initials(name)}
-      {img && <Image className="av-img" src={img} width={32} height={32} alt="" unoptimized style={{ opacity: loaded ? 1 : 0 }} onLoad={(e) => { if (e.currentTarget.naturalWidth > 0) setLoaded(true); }} />}
+    <span className={"avw" + (children ? " notch" : "")}>
+      <span className="av" style={{ "--av": av } as CSSProperties}>
+        {initials(name)}
+        {img && <Image className="av-img" src={img} width={32} height={32} alt="" unoptimized style={{ opacity: loaded ? 1 : 0 }} onLoad={(e) => { if (e.currentTarget.naturalWidth > 0) setLoaded(true); }} />}
+      </span>
       {children}
     </span>
   );
@@ -439,11 +446,12 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
             {open && <Suggest opts={opts} active={active} added={added} loading={false} onPick={pick} onHover={setActive} />}
           </form>
           <div className="under">
+            {/* One set: the famous presets sit in among the made up people. */}
             <div className="people">
-              {PEOPLE.map((p, i) => (
-                <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
+              {CHIP_ORDER.map((c) => { if (c.kind === "person") { const p = PEOPLE[c.i]; return (
+                <button key={p.n} type="button" className="person" onClick={() => pickPerson(c.i)}>
                   <Avatar name={p.n} av={p.av} img={p.img}>
-                    <span className={"pb n" + p.found.length} aria-hidden="true" style={{ "--n": p.found.length, "--off": i * 0.55 + "s" } as CSSProperties}>
+                    <span className={"pb n" + p.found.length} aria-hidden="true" style={{ "--n": p.found.length, "--off": c.i * 0.55 + "s" } as CSSProperties}>
                       {p.found.map((f, j) => (
                         <span key={f} className="pbi" style={{ "--c": MINI[f].c, "--i": j } as CSSProperties}>{MINI[f].icon}</span>
                       ))}
@@ -451,15 +459,12 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                   </Avatar>
                   <span className="nm">{p.n}</span>
                 </button>
-              ))}
-            </div>
-            <div className="people presets">
-              {PRESETS.map((p, i) => (
-                <button key={p.name} type="button" className="person preset" onClick={() => pickPreset(i)}>
-                  <Avatar name={p.name} av={p.av} img={p.img} />
-                  <span className="nm">{p.name}</span>
+              ); } return (
+                <button key={PRESETS[c.i].name} type="button" className="person preset" onClick={() => pickPreset(c.i)}>
+                  <Avatar name={PRESETS[c.i].name} av={PRESETS[c.i].av} img={PRESETS[c.i].img} />
+                  <span className="nm">{PRESETS[c.i].name}</span>
                 </button>
-              ))}
+              ); })}
             </div>
             <div className="srcs">
               <div className="srow"><span className="slbl">Sources we check</span>{SOURCES.slice(0, 4).map(pill)}</div>
