@@ -5,7 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai";
 import { Lucide, Tile } from "./icons";
 import { Fan, runH, type CardState } from "./Fan";
-import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, Stars, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, livePatterns, PatternSec, presetFindings, type Outputs } from "./Report";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
@@ -277,7 +277,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 ),
               )}
               <input ref={entryRef} className="entry" type="text" spellCheck={false}
-                aria-label="Name, email or link" enterKeyHint="go" autoCapitalize="off" autoCorrect="off"
+                aria-label="Name, email or link" enterKeyHint="go" autoComplete="off" autoCapitalize="off" autoCorrect="off"
                 placeholder={chips.length ? "Add more" : ""}
                 value={entry} onChange={(e) => onEntryInput(e.target.value)} onKeyDown={onEntryKey}
                 onBlur={() => setTimeout(() => {
@@ -307,7 +307,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
               {PRESETS.map((p, i) => (
                 <button key={p.name} type="button" className="person preset" onClick={() => pickPreset(i)}>
                   <span className="av" style={{ "--av": p.av } as CSSProperties}>{initials(p.name)}</span>
-                  <span className="nm">{p.name}<Stars n={p.stars} /></span>
+                  <span className="nm">{p.name}</span>
                 </button>
               ))}
             </div>

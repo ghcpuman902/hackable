@@ -263,24 +263,12 @@ export function liveFindings(o: Outputs): ReactNode[] {
   return out;
 }
 
-/* ---- preset profiles: a status badge and a wanted level out of five ---- */
-export function Stars({ n }: { n: number }) {
-  return (
-    <span className="stars" role="img" aria-label={`${n} of 5 stars`}>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <svg key={i} className={i < n ? "on" : undefined} viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" />
-        </svg>
-      ))}
-    </span>
-  );
-}
-
+/* ---- preset profiles: a status shown as a profile tag at the top of the report ---- */
 export function presetFindings(p: Preset): ReactNode[] {
   const [head, ...more] = p.findings;
   return [
     <Sec key="head">
-      <div className="wanted"><span className="badge">{p.badge}</span><Stars n={p.stars} /></div>
+      <div className="tag-row"><span className="badge">{p.badge}</span></div>
       <Para lead={head.lead} rest={head.rest} />
     </Sec>,
     ...more.map((f) => <Sec key={f.lead}><Para lead={f.lead} rest={f.rest} /></Sec>),

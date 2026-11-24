@@ -9,7 +9,7 @@ export const LIVE_DEMO_CHIPS = "manglekuo@gmail.com, ghcpuman902@gmail.com, ghcp
    public role, with no breach or leak claims. The other three are made up. ---- */
 
 export type Preset = {
-  name: string; badge: string; stars: number; av: string;
+  name: string; badge: string; av: string;
   results: Partial<Record<ScanTool, ScanResult>>;
   findings: { lead: string; rest: string }[];
   patterns: PatternId[];
@@ -19,7 +19,7 @@ const r = (found: string, hit = false): ScanResult => ({ found, hit });
 const NOT = r("Not checked");
 
 export const PRESETS: Preset[] = [
-  { name: "Tim Cook", badge: "High Value Individual", stars: 5, av: "#e5e5e5",
+  { name: "Tim Cook", badge: "High Value Individual", av: "#e5e5e5",
     results: { hibpTest: NOT, github: NOT, linkedin: r("Risk: fake profiles", true), hudsonRock: NOT,
       web: r("Found: public role at Apple", true), leakCheck: NOT, social: r("Risk: impersonation", true), forum: r("Risk: fake giveaways", true) },
     findings: [
@@ -31,7 +31,7 @@ export const PRESETS: Preset[] = [
         rest: " Scammers use fake videos of famous business leaders to promote crypto giveaways, so a familiar face on a livestream proves nothing." },
     ],
     patterns: [] },
-  { name: "Jensen Huang", badge: "Target of Spies", stars: 5, av: "#d9f99d",
+  { name: "Jensen Huang", badge: "Target of Spies", av: "#d9f99d",
     results: { hibpTest: NOT, github: NOT, linkedin: r("Risk: fake recruiters", true), hudsonRock: NOT,
       web: r("Found: public role at Nvidia", true), leakCheck: NOT, social: r("Risk: impersonation", true), forum: r("Risk: state hackers", true) },
     findings: [
@@ -43,7 +43,7 @@ export const PRESETS: Preset[] = [
         rest: " Anyone who learns early which chips may be sold where can trade on it or pass it on, so attackers look for those plans too." },
     ],
     patterns: ["contagious-interview"] },
-  { name: "Kai Mercer", badge: "Crypto Worker", stars: 4, av: "#fde68a",
+  { name: "Kai Mercer", badge: "Crypto Worker", av: "#fde68a",
     results: { hibpTest: r("Found: 4 breaches", true), github: r("Found: email in commits", true), linkedin: r("Found: open to work", true),
       hudsonRock: r("Found: wallet logins", true), web: r("Found: conference talks"), leakCheck: r("Found: passwords in 2 leaks", true),
       social: r("Found: wallet address", true), forum: r("Found: Discord and Telegram", true) },
@@ -56,7 +56,7 @@ export const PRESETS: Preset[] = [
         rest: " Kai's GitHub and open to work profile tell a fake recruiter exactly which test to send." },
     ],
     patterns: ["contagious-interview", "session-hijack"] },
-  { name: "Ellis Grey", badge: "Ghost", stars: 1, av: "#e0e7ff",
+  { name: "Ellis Grey", badge: "Ghost", av: "#e0e7ff",
     results: { hibpTest: r("No breaches found"), github: r("No GitHub profile"), linkedin: r("Not in search results"),
       hudsonRock: r("No stealer logs found"), web: r("Found: one old mention"), leakCheck: r("No leaks found"),
       social: r("No public profiles found"), forum: r("No forum profiles found") },
@@ -67,7 +67,7 @@ export const PRESETS: Preset[] = [
         rest: " A separate email for sign ups, private profiles and sign in codes on every account keep it that way." },
     ],
     patterns: [] },
-  { name: "Rose Hart", badge: "Romance Target", stars: 3, av: "#fecdd3",
+  { name: "Rose Hart", badge: "Romance Target", av: "#fecdd3",
     results: { hibpTest: r("Found: 1 breach", true), github: r("No GitHub profile"), linkedin: r("Found: public profile"),
       hudsonRock: r("No stealer logs found"), web: r("Found: public photos", true), leakCheck: r("No leaks found"),
       social: r("Found: open profile", true), forum: r("Found: hobby posts") },
