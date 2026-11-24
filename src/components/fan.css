@@ -1,0 +1,34 @@
+/* Scan scene motion, moved here from globals.css. Layout and look of the pieces stay in globals.css.
+   The doodles drift up slowly and sway a little (ambient unease, never urgent). When a check runs, the
+   check rows keep their place; a running row shows a spinner, a clean row settles quietly, and a hit
+   gets one short shake and stays red. */
+
+.pc{
+  animation:float var(--dur) linear infinite;animation-delay:var(--d);
+  transition:left .9s cubic-bezier(.2,.8,.2,1), top .9s cubic-bezier(.2,.8,.2,1), opacity .6s, filter .6s}
+@keyframes float{
+  0%{transform:translate(-50%,0) scale(var(--sc));opacity:0}
+  10%,90%{opacity:1}
+  100%{transform:translate(-50%,calc(var(--travel) * -1)) scale(var(--sc));opacity:0}}
+.art{animation:sway var(--sw) ease-in-out infinite alternate}
+@keyframes sway{from{transform:translateX(-7px) rotate(calc(var(--r) - 3deg))}to{transform:translateX(7px) rotate(calc(var(--r) + 3deg))}}
+
+/* the stage grows to hold the list, then folds away once the report is ready */
+.stage{transition:height .6s cubic-bezier(.2,.8,.2,1)}
+.landing.done .stage{height:0;opacity:0;transition:height .6s cubic-bezier(.2,.8,.2,1) .2s,opacity .3s .2s}
+.landing.quick.done .stage{transition:height .3s cubic-bezier(.2,.8,.2,1),opacity .2s}
+
+.run .pc.ck{animation:none}
+.run .pc.ck.chk .st::after{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.run .pc.ck.bad .lrow{animation:fan-hit .5s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes fan-hit{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+
+@media (max-width:640px){
+  .pc{animation-duration:30s;animation-delay:var(--dm)}
+}
+@media (prefers-reduced-motion:reduce){
+  .pc{animation:none}
+  .art{animation:none}
+  .pc,.stage,.landing.done .stage{transition:none}
+}

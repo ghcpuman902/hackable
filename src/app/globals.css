@@ -72,7 +72,6 @@ a{color:inherit}
 .go-btn svg{width:100%;height:100%}
 .go-btn:disabled{background:#d4d4d4;cursor:default}
 .under{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:14px;min-height:36px}
-@keyframes spin{to{transform:rotate(360deg)}}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .report{display:grid;gap:18px;margin-top:28px}
 .sec{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:center;padding:24px 24px 24px 30px;animation:rise .5s ease-out both;text-decoration:none;color:inherit}
@@ -96,64 +95,6 @@ a.sec{padding-right:64px}
   .chip .lbl{max-width:190px}
 }
 
-/* mini animations: CSS only, 8s loop */
-.mini{position:relative;height:190px;border-radius:1.25rem;background:#fff;overflow:hidden;font-family:var(--font)}
-.mini *{box-sizing:border-box}
-.mini .a{opacity:0;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
-@keyframes s5{0%,5%{opacity:0;transform:translateY(4px)}9%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s15{0%,15%{opacity:0;transform:translateY(4px)}19%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s20{0%,20%{opacity:0;transform:translateY(4px)}24%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s25{0%,25%{opacity:0;transform:translateY(4px)}29%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s30{0%,30%{opacity:0;transform:translateY(4px)}34%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s40{0%,40%{opacity:0;transform:translateY(4px)}44%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s45{0%,45%{opacity:0;transform:translateY(4px)}49%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s50{0%,50%{opacity:0;transform:translateY(4px)}54%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s60{0%,60%{opacity:0;transform:translateY(4px)}64%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s65{0%,65%{opacity:0;transform:translateY(4px)}69%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-@keyframes s70{0%,70%{opacity:0;transform:translateY(4px)}74%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
-
-.m-rec .bub{position:absolute;left:12px;top:12px;right:36px;background:#f5f5f5;border-radius:4px 12px 12px 12px;padding:8px 10px;font-size:12.5px;font-weight:600;color:var(--n900)}
-.m-rec .term{position:absolute;left:12px;right:12px;bottom:12px;height:100px;background:#0f1115;border-radius:10px;padding:9px 11px;font:11.5px/1.55 var(--mono);color:#d4d4d8}
-.m-rec .term .p{color:#4ade80} .m-rec .term .r{color:#fb7185}
-.m-rec .loot{position:absolute;right:-4px;bottom:40px;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
-.m-rec .loot b{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--danger);color:#fff;opacity:0;animation:leave 8s infinite}
-.m-rec .loot b:nth-child(2){animation-delay:.25s}.m-rec .loot b:nth-child(3){animation-delay:.5s}
-@keyframes leave{0%,66%{opacity:0;transform:translateX(-40px)}72%{opacity:1;transform:translateX(-14px)}88%{opacity:1;transform:translateX(0)}95%,100%{opacity:0;transform:translateX(40px)}}
-.m-flood .bar{position:absolute;left:0;right:0;top:0;height:28px;border-bottom:1px solid var(--n200);display:flex;align-items:center;padding:0 12px;font-size:11.5px;font-weight:700;color:var(--n900)}
-.m-flood .bar span{margin-left:auto;color:#0b4fc4}
-.m-flood .bar span b{font-weight:700;animation:cnt 8s steps(1) infinite}
-.m-flood .bar span b::after{content:"2";animation:cnt 8s steps(1) infinite}
-@keyframes cnt{0%{content:"2"}25%{content:"38"}40%{content:"212"}55%{content:"640"}70%,100%{content:"1,284"}}
-.m-flood .list{position:absolute;left:0;right:0;top:28px;bottom:0;overflow:hidden}
-.m-flood .stack{height:0;position:relative;background:repeating-linear-gradient(#fff 0 24px,#f0f0f0 24px 25px);animation:grow 8s infinite ease-in}
-.m-flood .stack::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 9px,#e5e5e5 9px 13px,transparent 13px 25px);-webkit-mask:linear-gradient(90deg,transparent 0 12px,#000 12px 38%,transparent 38% 44%,#000 44% 82%,transparent 82%);mask:linear-gradient(90deg,transparent 0 12px,#000 12px 38%,transparent 38% 44%,#000 44% 82%,transparent 82%)}
-.m-flood .real{height:26px;display:flex;align-items:center;gap:6px;padding:0 12px;font-size:11.5px;font-weight:700;color:#b42318;background:var(--danger-bg)}
-.m-flood .real::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--danger)}
-@keyframes grow{0%,18%{height:0}75%,100%{height:600px}}
-.m-sess .w{position:absolute;top:20px;bottom:20px;width:40%;background:#f5f5f5;border-radius:10px;padding:28px 10px 10px;font-size:11.5px;font-weight:600;color:var(--n500)}
-.m-sess .w::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-radius:10px 10px 0 0;background:#e5e5e5}
-.m-sess .w.you{left:12px} .m-sess .w.them{right:12px} .m-sess .w.them::before{background:#18181b}
-.m-sess .ck{display:inline-block;width:12px;height:12px;border-radius:50%;background:#d6a15a;vertical-align:-2px;margin-right:4px}
-.m-sess .fly{position:absolute;left:30%;top:46%;width:14px;height:14px;border-radius:50%;background:#d6a15a;box-shadow:0 0 0 3px rgba(214,161,90,.25);opacity:0;animation:cross 8s infinite ease-in-out}
-@keyframes cross{0%,25%{opacity:0;left:30%}30%{opacity:1;left:30%}55%{opacity:1;left:66%}60%,100%{opacity:0;left:66%}}
-.m-sess .ok{margin-top:8px;padding:8px;border-radius:7px;background:var(--ok-bg);color:#1a5c38;font-weight:700}
-.m-sess .x{display:block;margin-top:6px;text-decoration:line-through;color:#b42318}
-.m-breach{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
-.m-breach .mail{font-size:11.5px;font-weight:700;color:var(--n900);background:#f5f5f5;border-radius:999px;padding:6px 12px;display:inline-flex;align-items:center;max-width:92%;overflow:hidden;white-space:nowrap}
-.m-breach b{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--danger-bg);color:#b42318}
-.m-steal{display:grid;place-items:center}
-.m-steal .lap{width:110px;height:70px;border:3px solid var(--n900);border-radius:8px;background:#fff;position:relative;margin-top:36px}
-.m-steal .lap::after{content:"";position:absolute;left:-18px;right:-18px;bottom:-12px;height:7px;border-radius:0 0 6px 6px;background:var(--n900)}
-.m-steal .k{position:absolute;left:50%;top:60%;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--danger);color:#fff;white-space:nowrap;opacity:0;animation:up 8s infinite}
-.m-steal .k:nth-child(3){animation-delay:.6s}.m-steal .k:nth-child(4){animation-delay:1.2s}.m-steal .k:nth-child(5){animation-delay:1.8s}
-@keyframes up{0%,10%{opacity:0;transform:translate(-50%,0)}18%{opacity:1}55%{opacity:1;transform:translate(var(--dx,-50%),-92px)}62%,100%{opacity:0;transform:translate(var(--dx,-50%),-110px)}}
-.m-prof{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.m-prof .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.m-prof .row .pill{font-size:12.5px;padding:3px 9px}
-.m-prof .lab{font-size:13px;font-weight:700;color:#fff;background:var(--n900);padding:7px 12px;border-radius:10px}
-.m-prof .arrow{width:2px;height:16px;background:#d4d4d4}
-@media (prefers-reduced-motion:reduce){.mini .a,.m-rec .loot b,.m-steal .k{opacity:1!important;animation:none!important}.m-flood .stack{height:600px;animation:none}.m-sess .fly{display:none}}
-
 /* ---- 05 pattern cards: stage pills, lesson, source line ---- */
 .chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 0;padding:0;list-style:none}
 /* Each step carries its own arrow, so the arrow wraps with the step it points to. */
@@ -175,10 +116,6 @@ a.sec{padding-right:64px}
 .tick input:checked+span{background:var(--n900);color:#fff;box-shadow:none}
 .tick input:checked+span svg{color:var(--n900);background:#fff;box-shadow:none}
 .tick input:focus-visible+span{outline:2px solid var(--n900);outline-offset:2px}
-.m-vish .call{position:absolute;left:11%;right:11%;top:44px;background:var(--n900);color:#fff;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-.m-vish .call span{display:block;font-weight:500;color:#a3a3a3;font-size:11px}
-.m-vish .qa{position:absolute;left:11%;right:11%;bottom:14px;background:#fff;border:1px solid var(--n200);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--n900);display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.12)}
-.m-vish .qa b{background:var(--danger);color:#fff;border-radius:999px;padding:3px 9px;font-size:11px}
 
 /* ---- 06 landing: ported from public/mockups/06-landing.html (body.run → .run, body.done → .done) ---- */
 html,body{overflow-x:clip}
@@ -292,22 +229,15 @@ button.src:hover{background:var(--n50)}
   background:radial-gradient(60% 80% at 50% 110%,rgba(251,44,54,.13),rgba(251,44,54,.04) 55%,transparent 75%)}
 
 /* ---- the scene: a sparse, drifting doodle field; the same pieces become the check list ---- */
-.stage{position:relative;height:440px;--travel:440px;margin-top:4px;overflow:hidden;pointer-events:none;transition:height .6s cubic-bezier(.2,.8,.2,1)}
+.stage{position:relative;height:440px;--travel:440px;margin-top:4px;overflow:hidden;pointer-events:none}
 .pc{position:absolute;left:var(--l);top:100%;opacity:0;filter:blur(var(--bl));z-index:0;
-  transform:translate(-50%,0) scale(var(--sc));
-  animation:float var(--dur) linear infinite;animation-delay:var(--d);
-  transition:left .9s cubic-bezier(.2,.8,.2,1), top .9s cubic-bezier(.2,.8,.2,1), opacity .6s, filter .6s}
+  transform:translate(-50%,0) scale(var(--sc))}
 .z0{--sc:1;--bl:0px;--sh:0 2px 4px rgba(0,0,0,.08),0 14px 32px rgba(0,0,0,.12)}
 .z1{--sc:.82;--bl:.4px;--sh:0 1px 3px rgba(0,0,0,.08),0 8px 20px rgba(0,0,0,.09)}
 .z2{--sc:.64;--bl:1px;--sh:0 1px 2px rgba(0,0,0,.08),0 4px 10px rgba(0,0,0,.07)}
-@keyframes float{
-  0%{transform:translate(-50%,0) scale(var(--sc));opacity:0}
-  10%,90%{opacity:1}
-  100%{transform:translate(-50%,calc(var(--travel) * -1)) scale(var(--sc));opacity:0}}
-.art{animation:sway var(--sw) ease-in-out infinite alternate;transform:rotate(var(--r));transition:opacity .5s}
+.art{transform:rotate(var(--r));transition:opacity .5s}
 /* Once a check runs, only the check rows stay; the rest of the scene fades out in place. */
 .run .pc:not(.ck) .art{opacity:0;visibility:hidden;transition:opacity .5s,visibility 0s .5s}
-@keyframes sway{from{transform:translateX(-7px) rotate(calc(var(--r) - 3deg))}to{transform:translateX(7px) rotate(calc(var(--r) + 3deg))}}
 .ic{display:block;width:38px;height:38px;color:#e5484d;filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))}
 .ic svg{width:100%;height:100%}
 .ic.g{color:#171717}
@@ -333,7 +263,7 @@ button.src:hover{background:var(--n50)}
 .mc.sms{width:176px;border-radius:18px 18px 18px 6px}
 .lrow{display:none}
 .run .stage{height:var(--runh)}
-.run .pc.ck{animation:none;left:var(--sl);top:var(--st);opacity:1;filter:none;z-index:1;transform:translate(-50%,0)}
+.run .pc.ck{left:var(--sl);top:var(--st);opacity:1;filter:none;z-index:1;transform:translate(-50%,0)}
 .run .pc.ck .art{display:none}
 .run .pc.ck .lrow{display:flex}
 .lrow{align-items:center;gap:12px;width:272px;padding:10px 14px 10px 10px;border-radius:18px;background:var(--card-bg);box-shadow:var(--card-shadow);transition:box-shadow .4s, background .4s}
@@ -346,7 +276,7 @@ button.src:hover{background:var(--n50)}
 .run .pc.ck:not(.chk):not(.ok):not(.bad) .lrow .lg{background:#d4d4d4!important}
 .run .pc.ck.chk{z-index:2}
 .run .pc.ck.chk .lrow{background:#fff;box-shadow:inset 0 0 0 1px #fff,0 0 0 2px var(--n900),0 10px 26px rgba(0,0,0,.1)}
-.run .pc.ck.chk .st::after{content:"";display:inline-block;box-sizing:border-box;width:15px;height:15px;margin-left:7px;border-radius:50%;border:2.5px solid #d4d4d4;border-top-color:var(--n900);vertical-align:-3px;animation:spin .7s linear infinite}
+.run .pc.ck.chk .st::after{content:"";display:inline-block;box-sizing:border-box;width:15px;height:15px;margin-left:7px;border-radius:50%;border:2.5px solid #d4d4d4;border-top-color:var(--n900);vertical-align:-3px}
 .run .pc.ck.bad .lrow{background:#fff1f1}
 .pc.bad .st{color:#c4262d}
 .results-area{padding-bottom:64px}
@@ -357,7 +287,7 @@ button.src:hover{background:var(--n50)}
   .srcs{display:none}
   .landing:not(.run) .srcs-m{display:flex}
   .stage{height:340px;--travel:340px}
-  .pc{left:var(--lm);animation-duration:30s;animation-delay:var(--dm)}
+  .pc{left:var(--lm)}
   .z0{--sc:.82}
   .pc.d,.landing:not(.run) .pc.pm{display:none}
   .mc{width:150px;font-size:11px}
@@ -368,16 +298,13 @@ button.src:hover{background:var(--n50)}
   .landing .field .chip{max-width:100%}
 }
 @media (prefers-reduced-motion:reduce){
-  .pc{animation:none;top:var(--t);opacity:1}
-  .art{animation:none}
+  .pc{top:var(--t);opacity:1}
   .ph span{animation:none}.ph span:first-child{opacity:1}
-  .landing .top,.landing h1,.pc,.stage{transition:none}
+  .landing .top,.landing h1{transition:none}
 }
 @media (prefers-reduced-motion:reduce) and (max-width:640px){.pc{top:var(--tm)}}
 
 /* ---- p23: once the checks finish, the loading card folds away and the report moves up; cached reports fold faster ---- */
-.landing.done .stage{height:0;opacity:0;transition:height .6s cubic-bezier(.2,.8,.2,1) .2s,opacity .3s .2s}
-.landing.quick.done .stage{transition:height .3s cubic-bezier(.2,.8,.2,1),opacity .2s}
 .quick .rise{animation-duration:.3s}
 /* the report opens with who it is about and what was found, as icons */
 .sum{display:grid;gap:14px;padding:4px 0 0}
@@ -387,4 +314,3 @@ button.src:hover{background:var(--n50)}
 .sum-row .lg{width:32px;height:32px;border-radius:999px;box-shadow:none;flex:none}
 .sum-row .lg svg{width:17px;height:17px}
 @media (max-width:640px){.sum h2{font-size:22px}}
-@media (prefers-reduced-motion:reduce){.landing.done .stage{transition:none}}

@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { BRAND_BG, BrandIcon, type Brand } from "./brand-icons";
 import { Lucide } from "./icons";
 import { FAN, type FanCard, type ScanTool } from "@/lib/synthetic";
+import "./fan.css";
 
 export type CardState = "idle" | "checking" | "ok" | "hit";
 
