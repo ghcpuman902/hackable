@@ -40,10 +40,11 @@ export const FAN: FanCard[] = [
   { tool: "forum", title: "Forums", icon: { brand: "reddit" },
     checking: "Checking forums", result: { found: "Found: 3 old posts", hit: false } },
 ];
-/* Timing, as in 06: a new source starts every STEP_MS and each one takes CHECK_MS. */
+/* Timing, as in 06: sources are checked one at a time. A new one starts every STEP_MS and
+   each takes CHECK_MS, which is shorter, so only one card is checking at any moment. */
 export const START_MS = 300;
-export const STEP_MS = 640;
-export const CHECK_MS = 900;
+export const STEP_MS = 720;
+export const CHECK_MS = 640;
 
 /* ---- landing ---- */
 export const EXAMPLES = [

@@ -8,10 +8,13 @@ import { FAN, START_MS, STEP_MS } from "@/lib/synthetic";
 
 /* Default: a mock model that calls every source tool, so the demo needs no API key.
    Set SCAN_MODEL (an AI Gateway model id) to use a real model later. */
+type Part = Awaited<ReturnType<MockLanguageModelV4["doStream"]>>["stream"] extends ReadableStream<infer P> ? P : never;
+type Group = Part[];
+
 function mockModel(query: string) {
   const json = JSON.stringify({ query });
-  /* Four chunks per call, so a new call starts every STEP_MS. */
-  const chunks = FAN.flatMap((c, i) => {
+  /* One call per STEP_MS, sent whole, so sources start one after another. */
+  const calls = FAN.map((c, i): Group => {
     const id = "call-" + i;
     return [
       { type: "tool-input-start" as const, id, toolName: c.tool },
@@ -24,19 +27,21 @@ function mockModel(query: string) {
     doStream: async () => ({
       stream: simulateReadableStream({
         initialDelayInMs: START_MS,
-        chunkDelayInMs: STEP_MS / 4,
+        chunkDelayInMs: STEP_MS,
         chunks: [
-          ...chunks,
-          {
+          ...calls,
+          [{
             type: "finish" as const,
             finishReason: { unified: "tool-calls" as const, raw: undefined },
             usage: {
               inputTokens: { total: 0, noCache: 0, cacheRead: undefined, cacheWrite: undefined },
               outputTokens: { total: 0, text: 0, reasoning: undefined },
             },
-          },
+          }],
         ],
-      }),
+      }).pipeThrough(new TransformStream<Group, Group[number]>({
+        transform(group, ctl) { for (const c of group) ctl.enqueue(c); },
+      })),
     }),
   });
 }

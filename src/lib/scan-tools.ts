@@ -25,7 +25,7 @@ const sleep = (ms: number, signal?: AbortSignal) =>
   });
 
 export function makeScanTools(startedAt: number) {
-  /* The i-th source settles CHECK_MS after its call starts (calls start every STEP_MS). */
+  /* The i-th source settles CHECK_MS after its call starts (calls start every STEP_MS), before the next one starts. */
   const make = (card: (typeof FAN)[number]) =>
     tool({
       description: DESCRIPTION[card.tool],

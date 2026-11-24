@@ -211,7 +211,7 @@ export default function SearchFlow() {
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "")}>
       <div className="glow" aria-hidden="true"></div>
-      <nav className="nav"><span className="mark"><i><Lucide name="shield" /></i>Mirror</span></nav>
+      <nav className="nav"><span className="mark"><i><Lucide name="shield" /></i>Mirror</span><button type="button" className="login">Subscribe</button></nav>
       <div className="app">
         <div className="top">
           <h1>See what’s public about you</h1>

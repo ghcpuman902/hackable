@@ -175,6 +175,7 @@ a.sec{padding-right:64px}
 /* ---- 06 landing: ported from public/mockups/06-landing.html (body.run → .run, body.done → .done) ---- */
 html,body{overflow-x:clip}
 .nav{position:relative;z-index:3;display:flex;align-items:center;gap:24px;max-width:1120px;margin:0 auto;padding:16px 24px}
+.login{margin-left:auto;padding:9px 18px;border-radius:999px;border:1px solid var(--n200);background:#fff;font:600 15px var(--font);color:var(--n900);text-decoration:none;cursor:pointer}
 .mark{display:inline-flex;align-items:center;gap:9px;font:700 18px var(--font);letter-spacing:-.03em;color:var(--n900);text-decoration:none}
 .mark i{width:30px;height:30px;border-radius:9px;background:var(--n900);color:#fff;display:grid;place-items:center}
 .mark i svg{width:17px;height:17px}
