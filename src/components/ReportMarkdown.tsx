@@ -5,6 +5,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Info, Lightbulb, ShieldAlert, TriangleAlert } from "lucide-react";
 import { parseReport } from "@/lib/report-md";
+import { PATTERN_LIST } from "@/lib/patterns";
 import "./report-markdown.css";
 
 const ALERT = {
@@ -56,11 +57,23 @@ const components: Components = {
   },
 };
 
+/* A source that belongs to a scam pattern folds into one reference to that pattern's card on /patterns. */
+const PATTERN_BY_SOURCE = new Map(PATTERN_LIST.flatMap((p) => p.sources.map((u) => [u, p] as const)));
+function foldPatternRefs<T extends { url: string; label: string }>(refs: T[]): { url: string; label: string }[] {
+  const out: { url: string; label: string }[] = [];
+  for (const r of refs) {
+    const p = PATTERN_BY_SOURCE.get(r.url);
+    const ref = p ? { url: `/patterns#${p.id}`, label: p.name } : { url: r.url, label: r.label };
+    if (!out.some((o) => o.url === ref.url)) out.push(ref);
+  }
+  return out;
+}
+
 const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } };
 
 /* Each blank line separated block is one group: the block, then its references under it, outside the card. */
 export default function ReportMarkdown({ markdown }: { markdown: string }) {
-  const groups = parseReport(markdown).blocks.map((b) => ({ clean: b.markdown, refs: b.refs }));
+  const groups = parseReport(markdown).blocks.map((b) => ({ clean: b.markdown, refs: foldPatternRefs(b.refs) }));
   return (
     <div className="rm">
       {groups.map((g, i) => (
@@ -71,7 +84,8 @@ export default function ReportMarkdown({ markdown }: { markdown: string }) {
               {g.refs.map((r, j) => (
                 <span key={r.url}>
                   {j > 0 && " · "}
-                  <a href={r.url} target="_blank" rel="noopener noreferrer">{r.label.length > 28 ? host(r.url) : r.label}</a>
+                  {r.url.startsWith("/") ? <a href={r.url}>{r.label}</a>
+                    : <a href={r.url} target="_blank" rel="noopener noreferrer">{r.label.length > 28 ? host(r.url) : r.label}</a>}
                 </span>
               ))}
             </div>
