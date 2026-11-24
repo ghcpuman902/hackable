@@ -18,3 +18,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - The mockups in `public/mockups/` are the design source of truth. Port them; don't restyle them.
 - Synthetic data only until real APIs are approved. No network calls to breach APIs.
 - Never push, add a remote or deploy.
+
+## Copy style (all user-facing text)
+
+Follow `docs/copy-style/oxford-chat.md` for every UI string and short copy, and `docs/copy-style/write-clear-essays-and-explainers.md` for longer report prose. No punchy short contrast sentences, slogans or other AI-sounding patterns.
