@@ -11,8 +11,6 @@ import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import type { ScanMessage } from "@/lib/scan-tools";
 import { DEMO_CHIPS, DEMO_EMAIL, EXAMPLES, EXTRA_PATTERNS, FAN, LEAD_PATTERNS, PEOPLE, SOURCES, type Found, type ScanTool } from "@/lib/synthetic";
 
-type Who = "me" | "other";
-
 /* Small platform tiles under each recent person, as in 06. */
 const MINI: Record<Found, { c: string; icon: ReactNode }> = {
   linkedin: { c: BRAND_BG.linkedin, icon: <BrandIcon name="linkedin" /> },
@@ -32,7 +30,6 @@ const src = (s: (typeof SOURCES)[number]) => (
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
-const now = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
 let uid = 0;
 
@@ -44,10 +41,6 @@ export default function SearchFlow() {
   const [sel, setSel] = useState<number | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [entry, setEntry] = useState("");
-  const [who, setWho] = useState<Who>("me");
-  const [person, setPerson] = useState<string | null>(null);
-  const [agreed, setAgreed] = useState(false);
-  const [agreedAt, setAgreedAt] = useState("");
   const [running, setRunning] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [extraOpen, setExtraOpen] = useState(false);
@@ -86,8 +79,7 @@ export default function SearchFlow() {
     return () => clearInterval(t);
   }, [empty]);
 
-  const other = who === "other";
-  const disabled = running || !(chips.length || entry.trim()) || (other && !agreed);
+  const disabled = running || !(chips.length || entry.trim());
 
   /* Card states come straight from the typed tool parts of the streaming assistant message. */
   const assistant = messages.findLast((m) => m.role === "assistant");
@@ -114,10 +106,9 @@ export default function SearchFlow() {
     const q = new URLSearchParams(location.search).get("q");
     if (!q) { void stop(); setMessages([]); setRunning(false); return false; }
     try {
-      const st = JSON.parse(q) as { who?: Who; consent?: string | null; chips?: string[] };
+      const st = JSON.parse(q) as { chips?: string[] };
       chipsRef.current = [];
       add((st.chips || []).join(", "));
-      if (st.who === "other") { setWho("other"); setAgreed(!!st.consent); if (st.consent) setAgreedAt(now()); }
       scan(chipsRef.current);
       return true;
     } catch { return false; }
@@ -137,9 +128,9 @@ export default function SearchFlow() {
   const submit = () => {
     commit();
     const list = chipsRef.current;
-    if (!list.length || (other && !agreed) || running) return;
+    if (!list.length || running) return;
     entryRef.current?.blur();
-    const state = { who, consent: other ? new Date().toISOString() : null, chips: list.map((c) => c.raw) };
+    const state = { chips: list.map((c) => c.raw) };
     history.pushState(null, "", "?q=" + encodeURIComponent(JSON.stringify(state)));
     scan(list);
   };
@@ -148,7 +139,6 @@ export default function SearchFlow() {
     const p = PEOPLE[i];
     setChips([]);
     add(p.q);
-    setWho("other"); setPerson(p.n.split(" ")[0]); setAgreed(false);
     entryRef.current?.focus();
   };
 
@@ -202,7 +192,7 @@ export default function SearchFlow() {
     ...LEAD_PATTERNS.map((id) => <PatternSec key={id} id={id} />),
     ...(showAll || extraOpen
       ? EXTRA_PATTERNS.map((id) => <PatternSec key={id} id={id} />)
-      : [<button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>Show another attack pattern</button>]),
+      : [<button key="more" type="button" className="more" onClick={() => setExtraOpen(true)}>One more pattern</button>]),
     <FinalSec key="final" onMail={mail} />,
   ];
 
@@ -211,10 +201,15 @@ export default function SearchFlow() {
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "")}>
       <div className="glow" aria-hidden="true"></div>
-      <nav className="nav"><span className="mark"><i><Lucide name="shield" /></i>Mirror</span><button type="button" className="login">Subscribe</button></nav>
+      <nav className="nav">
+        <a className="mark" href="#"><i><Lucide name="shield" /></i>Mirror</a>
+        <div className="links"><a href="#" aria-current="page">Home</a><a href="#">How it works</a><a href="#">Privacy</a></div>
+        <a className="login" href="#">Subscribe</a>
+      </nav>
       <div className="app">
         <div className="top">
           <h1>See what’s public about you</h1>
+          <p className="sub">Search your name, email or profile links to see what a scammer can find.</p>
           <form className="search" autoComplete="off" onSubmit={(e) => {
             e.preventDefault();
             if ((entryRef.current?.value ?? "").trim()) commit(); else submit();
@@ -269,16 +264,6 @@ export default function SearchFlow() {
             </div>
           </form>
           <div className="under">
-            <div className="who-row">
-              <div className="seg" role="radiogroup" aria-label="Who is this for?">
-                <label><input type="radio" name="who" value="me" checked={who === "me"} onChange={() => { setWho("me"); setPerson(null); }} /><span>Me</span></label>
-                <label><input type="radio" name="who" value="other" checked={other} onChange={() => setWho("other")} /><span>Someone else</span></label>
-              </div>
-              <label className={"consent" + (other ? " on" : "") + (other && agreed ? " agreed" : "")}>
-                <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setAgreedAt(now()); }} />
-                <span>{other && agreed ? "Agreed at " + agreedAt : (person ?? "They") + " agreed to this check"}</span>
-              </label>
-            </div>
             <div className="people">
               {PEOPLE.map((p, i) => (
                 <button key={p.n} type="button" className="person" onClick={() => pickPerson(i)}>
@@ -307,7 +292,7 @@ export default function SearchFlow() {
       <div className="app results-area">
         {done && <div className="report" id="report">{report.map((el, i) => <div key={i} className="rise" style={rise(i)}>{el}</div>)}</div>}
       </div>
-      <div className={"toast" + (toast ? " on" : "")} role="status">Report sent to {DEMO_EMAIL}</div>
+      <div className={"toast" + (toast ? " on" : "")} role="status">Sent to {DEMO_EMAIL}</div>
     </div>
   );
 }
