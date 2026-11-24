@@ -17,7 +17,7 @@ const MINI: Record<Found, { c: string; icon: ReactNode }> = {
   linkedin: { c: BRAND_BG.linkedin, icon: <BrandIcon name="linkedin" /> },
   github: { c: BRAND_BG.github, icon: <BrandIcon name="github" /> },
   breach: { c: "#e5484d", icon: <Lucide name="shield-alert" w={2} /> },
-  forum: { c: BRAND_BG.reddit, icon: <BrandIcon name="reddit" /> },
+  forum: { c: BRAND_BG.hackernews, icon: <BrandIcon name="hackernews" /> },
   x: { c: BRAND_BG.x, icon: <BrandIcon name="x" /> },
   social: { c: BRAND_BG.instagram, icon: <BrandIcon name="instagram" /> },
   phone: { c: "#009767", icon: <Lucide name="phone-call" w={2} /> },

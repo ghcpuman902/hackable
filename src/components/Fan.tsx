@@ -31,7 +31,7 @@ const MOCK: Record<string, ReactNode> = {
   breach: <div className="mc"><Hd c="#e5484d" icon={L("shield-alert")} label="Data breach" /><div className="big">Found in 3 breaches</div><div className="tags"><i>Email</i><i>Username</i></div></div>,
   people: <div className="mc"><Hd c="#8e51ff" icon={L("user-search")} label="People search" /><b>Jane D. Smith</b>Age 32 · Manchester</div>,
   social: <div className="mc"><Hd c="linear-gradient(45deg,#f58529,#dd2a7b,#8134af)" icon={B("instagram")} label="Social" /><b>@janedoesmith</b>1.2k followers</div>,
-  forum: <div className="mc"><Hd c="#FF4500" icon={B("reddit")} label="Forum" /><b>janedoe88</b>Member since 2019</div>,
+  forum: <div className="mc"><Hd c="#FF6600" icon={B("hackernews")} label="Forum" /><b>janedoe88</b>Member since 2019</div>,
 };
 
 /* Which source each scene card turns into when a check runs. */

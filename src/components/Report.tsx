@@ -198,12 +198,21 @@ export function liveFindings(o: Outputs): ReactNode[] {
     out.push(<Sec key="pw"><Para lead="Your email appears next to a password in a leaked list." rest=" Change that password wherever you still use it." /></Sec>);
   }
   const devices = o.hudsonRock?.facts?.devices ?? [];
-  if (o.hudsonRock?.hit) {
+  if (devices.length) {
     const latest = [...devices].sort().at(-1);
     out.push(
       <Sec key="steal">
         <Para lead={`A program on ${devices.length > 1 ? `${devices.length} of your devices` : "one of your devices"} copied saved logins.`}
           rest={latest && latest !== "unknown date" ? ` The latest copy was made on ${latest}, and someone may be selling the logins.` : " Someone may be selling the logins."} />
+      </Sec>,
+    );
+  }
+  const lists = o.hudsonRock?.facts?.stealerLists ?? [];
+  if (!devices.length && lists.length) {
+    out.push(
+      <Sec key="steal">
+        <Para lead="Your email is in a stealer log list."
+          rest={` These lists hold logins that malware copied from infected computers.${o.hudsonRock?.facts?.noDevice ? " Hudson Rock found no infected device linked to your details, so the computer may not have been yours." : ""}`} />
       </Sec>,
     );
   }

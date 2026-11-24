@@ -245,7 +245,9 @@ html,body{overflow-x:clip}
   0%{transform:translate(-50%,0) scale(var(--sc));opacity:0}
   10%,90%{opacity:1}
   100%{transform:translate(-50%,calc(var(--travel) * -1)) scale(var(--sc));opacity:0}}
-.art{animation:sway var(--sw) ease-in-out infinite alternate;transform:rotate(var(--r))}
+.art{animation:sway var(--sw) ease-in-out infinite alternate;transform:rotate(var(--r));transition:opacity .5s}
+/* Once a check runs, only the check rows stay; the rest of the scene fades out in place. */
+.run .pc:not(.ck) .art{opacity:0;visibility:hidden;transition:opacity .5s,visibility 0s .5s}
 @keyframes sway{from{transform:translateX(-7px) rotate(calc(var(--r) - 3deg))}to{transform:translateX(7px) rotate(calc(var(--r) + 3deg))}}
 .ic{display:block;width:38px;height:38px;color:#e5484d;filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))}
 .ic svg{width:100%;height:100%}

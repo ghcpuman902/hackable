@@ -11,7 +11,7 @@ export type Facts = {
   /* creds: a stealer log, combolist or credential stuffing list. checked: the breach sources that answered. */
   breaches?: { name: string; date?: string; email?: string; passwords?: boolean; creds?: boolean }[];
   pastes?: { name: string; date?: string; email?: string; creds?: boolean }[]; checked?: string[];
-  devices?: string[]; profiles?: string[]; linked?: string[]; domains?: string[]; results?: number; username?: string;
+  devices?: string[]; stealerLists?: string[]; noDevice?: boolean; profiles?: string[]; linked?: string[]; domains?: string[]; results?: number; username?: string;
 };
 export type ScanResult = { found: string; hit: boolean; source?: "live" | "skipped" | "unavailable"; detail?: string; facts?: Facts };
 
@@ -46,7 +46,7 @@ export const FAN: FanCard[] = [
     checking: "Checking leak lists", result: { found: "Found: 3 passwords", hit: true } },
   { tool: "social", title: "Social", icon: { brand: "instagram" },
     checking: "Checking social", result: { found: "Found: public profile", hit: false } },
-  { tool: "forum", title: "Forums", icon: { brand: "reddit" },
+  { tool: "forum", title: "Forums", icon: { brand: "hackernews" },
     checking: "Checking forums", result: { found: "Found: 3 old posts", hit: false } },
 ];
 /* Live mode has no free source for people search or phone numbers, so those cards are dropped. The rest keep
@@ -87,7 +87,7 @@ export const SOURCES: { n: string; c: string; icon: { brand: Brand } | { lucide:
   { n: "LeakCheck", c: "#171717", icon: { lucide: "key-round" } },
   { n: "Have I Been Pwned", c: "#2A6379", icon: { brand: "hibp" } },
   { n: "Public records", c: "#737373", icon: { lucide: "landmark" } },
-  { n: "Forums", c: "#FF4500", icon: { lucide: "messages-square" } },
+  { n: "Forums", c: "#FF6600", icon: { lucide: "messages-square" } },
 ];
 
 /* ---- report ---- */

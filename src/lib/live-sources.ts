@@ -7,7 +7,7 @@
    hudsonRock  Hudson Rock Cavalier free OSINT (email and username)
    github      GitHub public REST, unauthenticated: profile and author emails in recent public commits
    social      Gravatar public profile (email hash) and Keybase (username)
-   forum       Hacker News public profile (username). Reddit blocks anonymous checks, so it is not used.
+   forum       Hacker News public profile (username).
    web         one search for the name: Tavily when TAVILY_API_KEY is set, otherwise DuckDuckGo HTML;
                linkedin reads the same results (LinkedIn itself is never fetched)
    GITHUB_TOKEN, when set, is sent as the Authorization header to the GitHub API. Keys are never logged.
@@ -144,6 +144,7 @@ const same = (a: string, b: string) => {
   return x === y || (Math.min(x.length, y.length) >= 5 && (x.startsWith(y) || y.startsWith(x))) || (first(a).length >= 5 && first(a) === first(b));
 };
 const CREDS = /stealer|credential stuffing|combo|naz\.api/i;
+const STEALER_LOG = /stealer\s*log/i;
 
 type Once = <T>(key: string, f: () => Promise<T>) => Promise<T>;
 type Runner = (ids: Ids, signal: AbortSignal, once: Once) => Promise<ScanResult>;
@@ -215,10 +216,20 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
   hudsonRock: async (ids, signal) => {
     const q = [...ids.emails.map((v) => ["email", v] as const), ...ids.usernames.map((v) => ["username", v] as const)];
     if (!q.length) return skipped("No email or username in the query", "Nothing to check");
-    const hits = (await Promise.all(q.map(([k, v]) => hudson(k, v, signal)))).flat();
-    return hits.length
-      ? { found: `Found: ${plural(hits.length, "infected device")}`, hit: true, source: "live", detail: `Hudson Rock: compromised ${list(hits)}`, facts: { devices: hits } }
-      : { found: "No stealer logs found", hit: false, source: "live", detail: `Hudson Rock: no infostealer record for ${plural(q.length, "identifier")}` };
+    /* Stealer log lists named in the cached HIBP results (preset emails only) are a hit on their own. */
+    const presets = ids.emails.filter((e) => HIBP_CACHE_EMAILS.includes(e));
+    const cache = presets.length ? await hibpCache() : null;
+    const lists = [...new Set(presets.flatMap((e) => (cache?.accounts?.[e]?.breaches ?? []).filter((b) => STEALER_LOG.test(b.name)).map((b) => b.name)))];
+    const devices = await Promise.all(q.map(([k, v]) => hudson(k, v, signal))).then((x) => x.flat(), (e: unknown) => {
+      if (!lists.length) throw e;
+      return null;
+    });
+    const hr = devices === null ? "Hudson Rock: could not check"
+      : devices.length ? `Hudson Rock: compromised ${list(devices)}` : `Hudson Rock: no infected device found for ${plural(q.length, "identifier")}`;
+    if (devices?.length) return { found: `Found: ${plural(devices.length, "infected device")}`, hit: true, source: "live", detail: hr, facts: { devices, stealerLists: lists } };
+    if (lists.length) return { found: "Found in a stealer log list", hit: true, source: "live", detail: `${checkedOn(cache?.source)}: ${list(lists)}; ${hr}`,
+      facts: { devices: [], stealerLists: lists, noDevice: devices !== null } };
+    return { found: "No stealer logs found", hit: false, source: "live", detail: hr };
   },
   github: async (ids, signal) => {
     if (!ids.github.length) return skipped("No GitHub handle in the query", "No GitHub handle");
@@ -293,26 +304,32 @@ function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile
     detail: `${sites.join(", ")}${linked.length ? ` (linked: ${linked.join(", ")})` : ""}${note}`, facts };
 }
 
-/* ---- one public web search for the name: Tavily when TAVILY_API_KEY is set, otherwise DuckDuckGo HTML ---- */
+/* ---- one public web search for the name: Tavily when TAVILY_API_KEY is set, DuckDuckGo HTML otherwise or when Tavily fails ---- */
 type Search = { engine: string; urls: string[] };
+const TAVILY_MS = 2500;
+async function tavily(name: string, key: string, signal: AbortSignal): Promise<Search> {
+  const res = await fetch("https://api.tavily.com/search", {
+    method: "POST", signal, cache: "no-store",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "user-agent": UA },
+    body: JSON.stringify({ query: `"${name}"`, max_results: 10, search_depth: "basic" }),
+  });
+  if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
+  const data = (await res.json()) as { results?: { url: string }[] };
+  return { engine: "Tavily", urls: [...new Set((data.results ?? []).map((r) => r.url))].slice(0, 10) };
+}
 async function search(name: string, signal: AbortSignal): Promise<Search> {
   const key = process.env.TAVILY_API_KEY;
+  let note = "";
   if (key) {
-    const res = await fetch("https://api.tavily.com/search", {
-      method: "POST", signal, cache: "no-store",
-      headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "user-agent": UA },
-      body: JSON.stringify({ query: `"${name}"`, max_results: 10, search_depth: "basic" }),
-    });
-    if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
-    const data = (await res.json()) as { results?: { url: string }[] };
-    return { engine: "Tavily", urls: [...new Set((data.results ?? []).map((r) => r.url))].slice(0, 10) };
+    try { return await tavily(name, key, AbortSignal.any([signal, AbortSignal.timeout(TAVILY_MS)])); }
+    catch (e) { note = ` (Tavily failed: ${e instanceof Error ? (e.name === "TimeoutError" ? "timed out" : e.message) : "error"})`; }
   }
   const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(`"${name}"`)}`,
     { headers: { "user-agent": UA, accept: "text/html" }, signal, cache: "no-store" });
-  if (res.status !== 200) throw new Error(`Search HTTP ${res.status}${res.status === 202 ? " (rate limited)" : ""}`);
+  if (res.status !== 200) throw new Error(`Search HTTP ${res.status}${res.status === 202 ? " (rate limited)" : ""}${note}`);
   const html = await res.text();
   const urls = [...html.matchAll(/result__url" href="[^"]*?uddg=([^&"]+)/g)].map((m) => decodeURIComponent(m[1]));
-  return { engine: "DuckDuckGo", urls: [...new Set(urls)].slice(0, 10) };
+  return { engine: "DuckDuckGo" + note, urls: [...new Set(urls)].slice(0, 10) };
 }
 export function makeLiveContext() {
   const memo = new Map<string, Promise<unknown>>();

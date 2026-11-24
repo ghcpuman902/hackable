@@ -15,7 +15,7 @@ const DESCRIPTION: Record<ScanTool, string> = {
   hudsonRock: "Look up infostealer logs (Hudson Rock)",
   leakCheck: "Look up leaked passwords (LeakCheck)",
   hibpTest: "Look up breaches (Have I Been Pwned test account)",
-  forum: "Search public forum posts (Reddit and similar)",
+  forum: "Look up a public Hacker News profile",
   peopleSearch: "Look up people-search listings for address and relatives",
   publicContact: "Look up public contact listings for phone numbers",
   social: "Find public social profiles (Instagram, X)",
