@@ -94,10 +94,10 @@ export function Mini({ name, who = "Jane" }: { name: MiniName; who?: string }) {
       return (
         <div ref={ref} className={cls("m-steal")} aria-hidden="true">
           <div className="lap"></div>
-          <span className="k" style={{ ...dx("-130%"), ...at(0.3) }}>GitHub</span>
+          <span className="k" style={{ ...dx("calc(-50% - 68px)"), ...at(0.3) }}>GitHub</span>
           <span className="k" style={{ ...dx("-50%"), ...at(0.8) }}>Slack</span>
-          <span className="k" style={{ ...dx("30%"), ...at(1.3) }}>Bank</span>
-          <span className="k" style={{ ...dx("-90%"), ...at(1.8) }}>Shop</span>
+          <span className="k" style={{ ...dx("calc(-50% + 68px)"), ...at(1.3) }}>Bank</span>
+          <span className="k" style={{ ...dx("-50%"), ...at(1.8), ["--dy" as string]: "-62px" }}>Shop</span>
         </div>
       );
     case "prof":
