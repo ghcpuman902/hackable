@@ -241,8 +241,9 @@ html,body{overflow-x:clip}
 .rise .sec{animation:none}
 @media (max-width:640px){
   .stage{height:320px}
-  .fan{--w:96px;--k:14px;--top:52px;--rot:3deg;--pad:10px;
-    --step:min(100px,calc((100vw - 32px - var(--w)) / (var(--nn) - 1)))}
+  /* the stage is 100vw - 40px wide (app padding) and clips; size cards so the narrow row plus tilt fits it, with a gap so no card covers another */
+  .fan{--gap:8px;--w:min(96px,calc((100vw - 40px - 16px) / var(--nn) - var(--gap)));--step:calc(var(--w) + var(--gap));
+    --k:14px;--top:52px;--rot:2.5deg;--pad:9px}
   .fs{--x:var(--om);--xa:var(--oma);--xs:var(--sm)}
   .fs.wide{display:none}
   .fc{min-height:132px;border-radius:16px}
