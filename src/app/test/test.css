@@ -1,0 +1,32 @@
+/* /test QA page only. Flat, dense, readable at 1280. */
+.qa{max-width:1240px;margin:0 auto;padding:32px 20px 80px;font-family:var(--font);color:var(--n900)}
+.qa h1{font-size:32px;letter-spacing:-.03em;margin:0}
+.q-head{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.q-head .q-btn{margin-left:auto}
+.q-mute{color:var(--n500)}
+.q-btn{height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--n200);background:#fff;font:600 15px var(--font);cursor:pointer;color:var(--n900)}
+.q-btn.dark{background:var(--n900);color:#fff;border-color:var(--n900)}
+.q-btn:disabled{opacity:.5;cursor:default}
+.q-target{background:#f5f5f5;border-radius:24px;padding:18px 20px;margin-bottom:16px}
+.q-row-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.q-row-head h2{font-size:20px;letter-spacing:-.02em;margin:0}
+.q-row-head .q-btn{margin-left:auto;height:36px}
+.q-kind{font-size:13px;font-weight:600;color:var(--n500);background:#fff;border-radius:999px;padding:4px 10px}
+.q-tally{display:flex;gap:12px;font-weight:700;font-size:14px}
+.qa table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:16px;overflow:hidden;font-size:13px;line-height:1.4}
+.qa th{text-align:left;font-weight:600;color:var(--n500);padding:8px 12px;border-bottom:1px solid var(--n200)}
+.qa td{vertical-align:top;padding:9px 12px;border-bottom:1px solid #f0f0f0}
+.qa tr:last-child td{border-bottom:0}
+.qa th:nth-child(1){width:150px}.qa th:nth-child(2){width:260px}.qa th:nth-child(4){width:170px}
+.q-tool{font-weight:600}
+.q-tool span{display:block;font:500 11px var(--mono,monospace);color:var(--n500)}
+.q-exp p,.q-found p,.q-m p{margin:3px 0 0;word-break:break-word}
+.q-found b{font-weight:700}
+.q-found i{font-style:normal;font-weight:600;color:var(--n500)}
+.q-src{margin-left:8px;font:600 11px var(--mono,monospace);color:var(--n500)}
+.q-src.unavailable{color:#e5484d}
+.q-m{font-weight:700}
+.q-m p{font-weight:500;color:var(--n500)}
+.q-mark{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;margin-right:6px;color:#fff;font-size:12px}
+.match{color:#0a7d4f}.partial{color:#b26b00}.miss{color:#d0343a}
+.q-m.match .q-mark{background:#16a34a}.q-m.partial .q-mark{background:#f59e0b}.q-m.miss .q-mark{background:#e5484d}

@@ -11,7 +11,7 @@ export type Facts = {
   /* creds: a stealer log, combolist or credential stuffing list. checked: the breach sources that answered. */
   breaches?: { name: string; date?: string; email?: string; passwords?: boolean; creds?: boolean }[];
   pastes?: { name: string; date?: string; email?: string; creds?: boolean }[]; checked?: string[];
-  devices?: string[]; stealerLists?: string[]; noDevice?: boolean; profiles?: string[]; linked?: string[]; domains?: string[]; results?: number; username?: string;
+  devices?: string[]; stealerLists?: string[]; noDevice?: boolean; profiles?: string[]; linked?: string[]; domains?: string[]; results?: number; username?: string; urls?: string[];
 };
 export type ScanResult = { found: string; hit: boolean; source?: "live" | "skipped" | "unavailable"; detail?: string; facts?: Facts };
 

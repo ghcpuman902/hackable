@@ -254,7 +254,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     const { engine, urls } = await once(`search:${ids.names[0]}`, () => search(ids.names[0], signal));
     const domains = [...new Set(urls.map((u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))];
     return urls.length
-      ? { found: `Found: ${plural(urls.length, "result")}`, hit: false, source: "live", detail: `${engine}: ${list(domains)}`, facts: { results: urls.length, domains } }
+      ? { found: `Found: ${plural(urls.length, "result")}`, hit: false, source: "live", detail: `${engine}: ${list(domains)}`, facts: { results: urls.length, domains, urls: urls.slice(0, 5) } }
       : { found: "No results found", hit: false, source: "live", detail: `${engine}: no results` };
   },
   linkedin: async (ids, signal, once) => {
@@ -262,7 +262,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     const { urls } = await once(`search:${ids.names[0]}`, () => search(ids.names[0], signal));
     const li = urls.filter((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\//i.test(u));
     return li.length
-      ? { found: "Found: public profile", hit: false, source: "live", detail: `Search result: ${list(li, 2)}`, facts: { profiles: ["LinkedIn"] } }
+      ? { found: "Found: public profile", hit: false, source: "live", detail: `Search result: ${list(li, 2)}`, facts: { profiles: ["LinkedIn"], urls: li.slice(0, 3) } }
       : { found: "Not in search results", hit: false, source: "live", detail: "No linkedin.com/in result for the name" };
   },
 };
@@ -360,8 +360,22 @@ export function warm(query: string): boolean {
   return keys.length > 0 && keys.every(ready);
 }
 
-export function makeLiveContext({ quiet = false } = {}) {
-  const once = shared;
+/* fresh: skip the memo for this context's calls (the QA page's Rerun), but still share calls within the run
+   and store the new results in the memo. */
+function freshOnce(): Once {
+  const local = new Map<string, Promise<unknown>>();
+  return (key, f) => {
+    if (!local.has(key)) {
+      local.set(key, f());
+      memo.delete(key);
+      void shared(key, () => local.get(key) as ReturnType<typeof f>).catch(() => {});
+    }
+    return local.get(key) as ReturnType<typeof f>;
+  };
+}
+
+export function makeLiveContext({ quiet = false, fresh = false } = {}) {
+  const once = fresh ? freshOnce() : shared;
   return {
     check(tool: ScanTool, query: string, abortSignal?: AbortSignal): Promise<ScanResult> {
       const run = RUNNERS[tool] ?? (async () => skipped("No free live source", "Not checked"));
