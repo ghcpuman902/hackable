@@ -16,7 +16,10 @@
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-directive": "^4.0.0",
     "resend": "^6.39.0",
+    "unist-util-visit": "^5.2.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
