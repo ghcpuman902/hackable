@@ -541,7 +541,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <div className="app">
         <div className="top">
           <h1>See what’s public about you</h1>
-          <p className="sub">Search your name, email or profile links to see what a scammer can find.</p>
+          <p className="sub">Search your online presence to see which attack patterns could target you.</p>
           <form className="search" autoComplete="off" onSubmit={(e) => {
             e.preventDefault();
             if ((entryRef.current?.value ?? "").trim()) commit(); else submit();
