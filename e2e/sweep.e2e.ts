@@ -1,5 +1,5 @@
-import { appendFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { appendFile, mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 const paths = ["/", "/patterns", "/how-it-works", "/privacy", "/compare"];
@@ -101,8 +101,9 @@ async function writeSweepReport(testInfo: TestInfo, results: Result[], browserEr
   const lines = ["# E2E sweep report", "", `Project: ${testInfo.project.name}`, "", "## Controls and links", ""];
   for (const entry of results) lines.push(`- ${entry.subject}: ${entry.result}`);
   lines.push("", "## Browser errors", "", ...(browserErrors.length ? browserErrors.map((error) => `- ${error}`) : ["- None"]), "");
-  const report = resolve(testInfo.config.rootDir, "_agent/overnight/sweep-report.md");
+  const report = resolve(process.cwd(), "_agent/overnight/sweep-report.md");
   const text = lines.join("\n");
+  await mkdir(dirname(report), { recursive: true });
   if (testInfo.project.name === "mobile") await writeFile(report, text);
   else await appendFile(report, "\n" + text);
 }

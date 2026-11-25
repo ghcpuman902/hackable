@@ -8,8 +8,7 @@ async function expectCleanLanding(page: Page) {
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
 }
 
-test("Known issue: Back returns from a Jensen Huang report to a clean landing", async ({ page }) => {
-  test.fixme(true, "SearchFlow preset selection does not create the history entry that submit creates.");
+test("Back returns from a Jensen Huang report to a clean landing", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Jensen Huang" }).click();
   await expect(page.locator("#report")).toBeVisible({ timeout: 10_000 });
@@ -27,8 +26,8 @@ test("Hackable returns a report to a clean landing", async ({ page }) => {
   await expectCleanLanding(page);
 });
 
-test("Known issue: Home returns a report to a clean landing on mobile", async ({ page }, testInfo) => {
-  test.fixme(testInfo.project.name === "mobile", "The mobile navigation CSS hides the Home control.");
+test("Home returns a report to a clean landing", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "On phones the Hackable logo is the way home and the Home link is hidden.");
   await page.goto("/");
   await page.getByRole("button", { name: "Jensen Huang" }).click();
   await expect(page.locator("#report")).toBeVisible({ timeout: 10_000 });
