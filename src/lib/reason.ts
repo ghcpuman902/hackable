@@ -39,20 +39,39 @@ ${DEMO_REPORT}
 Allowed urls:
 `;
 
-export function buildReportPrompt(raw: unknown): { system: string; prompt: string } {
-  return { system: SYSTEM + reportWhitelist().join("\n"), prompt: JSON.stringify(raw) };
+/* picks: the scam patterns the deterministic scoring chose (pattern-score.ts), best first. When given, the report is
+   told about them, its CAUTION card is about the first, and only their sources (plus the learn urls) are allowed. */
+export function picksWhitelist(picks: readonly string[]): string[] {
+  const chosen = (patterns.patterns as { id: string; sources?: string[] }[]).filter((p) => picks.includes(p.id));
+  return [...chosen.flatMap((p) => p.sources ?? []), ...Object.values(LEARN).map((l) => l.url)];
 }
 
-function realModel(): LanguageModel | null {
+function picksSection(picks: readonly string[]): string {
+  const all = patterns.patterns as { id: string; name: string; oneLine: string; explain: string }[];
+  const chosen = picks.map((id) => all.find((p) => p.id === id)).filter((p): p is (typeof all)[number] => !!p);
+  if (!chosen.length) return "\nScam patterns picked for this person: none. Write no CAUTION card.\n";
+  return `\nScam patterns picked for this person from the findings, best fit first. The CAUTION card is about the first one, by name, and how the findings make it work; mention no other scam pattern.\n${
+    chosen.map((p, i) => `${i + 1}. ${p.name}: ${p.oneLine} ${p.explain}`).join("\n")}\n`;
+}
+
+export function buildReportPrompt(raw: unknown, picks?: readonly string[]): { system: string; prompt: string } {
+  if (!picks) return { system: SYSTEM + reportWhitelist().join("\n"), prompt: JSON.stringify(raw) };
+  return { system: SYSTEM.replace(/\nAllowed urls:\n$/, picksSection(picks) + "\nAllowed urls:\n") + picksWhitelist(picks).join("\n"), prompt: JSON.stringify(raw) };
+}
+
+/* The Nebius OpenAI compatible provider, shared by the report writer and the profile classifier. null without a key. */
+export function nebiusModel(modelId: string = process.env.NEBIUS_MODEL || NEBIUS_DEFAULT_MODEL): LanguageModel | null {
   const apiKey = process.env.NEBIUS_API_KEY;
   if (!apiKey) return null;
-  return createOpenAICompatible({ name: "nebius", baseURL: NEBIUS_BASE_URL, apiKey }).chatModel(process.env.NEBIUS_MODEL || NEBIUS_DEFAULT_MODEL);
+  return createOpenAICompatible({ name: "nebius", baseURL: NEBIUS_BASE_URL, apiKey }).chatModel(modelId);
 }
+export { NEBIUS_DEFAULT_MODEL };
+const realModel = () => nebiusModel();
 
-export async function generateReportMarkdown(raw: unknown): Promise<string> {
+export async function generateReportMarkdown(raw: unknown, picks?: readonly string[]): Promise<string> {
   const model = realModel();
   if (!model) return "";
-  const { system, prompt } = buildReportPrompt(raw);
+  const { system, prompt } = buildReportPrompt(raw, picks);
   const { text } = await generateText({
     model, system, prompt, temperature: 0.3, maxOutputTokens: 1600, maxRetries: 0,
     providerOptions: { nebius: { chat_template_kwargs: { enable_thinking: false } } },

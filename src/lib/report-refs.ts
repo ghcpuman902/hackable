@@ -21,7 +21,8 @@ export function shownRefs(refs: { url: string; label: string }[]): ShownRef[] {
   const out: ShownRef[] = [];
   for (const r of refs) {
     const p = PATTERN_BY_SOURCE.get(r.url);
-    const ref = p ? { url: `/patterns#${p.id}`, label: p.name, internal: true } : { url: r.url, label: r.label, internal: false };
+    /* A link to one of our own pages (the picked pattern on /patterns) stays internal. */
+    const ref = p ? { url: `/patterns#${p.id}`, label: p.name, internal: true } : { url: r.url, label: r.label, internal: r.url.startsWith("/") };
     if (!out.some((o) => o.url === ref.url)) out.push(ref);
   }
   const short = (r: ShownRef) => (r.internal || r.label.length <= LABEL_MAX ? r.label : host(r.url));

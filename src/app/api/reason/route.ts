@@ -1,16 +1,16 @@
-import { cleanReportMarkdown } from "@/lib/report-md";
-import { generateReportMarkdown, reportWhitelist } from "@/lib/reason";
+import { buildLiveReport, type LiveRaw } from "@/lib/live-report";
 
-/* POST the raw results as JSON, get { markdown } back. Empty markdown means the caller falls back to rules. */
+/* POST { query, findings, pivots, flags, selfFlags }, get { markdown, patterns, profile } back.
+   patterns: the deterministic picks (pattern-score.ts), which alone decide the pattern cards under the report.
+   Empty markdown means the caller falls back to the rules report. */
 export async function POST(req: Request) {
-  const raw = await req.json().catch(() => null);
-  if (!raw || process.env.SCAN_MODE !== "live") return Response.json({ markdown: "" });
+  const raw = (await req.json().catch(() => null)) as LiveRaw | null;
+  if (!raw || typeof raw !== "object" || process.env.SCAN_MODE !== "live") return Response.json({ markdown: "", patterns: [] });
   try {
-    const md = await generateReportMarkdown(raw);
-    /* Links the scan actually found are allowed alongside the fixed whitelist. */
-    const found = JSON.stringify(raw).match(/https?:\/\/[^\s"\\<>]+/g) ?? [];
-    return Response.json({ markdown: cleanReportMarkdown(md, [...reportWhitelist(), ...found]) ?? "" });
+    const r = await buildLiveReport(raw);
+    /* debug: why each pattern was picked. Never shown. */
+    return Response.json({ markdown: r.markdown, patterns: r.patterns, profile: r.profile, debug: { traits: r.traits, by: r.by, note: r.note, reasons: r.reasons } });
   } catch {
-    return Response.json({ markdown: "" });
+    return Response.json({ markdown: "", patterns: [] });
   }
 }

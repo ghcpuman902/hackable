@@ -13,7 +13,8 @@ import { tagLine, tagsFor, withTagLine } from "@/lib/report-tags";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
-import { patternsFor } from "@/lib/patterns";
+import { patternsFor, PROFILE_ID, type PatternId, type Profile, type ProfileId } from "@/lib/patterns";
+import { fromSignals, pickPatterns, SELF_TRAITS, signalsFrom, withTraitSignals, type Classification, type Findings } from "@/lib/pattern-score";
 import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
 import EmptyResult, { ScanFailed } from "./EmptyResult";
@@ -80,7 +81,15 @@ const CHIP_ORDER = Array.from({ length: Math.max(PEOPLE.length, PRESETS.length) 
   ...(i < PRESETS.length ? [{ kind: "preset" as const, i }] : []),
 ]).flat();
 const PRELOAD_MS = 10 * 60 * 1000;
-const REASON_MS = 18_000;
+const REASON_MS = 22_000;
+
+const PROFILE_LABEL = Object.fromEntries(Object.entries(PROFILE_ID).map(([label, id]) => [id, label])) as Record<Exclude<ProfileId, "no-profile">, Profile>;
+/* The scoring with the deterministic classifier, for a live report the server did not write. */
+function localPicks(findings: Findings, flags: FlagHit[], self: SelfFlagId[]): PatternId[] {
+  const base = signalsFrom(findings, flags);
+  const cls = fromSignals(base, self.flatMap((f) => SELF_TRAITS[f] ?? []));
+  return pickPatterns({ signals: withTraitSignals(base, cls.traits), profile: cls.profile, traits: cls.traits }).map((p) => p.id as PatternId);
+}
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
@@ -290,21 +299,28 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const flagsIn = !live || quick || netFlags !== null;
   const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
 
-  /* Live runs: Nemotron writes the report from what the scan actually found. "" means fall back to the rules report. */
-  const [liveMd, setLiveMd] = useState<{ key: string; md: string } | null>(null);
+  /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
+  const flagHits = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes");
+  const flags: FlagId[] = flagHits.map((f) => f.id);
+
+  /* Live runs: the server picks the scam patterns (classifier, then deterministic scoring) and Nemotron writes the
+     report about them; links to the findings are attached in code. "" means fall back to the rules report. */
+  const [liveMd, setLiveMd] = useState<{ key: string; md: string; patterns: PatternId[]; profile: Classification["profile"] } | null>(null);
   const liveHits = fan.filter((c) => states[c.tool] === "hit").length;
   const wantMd = done && live && !quick && !preset && liveHits > 0 && status !== "error";
-  const outputsJson = wantMd ? JSON.stringify({ query: chips.map((c) => c.label), findings: outputs, pivots }) : "";
+  const outputsJson = wantMd ? JSON.stringify({ query: chips.map((c) => c.label), findings: outputs, pivots, flags: flagHits, selfFlags }) : "";
   useEffect(() => {
     if (!outputsJson) return;
     let alive = true;
-    /* Longer than the server's own 15s model deadline, so a slow model still gives the written report, not the fallback. */
+    /* Longer than the server's classifier (4s) plus its model deadline (15s), so a slow model still gives the written report. */
+    type Reason = { markdown?: string; patterns?: PatternId[]; profile?: Classification["profile"] };
     fetch("/api/reason", { method: "POST", headers: { "content-type": "application/json" }, body: outputsJson, signal: AbortSignal.timeout(REASON_MS) })
-      .then((r) => r.json()).then((d: { markdown?: string }) => d.markdown ?? "").catch(() => "")
-      .then((md) => { if (alive) setLiveMd({ key: outputsJson, md }); });
+      .then((r) => r.json() as Promise<Reason>).catch((): Reason => ({}))
+      .then((d) => { if (alive) setLiveMd({ key: outputsJson, md: d.markdown ?? "", patterns: d.patterns ?? [], profile: d.profile ?? "none" }); });
     return () => { alive = false; };
   }, [outputsJson]);
   const mdNow = wantMd ? (liveMd?.key === outputsJson ? liveMd.md : null) : "";
+  const livePicks = wantMd && liveMd?.key === outputsJson ? liveMd : null;
 
   const scan = useCallback((list: Chip[]) => {
     setSelfFlags([]);
@@ -501,9 +517,10 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   };
 
   const rise = (i: number) => ({ animationDelay: i * (quick ? 0.04 : 0.14) + "s" }) as CSSProperties;
-  /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
-  const flags: FlagId[] = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes").map((f) => f.id);
-  const patterns = patternsFor({ profile: null, flags: [...flags, ...selfFlags] });
+  /* Live pattern picks come only from the scoring: the server's when it answered, otherwise the same scoring here with
+     the deterministic classifier. */
+  const patterns: PatternId[] = livePicks?.patterns ?? localPicks(outputs, flagHits, selfFlags);
+  const liveProfile = livePicks && livePicks.profile !== "none" ? PROFILE_LABEL[livePicks.profile] : null;
   const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
   const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   /* Live scans get No profile for now: nothing they return is a cheap, reliable sign of one. */
@@ -542,8 +559,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     mdNow === null
       ? <p key="writing" className="sum-writing" role="status">Reading what we found…</p>
       /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
-      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(null, flags))} />,
-    mdNow ? <PatternCards key="pcards" markdown={mdNow} fallback={patterns} /> : null,
+      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(liveProfile, flags))} />,
+    mdNow ? <PatternCards key="pcards" ids={patterns} /> : null,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
