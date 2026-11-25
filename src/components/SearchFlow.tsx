@@ -124,6 +124,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   /* What the person ticks themselves (moved home, big life event, selling online, travelling soon). Never inferred. */
   const [selfFlags, setSelfFlags] = useState<SelfFlagId[]>([]);
   const [scanId, setScanId] = useState(0);
+  /* The chips the current report was made from. Editing the box afterwards must not rewrite that report. */
+  const [scanned, setScanned] = useState<Chip[]>([]);
   const entryRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const armed = useRef(false);
@@ -133,9 +135,10 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const [netFlags, setNetFlags] = useState<FlagHit[] | null>(null);
   const flagsCtl = useRef<AbortController | null>(null);
   /* A preset opens a cached profile on the live card list, in either mode. */
-  const preset = running ? presetFor(chips.map((c) => c.raw).join(", ")) : undefined;
+  const scannedText = scanned.map((c) => c.raw).join(", ");
+  const preset = running ? presetFor(scannedText) : undefined;
   /* Jane Doe Smith (the demo person) is cached as well. Cached reports run the same steps, compressed (QUICK). */
-  const demo = running && !preset && isDemoQuery(chips.map((c) => c.raw).join(", "));
+  const demo = running && !preset && isDemoQuery(scannedText);
   const quick = !!preset || demo;
   const fan = fanFor(!demo && (live || !!preset));
 
@@ -161,14 +164,38 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   /* Empty box: one placeholder line loops through what you can paste (CSS only, hidden on focus). */
   const empty = !chips.length && !entry && !running;
 
-  const disabled = running || !(chips.length || entry.trim());
+  /* Card states come straight from the typed tool parts of the streaming assistant message. */
+  const assistant = messages.findLast((m) => m.role === "assistant");
+  const states: Partial<Record<ScanTool, CardState>> = {};
+  const found: Partial<Record<ScanTool, string>> = {};
+  const outputs: Outputs = {};
+  const received: Pivot[] = [];
+  for (const p of assistant?.parts ?? []) {
+    if (p.type === "data-pivot") received.push(p.data);
+    if (!isStaticToolUIPart(p)) continue;
+    const name = getStaticToolName(p) as ScanTool;
+    if (p.state === "output-available") {
+      states[name] = p.output.hit ? "hit" : "ok";
+      if (!p.output.empty) found[name] = p.output.found;
+      outputs[name] = p.output;
+    }
+    else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
+  }
+  const pivots = dedupePivots(received);
+  const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
+  const flagsIn = !live || quick || netFlags !== null;
+  const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
+
+  /* `busy` is a scan in flight. Once it has finished (or failed) the box works again, so a search can follow a search. */
+  const busy = running && !done;
+  const disabled = busy || !(chips.length || entry.trim());
 
   /* ---- suggestions: typeahead sites, prefix search and name search (find and confirm) ---- */
   const [sugQ, setSugQ] = useState<string | null>(null);
   const [active, setActive] = useState(-1);
   const [res, setRes] = useState<{ key: string; groups: SugGroup[] | null } | null>(null);
   const [sugCache, setSugCache] = useState<Record<string, SugGroup[]>>({});
-  const plan = running ? null : planFor(sugQ, live);
+  const plan = busy ? null : planFor(sugQ, live);
   const planKey = plan?.kind === "search" ? plan.key : null;
 
   /* Debounced 350ms, cached per query, and the request in flight is cancelled whenever the text changes. */
@@ -260,7 +287,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
      Removing a chip aborts its preload. ?nopreload turns it off for timing. ---- */
   const preloads = useRef(new Map<string, { ctl: AbortController; t: number }>());
   useEffect(() => {
-    if (!live || running || new URLSearchParams(location.search).has("nopreload")) return;
+    if (!live || busy || new URLSearchParams(location.search).has("nopreload")) return;
     const want = new Map(chips.filter((c) => !presetFor(c.raw)).map((c) => [normUrl(c.label), c.raw]));
     for (const [k, p] of preloads.current) if (!want.has(k)) { p.ctl.abort(); preloads.current.delete(k); }
     for (const [k, raw] of want) {
@@ -271,33 +298,11 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       fetch("/api/preload", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: raw }), signal: ctl.signal })
         .catch(() => { if (preloads.current.get(k)?.ctl === ctl) preloads.current.delete(k); });
     }
-  }, [chips, live, running]);
+  }, [chips, live, busy]);
 
   const pill = (s: (typeof SOURCES)[number]) => SRC_PREFIX[s.n]
     ? <button key={s.n} type="button" className="src" onClick={() => insertPrefix(SRC_PREFIX[s.n])}>{srcBody(s)}</button>
     : <span key={s.n} className="src">{srcBody(s)}</span>;
-
-  /* Card states come straight from the typed tool parts of the streaming assistant message. */
-  const assistant = messages.findLast((m) => m.role === "assistant");
-  const states: Partial<Record<ScanTool, CardState>> = {};
-  const found: Partial<Record<ScanTool, string>> = {};
-  const outputs: Outputs = {};
-  const received: Pivot[] = [];
-  for (const p of assistant?.parts ?? []) {
-    if (p.type === "data-pivot") received.push(p.data);
-    if (!isStaticToolUIPart(p)) continue;
-    const name = getStaticToolName(p) as ScanTool;
-    if (p.state === "output-available") {
-      states[name] = p.output.hit ? "hit" : "ok";
-      if (!p.output.empty) found[name] = p.output.found;
-      outputs[name] = p.output;
-    }
-    else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
-  }
-  const pivots = dedupePivots(received);
-  const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
-  const flagsIn = !live || quick || netFlags !== null;
-  const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
 
   /* Shown flags: only "yes". A namesake in the news or an undated new role stays out. */
   const flagHits = [...(netFlags ?? []), ...outputFlags(outputs)].filter((f) => f.state === "yes");
@@ -308,7 +313,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const [liveMd, setLiveMd] = useState<{ key: string; md: string; patterns: PatternId[]; profile: Classification["profile"] } | null>(null);
   const liveHits = fan.filter((c) => states[c.tool] === "hit").length;
   const wantMd = done && live && !quick && !preset && liveHits > 0 && status !== "error";
-  const outputsJson = wantMd ? JSON.stringify({ query: chips.map((c) => c.label), findings: outputs, pivots, flags: flagHits, selfFlags }) : "";
+  const outputsJson = wantMd ? JSON.stringify({ query: scanned.map((c) => c.label), findings: outputs, pivots, flags: flagHits, selfFlags }) : "";
   useEffect(() => {
     if (!outputsJson) return;
     let alive = true;
@@ -324,6 +329,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   const scan = useCallback((list: Chip[]) => {
     setSelfFlags([]);
+    setScanned(list);
     setScanId((n) => n + 1);
     setSugQ(null);
     setShowAll(new URLSearchParams(location.search).has("all"));
@@ -351,6 +357,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     flagsCtl.current?.abort();
     setMessages([]);
     setRunning(false);
+    setScanned([]);
     setNetFlags(null);
     setSelfFlags([]);
     setChips([]);
@@ -395,7 +402,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const submit = () => {
     commit();
     const list = chipsRef.current;
-    if (!list.length || running) return;
+    if (!list.length || busy) return;
     entryRef.current?.blur();
     start(list);
   };
@@ -521,8 +528,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
      the deterministic classifier. */
   const patterns: PatternId[] = livePicks?.patterns ?? localPicks(outputs, flagHits, selfFlags);
   const liveProfile = livePicks && livePicks.profile !== "none" ? PROFILE_LABEL[livePicks.profile] : null;
-  const name = chips.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
-  const who = name ?? chips.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
+  const name = scanned.find((c) => c.kind === "name")?.label.split(/\s+/)[0];
+  const who = name ?? scanned.find((c) => c.kind === "handle")?.label.replace(/^@/, "") ?? "there";
   /* Live scans get No profile for now: nothing they return is a cheap, reliable sign of one. */
   /* First thing in the report: who this is about and what the checks found, as icons, before any prose. */
   const hits = fan.filter((c) => states[c.tool] === "hit");
@@ -537,7 +544,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   );
   const failed = done && scanFailed(status, fan.map((c) => c.tool), outputs);
   const report = failed ? [
-    <ScanFailed key="failed" connection={status === "error"} onRetry={() => scan(chipsRef.current)} />,
+    <ScanFailed key="failed" connection={status === "error"} onRetry={() => scan(scanned)} />,
   ] : preset ? [
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
@@ -547,13 +554,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
       <FinalSec key="final" both={false} />,
     ]),
-    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo && hits.length === 0 ? [
     /* Zero hits: never list web results, which are usually about someone else with the same name. */
     /* Says what was found and that no check turned up a risk, then one lesson at normal card size. */
     <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} outputs={outputs} pivots={pivots} />,
     <ReportMarkdown key="safe" markdown={SAFE_ANYWAY} />,
-    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo && mdNow !== "" ? [
     summary,
     mdNow === null
@@ -561,7 +568,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
       : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(liveProfile, flags))} />,
     mdNow ? <PatternCards key="pcards" ids={patterns} /> : null,
-    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
     ...(flags.length ? [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, flags))} />] : []),
@@ -570,7 +577,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <FinalSec key="final" both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
       rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
         ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
-    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
   ] : [
     summary,
     ...(demo ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, []))} />]),
@@ -579,7 +586,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
       <FinalSec key="final" />,
     ]),
-    <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
   ];
 
   /* One spoken line for the whole scan, instead of every card announcing itself. */
