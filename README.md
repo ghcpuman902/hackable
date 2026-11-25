@@ -85,4 +85,4 @@ Next.js 16, React 19, TypeScript, Tailwind CSS 4, Vercel AI SDK with an OpenAI c
 
 ## Licence
 
-The licence has not been decided yet.
+Copyright 2026 Mangle Kuo. All rights reserved. You may read the code here, but you may not use, copy, modify or share it without written permission. See [LICENSE](LICENSE).
