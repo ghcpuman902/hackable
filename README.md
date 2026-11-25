@@ -42,16 +42,18 @@ The other presets are Tim Cook, Mangle Kuo and Jane Doe Smith, who is synthetic.
 Checks:
 
 ```bash
-pnpm exec vitest run   # renderer unit tests: 278 passed
-pnpm exec tsc --noEmit # type check: passes
+pnpm exec vitest run                      # unit tests: 337 passed
+pnpm exec next typegen                    # route types, needed before tsc
+pnpm exec tsc --noEmit                    # type check
 pnpm lint
+BASE_URL=http://localhost:3000 pnpm exec playwright test   # Back button and click every control, at 390 and 1440 (needs pnpm dev running)
 ```
 
 ## Explore
 
-- [Scam patterns](http://localhost:3000/patterns)
-- [How it works](http://localhost:3000/how-it-works)
-- [Privacy](http://localhost:3000/privacy)
+- [Scam patterns](https://mangle-hackable.vercel.app/patterns)
+- [How it works](https://mangle-hackable.vercel.app/how-it-works)
+- [Privacy](https://mangle-hackable.vercel.app/privacy)
 
 The renderer tests run fixed inputs through the clean up pass: well formed reports plus messy ones such as fenced output, headings, unknown alert types, five cards, missing footnotes, raw HTML and JSON instead of markdown.
 
