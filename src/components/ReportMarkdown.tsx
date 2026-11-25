@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, isValidElement, type ReactNode } from "react";
+import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Info, Lightbulb, ShieldAlert, TriangleAlert } from "lucide-react";
@@ -71,11 +71,14 @@ export default function ReportMarkdown({ markdown }: { markdown: string }) {
           {g.refs.length > 0 && (
             <div className="rm-refs">
               {g.refs.map((r, j) => (
-                <span key={r.url}>
-                  {j > 0 && " · "}
+                <Fragment key={r.url}>
+                  {j > 0 && " "}
+                  <span className="rm-ref">
+                  {j > 0 && "· "}
                   {r.internal ? <a href={r.url}>{r.label}</a>
                     : <a href={r.url} target="_blank" rel="noopener noreferrer">{r.label}</a>}
-                </span>
+                  </span>
+                </Fragment>
               ))}
             </div>
           )}
