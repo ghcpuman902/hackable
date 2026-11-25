@@ -26,6 +26,8 @@ import LandingBadge from "./LandingBadge";
 /* The one lesson shown when no check found a risk. */
 const SAFE_ANYWAY = "> [!TIP]\n> **Stay safe anyway.** Treat any unexpected message that asks you to log in, pay or install something as fake until you check it another way. Use a different password for every account and turn on two step sign in.";
 import { SubscribeCard } from "./SubscribeCard";
+import { TavilyCredit } from "./Credits";
+import { DemoNoticeButton, DemoNoticeProvider } from "./DemoNoticeDialog";
 import { DEMO_REPORT, PRESET_REPORTS } from "@/lib/preset-reports";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
 import { CAT_PREFIX, isNameQuery, normUrl, prefixOf, SITES, sitesFor, SUG_MIN, type SugCat, type SugExtra, type SugGroup } from "@/lib/suggest";
@@ -112,6 +114,10 @@ let uid = 0;
 
 /* live: SCAN_MODE=live on the server. The list then drops the cards with no live source, and the report is built from the live results. */
 export default function SearchFlow({ live = false }: { live?: boolean }) {
+  return <DemoNoticeProvider><SearchFlowInner live={live} /></DemoNoticeProvider>;
+}
+
+function SearchFlowInner({ live }: { live: boolean }) {
   const [chips, setChipsState] = useState<Chip[]>([]);
   const chipsRef = useRef<Chip[]>([]);
   const setChips = (next: Chip[]) => { chipsRef.current = next; setChipsState(next); };
@@ -431,17 +437,6 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     if (location.search || location.hash) history.pushState(null, "", "/");
   };
 
-  /* Subscribe in the nav: with a report open it goes to the subscribe card under it; before that there is
-     nothing to subscribe to yet, so it puts you in the search box. */
-  const toSubscribe = (e: MouseEvent) => {
-    e.preventDefault();
-    const card = document.getElementById("subscribe");
-    if (!card) { scrollTo({ top: 0, behavior: "auto" }); entryRef.current?.focus(); return; }
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    card.scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
-    card.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
-  };
-
   /* The link keeps its slot but fades out once the report is in view. */
   const [inView, setInView] = useState(false);
   const reportSeen = done && inView;
@@ -549,26 +544,26 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
     ...(PRESET_REPORTS[preset.name] ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(preset.profile, preset.flags))} />]),
-    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />, <PatternCards key="pcards" markdown={PRESET_REPORTS[preset.name]} />] : [
+    ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} credit />, <PatternCards key="pcards" markdown={PRESET_REPORTS[preset.name]} />] : [
       ...presetFindings(preset),
       <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
       <FinalSec key="final" both={false} />,
     ]),
-    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" />,
   ] : live && !demo && hits.length === 0 ? [
     /* Zero hits: never list web results, which are usually about someone else with the same name. */
     /* Says what was found and that no check turned up a risk, then one lesson at normal card size. */
     <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} outputs={outputs} pivots={pivots} />,
     <ReportMarkdown key="safe" markdown={SAFE_ANYWAY} />,
-    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" />,
   ] : live && !demo && mdNow !== "" ? [
     summary,
     mdNow === null
       ? <p key="writing" className="sum-writing" role="status">Reading what we found…</p>
       /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
-      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(liveProfile, flags))} />,
+      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(liveProfile, flags))} credit />,
     mdNow ? <PatternCards key="pcards" ids={patterns} /> : null,
-    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" />,
   ] : live && !demo ? [
     summary,
     ...(flags.length ? [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, flags))} />] : []),
@@ -577,16 +572,16 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <FinalSec key="final" both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
       rest={` The flood comes by email and the request comes by phone. ${(outputs.linkedin?.facts?.profiles?.length ?? 0) > 0
         ? "The recruiter writes on LinkedIn" : "The recruiter writes to the email in your commits"}, and the malware sits in a GitHub repo.`} />,
-    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" />,
   ] : [
     summary,
     ...(demo ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, []))} />]),
-    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />, <PatternCards key="pcards" markdown={DEMO_REPORT} />] : [
+    ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} credit />, <PatternCards key="pcards" markdown={DEMO_REPORT} />] : [
       ...FINDINGS,
       <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
       <FinalSec key="final" />,
     ]),
-    <SubscribeCard key="sub" email={scanned.find((c) => c.kind === "email")?.label} />,
+    <SubscribeCard key="sub" />,
   ];
 
   /* One spoken line for the whole scan, instead of every card announcing itself. */
@@ -604,7 +599,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <nav className="nav">
         <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
         <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><Link href="/how-it-works">How it works</Link><Link href="/privacy">Privacy</Link><Link href="/patterns">Patterns</Link></div>
-        <a className="login" href="#subscribe" onClick={toSubscribe}>Subscribe</a>
+        <DemoNoticeButton className="login">Subscribe</DemoNoticeButton>
       </nav>
       <div className="app">
         <div className="top">
@@ -697,6 +692,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 {SOURCES.map((s, i) => <span key={s.n} className="sitem" style={{ "--i": i } as CSSProperties}>{pill(s)}</span>)}
               </span>
             </div>
+            <TavilyCredit />
             <a className="pill report-link" href="#report" onClick={openReport} aria-hidden={reportSeen} tabIndex={reportSeen ? -1 : undefined}
               style={{ opacity: reportSeen ? 0 : undefined, visibility: reportSeen ? "hidden" : undefined, pointerEvents: reportSeen ? "none" : undefined, transition: still ? undefined : "opacity 200ms ease-out, visibility 0s linear 200ms" }}>Open the report</a>
           </div>

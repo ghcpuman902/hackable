@@ -6,6 +6,7 @@ import ReportMarkdown from "@/components/ReportMarkdown";
 import { cleanReportMarkdown } from "@/lib/report-md";
 import { Fan, runH, type CardState } from "@/components/Fan";
 import { Mini } from "@/components/Mini";
+import { DemoNoticeProvider } from "@/components/DemoNoticeDialog";
 import { SubscribeCard } from "@/components/SubscribeCard";
 import { FAN, type MiniName, type ScanTool } from "@/lib/synthetic";
 
@@ -50,8 +51,8 @@ export default function AnimLab() {
         </div></div>
       </section>
       <section id="subscribe" style={{ display: "grid", gap: 8 }}>
-        <b>subscribe (mock)</b>
-        <SubscribeCard email="manglekuo@gmail.com" />
+        <b>subscribe</b>
+        <DemoNoticeProvider><SubscribeCard /></DemoNoticeProvider>
       </section>
       <section id="report-fixture" style={{ display: "grid", gap: 8 }}>
         <ReportMarkdown markdown={fixtureMd} />

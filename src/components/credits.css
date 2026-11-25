@@ -1,0 +1,69 @@
+/* Progress screen: the row is always laid out while a search runs, so nothing moves when the checks finish. */
+.tavily-credit {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  margin: 0;
+  font: 600 17px/1.2 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--n500);
+}
+
+.run .tavily-credit {
+  display: flex;
+}
+
+.tavily-credit a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--n200);
+  color: var(--n900);
+  text-decoration: none;
+}
+
+.tavily-credit a:hover {
+  background: var(--n50);
+}
+
+.tavily-credit b {
+  font: 700 26px/1 var(--font);
+  letter-spacing: -0.04em;
+}
+
+/* Report: the same quiet style as the source lines, aligned to the same edge. */
+.nebius-credit {
+  margin: 0;
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #8a8a8a;
+}
+
+.nebius-credit a {
+  position: relative;
+  color: #6b6b6b;
+  text-decoration: underline;
+  text-decoration-color: #cfcfcf;
+  text-underline-offset: 3px;
+}
+
+.nebius-credit a::after {
+  content: "";
+  position: absolute;
+  inset: -6px -4px;
+}
+
+.nebius-credit a:hover {
+  color: #1a1a1a;
+  text-decoration-color: currentColor;
+}
+
+.nebius-credit b {
+  font-weight: 700;
+}

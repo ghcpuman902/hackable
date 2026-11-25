@@ -1,6 +1,8 @@
 import { appendFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page, type TestInfo } from "@playwright/test";
+import { LINKEDIN_POST_URL, NEBIUS_TOKEN_FACTORY_URL } from "../src/lib/site-config";
+import { checkLinks, closeBy, openFromCard, openFromNav, openReport, type CloseWay } from "./demo-notice-helpers";
 
 const paths = ["/", "/patterns", "/how-it-works", "/privacy", "/compare"];
 const reportPages = ["Tim Cook", "Jane Doe Smith"];
@@ -97,13 +99,65 @@ test("every visible control and link completes without browser errors", async ({
   expect(browserErrors, browserErrors.join("\n")).toEqual([]);
 });
 
-async function writeSweepReport(testInfo: TestInfo, results: Result[], browserErrors: string[]) {
+/* Same lenient external check as the sweep above: a 404, 410 or server error fails; blocked or offline is noted. */
+async function externalOk(request: APIRequestContext, url: string) {
+  try {
+    const response = await request.get(url, { timeout: 5_000, failOnStatusCode: false, maxRedirects: 5 });
+    const status = response.status();
+    expect([404, 410].includes(status) || status >= 500, `${url} returned ${status}`).toBe(false);
+    return `${status}`;
+  } catch (error) {
+    return `unavailable: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
+test("the Subscribe dialog, the Tavily credit and the Nebius credit all work", async ({ page, request }, testInfo) => {
+  test.setTimeout(60_000);
+  const results: Result[] = [];
+
+  await page.goto("/");
+  await expect(page.locator('input[type="email"]')).toHaveCount(0);
+
+  for (const way of ["Escape", "backdrop", "close button"] as CloseWay[]) {
+    await openFromNav(page);
+    const { linkedinShown } = await checkLinks(page);
+    expect(linkedinShown, "the LinkedIn link is hidden while the constant is empty").toBe(LINKEDIN_POST_URL.trim() !== "");
+    await closeBy(page, way);
+    results.push({ subject: `nav Subscribe, closed with ${way}`, result: "clicked" });
+  }
+
+  await openReport(page);
+  for (const way of ["Escape", "backdrop", "close button"] as CloseWay[]) {
+    await openFromCard(page);
+    await checkLinks(page);
+    await closeBy(page, way);
+    results.push({ subject: `report card Subscribe, closed with ${way}`, result: "clicked" });
+  }
+
+  results.push({ subject: "https://manglekuo.com", result: await externalOk(request, "https://manglekuo.com") });
+
+  const tavily = page.locator(".tavily-credit a");
+  await expect(tavily).toHaveAttribute("href", "https://tavily.com");
+  await expect(tavily).toHaveAttribute("target", "_blank");
+  await expect(tavily).toHaveAttribute("rel", /noopener/);
+  results.push({ subject: "Powered by Tavily", result: await externalOk(request, "https://tavily.com") });
+
+  const nebius = page.locator("#report .nebius-credit a");
+  await expect(nebius).toHaveCount(1);
+  await expect(nebius).toHaveAttribute("href", NEBIUS_TOKEN_FACTORY_URL);
+  await expect(nebius).toHaveAttribute("rel", /noopener/);
+  results.push({ subject: "Report generated with Nebius Token Factory", result: await externalOk(request, NEBIUS_TOKEN_FACTORY_URL) });
+
+  await writeSweepReport(testInfo, results, [], false);
+});
+
+async function writeSweepReport(testInfo: TestInfo, results: Result[], browserErrors: string[], first = true) {
   const lines = ["# E2E sweep report", "", `Project: ${testInfo.project.name}`, "", "## Controls and links", ""];
   for (const entry of results) lines.push(`- ${entry.subject}: ${entry.result}`);
   lines.push("", "## Browser errors", "", ...(browserErrors.length ? browserErrors.map((error) => `- ${error}`) : ["- None"]), "");
   const report = resolve(process.cwd(), "_agent/overnight/sweep-report.md");
   const text = lines.join("\n");
   await mkdir(dirname(report), { recursive: true });
-  if (testInfo.project.name === "mobile") await writeFile(report, text);
+  if (first && testInfo.project.name === "mobile") await writeFile(report, text);
   else await appendFile(report, "\n" + text);
 }

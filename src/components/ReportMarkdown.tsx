@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Info, Lightbulb, ShieldAlert, TriangleAlert } from "lucide-react";
 import { parseReport } from "@/lib/report-md";
 import { shownRefs } from "@/lib/report-refs";
+import { NebiusCredit } from "./Credits";
 import "./report-markdown.css";
 
 const ALERT = {
@@ -61,8 +62,11 @@ const components: Components = {
 };
 
 /* Each blank line separated block is one group: the block, then its references under it, outside the card. */
-export default function ReportMarkdown({ markdown }: { markdown: string }) {
-  const groups = parseReport(markdown).blocks.map((b) => ({ clean: b.markdown, refs: shownRefs(b.refs) }));
+export default function ReportMarkdown({ markdown, credit = false }: { markdown: string; credit?: boolean }) {
+  const blocks = parseReport(markdown).blocks;
+  const groups = blocks.map((b) => ({ clean: b.markdown, refs: shownRefs(b.refs) }));
+  /* The Nebius credit closes the first section: the lead line and the paragraph under it, or the lead alone. */
+  const creditAt = credit && groups.length ? (blocks[1]?.kind === "para" && !blocks[0].markdown.startsWith(">") ? 1 : 0) : -1;
   return (
     <div className="rm">
       {groups.map((g, i) => (
@@ -82,6 +86,7 @@ export default function ReportMarkdown({ markdown }: { markdown: string }) {
               ))}
             </div>
           )}
+          {i === creditAt && <NebiusCredit />}
         </div>
       ))}
     </div>
