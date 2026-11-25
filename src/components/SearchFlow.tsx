@@ -318,10 +318,12 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     if (live && !presetFor(text) && !isDemoQuery(text)) {
       const ctl = new AbortController();
       flagsCtl.current = ctl;
-      fetch("/api/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: text }), signal: ctl.signal })
+      /* A lookup that never answers must not hold the report back: after 25s the flags are taken as none. */
+      fetch("/api/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: text }), signal: AbortSignal.any([ctl.signal, AbortSignal.timeout(25_000)]) })
         .then((r) => r.json() as Promise<{ flags?: FlagHit[] }>)
         .then((j) => { if (flagsCtl.current === ctl) setNetFlags(j.flags ?? []); })
         .catch(() => { if (flagsCtl.current === ctl && !ctl.signal.aborted) setNetFlags([]); });
+      // A timeout aborts only the combined signal, so ctl.signal.aborted stays false and the catch above sets [].
     }
     void sendMessage({ text });
   }, [live, sendMessage, setMessages]);
@@ -518,7 +520,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   );
   const failed = done && scanFailed(status, fan.map((c) => c.tool), outputs);
   const report = failed ? [
-    <ScanFailed key="failed" onRetry={() => scan(chipsRef.current)} />,
+    <ScanFailed key="failed" connection={status === "error"} onRetry={() => scan(chipsRef.current)} />,
   ] : preset ? [
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
@@ -563,13 +565,21 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ];
 
+  /* One spoken line for the whole scan, instead of every card announcing itself. */
+  const finished = fan.filter((c) => states[c.tool] === "ok" || states[c.tool] === "hit").length;
+  const progress = !running ? ""
+    : failed ? "The checks did not finish."
+    : done ? (hits.length ? `Checks finished. ${hits.length} of ${fan.length} found something.` : "Checks finished. Nothing risky found.")
+    : `Checking sources. ${finished} of ${fan.length} done.`;
+
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "") + (quick ? " quick" : "")}>
+      <p className="sr-only" role="status" aria-live="polite">{progress}</p>
       {!running && <LandingBadge />}
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
         <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
-        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a><a href="/patterns">Patterns</a></div>
+        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><Link href="/how-it-works">How it works</Link><Link href="/privacy">Privacy</Link><Link href="/patterns">Patterns</Link></div>
         <a className="login" href="#subscribe" onClick={toSubscribe}>Subscribe</a>
       </nav>
       <div className="app">
@@ -591,7 +601,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 editing === c.id ? (
                   <EditChip key={c.id} chip={c} onDone={(v, keep) => finishEdit(c.id, v, keep)} />
                 ) : (
-                  <span key={c.id} tabIndex={0} role="button" data-id={c.id} data-kind={c.kind}
+                  <span key={c.id} tabIndex={0} role="group" data-id={c.id} data-kind={c.kind}
+                    aria-label={`${KIND_LABEL[c.kind]}: ${c.raw}`}
                     title={`${KIND_LABEL[c.kind]}: ${c.raw}`}
                     className={"chip pill new" + (sel === c.id ? " sel" : "") + (shake?.id === c.id ? " shake" : "")}
                     onDoubleClick={(e) => { e.preventDefault(); setEditing(c.id); }}
@@ -608,14 +619,14 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                       if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); (el.previousElementSibling as HTMLElement | null)?.focus(); }
                     }}>
                     <span className="nw"><Tile kind={c.kind} /><span className="lbl">{c.label}</span></span>
-                    <button type="button" className="x" aria-label="Remove">
+                    <button type="button" className="x" aria-label={`Remove ${c.label}`}>
                       <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                     </button>
                   </span>
                 ),
               )}
               <input ref={entryRef} className="entry" type="text" spellCheck={false}
-                role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls="sg-list"
+                role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls={open ? "sg-list" : undefined}
                 aria-activedescendant={open && active >= 0 ? `sg-${active}` : undefined}
                 aria-label="Name, email or link" enterKeyHint="go" autoComplete="off" autoCapitalize="off" autoCorrect="off"
                 placeholder={chips.length ? "Add more" : PASTE[0]}

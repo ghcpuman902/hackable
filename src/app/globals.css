@@ -321,3 +321,8 @@ button.src:hover{background:var(--n50)}
 .sum-writing::before{content:"";width:8px;height:8px;flex:none;border-radius:999px;background:var(--n500);animation:writing 1.2s ease-in-out infinite}
 @keyframes writing{0%,100%{opacity:.25}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.sum-writing::before{animation:none;opacity:.6}}
+
+/* Keyboard focus on the landing: one ring on every control. Chips and the search button sit inside the clipped box, so their ring goes inside. */
+.landing :is(a,button,[tabindex]):focus-visible{outline:2px solid var(--n900);outline-offset:2px}
+.landing .field :is(.chip,.go-btn,.x):focus-visible{outline-offset:-2px}
+.landing .field .chip:focus-visible .x{background:#f0f0f0}

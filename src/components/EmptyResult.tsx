@@ -15,13 +15,15 @@ const FOUND_AS: Partial<Record<ScanTool, string>> = { github: "GitHub", linkedin
 const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
 /* The scan stopped, or no source answered: never shown as an all clear. */
-export function ScanFailed({ onRetry }: { onRetry: () => void }) {
+export function ScanFailed({ onRetry, connection = false }: { onRetry: () => void; connection?: boolean }) {
   return (
-    <section className="er-card er-fail">
+    <section className="er-card er-fail" role="alert">
       <TriangleAlert className="er-icon" aria-hidden />
       <div className="er-body">
         <h2>We could not finish the checks.</h2>
-        <p>The sources did not answer, so this is not a clean result.</p>
+        <p>{connection
+          ? "The connection dropped before the results came back, so this is not a clean result."
+          : "The sources did not answer, so this is not a clean result."}</p>
         <button type="button" className="pill er-retry" onClick={onRetry}>Try again</button>
       </div>
     </section>

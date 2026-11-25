@@ -79,7 +79,7 @@ export function Suggest({ opts, active, added, loading, onPick, onHover }: {
           case "searching":
             return row(o, <span className="sg-tx quiet" role="status">Searching</span>, i, "quiet");
           case "empty":
-            return row(o, <span className="sg-tx quiet">Press Enter to search the name only</span>, i, "quiet");
+            return row(o, <span className="sg-tx quiet">No matching profiles</span>, i, "quiet");
         }
       })}
     </ul>

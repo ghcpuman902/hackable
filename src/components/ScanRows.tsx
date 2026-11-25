@@ -24,7 +24,7 @@ export function ScanRows({ fan, states, found, pivots, showPivots }: {
           ))}
         </div>
       )}
-      <div className="stage scan-rows" aria-live="polite"
+      <div className="stage scan-rows"
         style={{ "--runh": `${height.wide}px`, "--runhm": `${height.phone}px` } as CSSProperties}>
         <Fan fan={fan} states={states}
           label={(card, state) => {
