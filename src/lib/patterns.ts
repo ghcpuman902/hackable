@@ -9,7 +9,7 @@ export type PatternId = "contagious-interview" | "email-bomb-fake-it-support" | 
   | "deepfake-crypto-giveaway" | "state-spearphishing" | "wallet-drainer" | "sim-swap" | "pig-butchering" | "romance-scam"
   | "task-scam" | "fake-bank-call" | "news-hook-phishing" | "payroll-change" | "after-move-council-letter" | "marketplace-fake-buyer"
   | "fake-booking-or-visa" | "qr-code-phishing" | "mfa-fatigue" | "credential-stuffing" | "voice-clone-family" | "doxxing-swatting"
-  | "leaked-password-extortion" | "fake-charity";
+  | "leaked-password-extortion" | "fake-charity" | "clickfix-fake-captcha";
 export type ProfileId = "high-value-individual" | "target-of-spies" | "crypto-worker" | "romance-target" | "no-profile";
 export type FraudPattern = {
   id: PatternId; name: string; oneLine: string; explain: string; steps: string[]; advice: string; sources: string[];

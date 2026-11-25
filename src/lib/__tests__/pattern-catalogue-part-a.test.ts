@@ -19,14 +19,12 @@ describe("pattern catalogue part A", () => {
   it("every pattern is known or flagged new, with valid targets, sources and cases", () => {
     expect(new Set(PART_A.map((p) => p.id)).size).toBe(PART_A.length);
     for (const p of PART_A) {
-      if (p.isNew) {
-        expect(knownIds.has(p.id)).toBe(false);
-        expect(p.name && p.oneLine).toBeTruthy();
-      } else {
-        expect(knownIds.has(p.id)).toBe(true);
-      }
+      /* R1 added the new pattern to fraud-patterns.json, so every id is now known. */
+      expect(knownIds.has(p.id)).toBe(true);
+      if (p.isNew) expect(p.name && p.oneLine).toBeTruthy();
       for (const prof of p.targets.profiles) expect(profiles.has(prof)).toBe(true);
       for (const id of p.prevalence.sourceIds) expect(sourceIds.has(id)).toBe(true);
+      /* Raw part A, before R1 drops the dead URLs: 3 or more sources each. */
       expect(p.prevalence.sourceIds.length).toBeGreaterThanOrEqual(3);
       expect(p.cases.length).toBeGreaterThanOrEqual(1);
       expect(p.cases.length).toBeLessThanOrEqual(3);

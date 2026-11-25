@@ -637,6 +637,31 @@
         "https://www.actionfraud.police.uk/a-z-of-fraud/charity-donation-fraud"
       ],
       "status": "new"
+    },
+    {
+      "id": "clickfix-fake-captcha",
+      "name": "Fake 'I'm not a robot' check",
+      "triggeredBy": {
+        "flags": [
+          "stealer-log-hit"
+        ],
+        "profiles": [],
+        "baseline": false
+      },
+      "oneLine": "A verification page that asks you to paste and run a command.",
+      "explain": "A link in an email, an advert or a hacked website opens what looks like a robot check. Clicking it quietly copies a command, and the page tells you to press Windows and R, paste and press Enter, which installs password stealing software.",
+      "steps": [
+        "Robot check",
+        "Command pasted",
+        "Passwords stolen"
+      ],
+      "advice": "No real website ever asks you to paste anything into the Run box, Terminal or PowerShell to prove you are human, so close the page if one does.",
+      "sources": [
+        "https://www.microsoft.com/en-us/security/blog/2025/08/21/think-before-you-clickfix-analyzing-the-clickfix-social-engineering-technique/",
+        "https://www.theregister.com/2025/08/22/clickfix_report/",
+        "https://www.bleepingcomputer.com/news/security/clickfix-attack-delivers-infostealers-rats-in-fake-bookingcom-emails/"
+      ],
+      "status": "new"
     }
   ],
   "flags": [

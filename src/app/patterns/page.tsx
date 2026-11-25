@@ -8,10 +8,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/patterns" },
 };
 
-/* All 24 patterns from fraud-patterns.json, wording kept exactly, grouped as Mangle asked (24 Nov). */
+/* Every pattern in fraud-patterns.json, wording kept exactly, grouped as Mangle asked (24 Nov). The fake robot check
+   was added by the 25 Nov research pass. */
 const GROUPS: { title: string; ids: PatternId[] }[] = [
   { title: "Work and money", ids: ["contagious-interview", "task-scam", "fake-boss-payment", "payroll-change"] },
-  { title: "Logins and accounts", ids: ["pass-the-cookie", "credential-stuffing", "mfa-fatigue", "sim-swap", "leaked-password-extortion"] },
+  { title: "Logins and accounts", ids: ["pass-the-cookie", "credential-stuffing", "mfa-fatigue", "sim-swap", "leaked-password-extortion", "clickfix-fake-captcha"] },
   { title: "Calls and impersonation", ids: ["email-bomb-fake-it-support", "fake-bank-call", "voice-clone-family"] },
   { title: "Crypto and romance", ids: ["deepfake-crypto-giveaway", "wallet-drainer", "pig-butchering", "romance-scam"] },
   { title: "Life events and news", ids: ["news-hook-phishing", "after-move-council-letter", "fake-charity", "fake-booking-or-visa", "marketplace-fake-buyer"] },

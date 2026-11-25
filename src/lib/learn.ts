@@ -11,7 +11,7 @@ export const LEARN_KEYS = [
   "state-spearphishing", "wallet-drainer", "sim-swap", "pig-butchering", "romance-scam", "task-scam", "fake-bank-call",
   "news-hook-phishing", "payroll-change", "after-move-council-letter", "marketplace-fake-buyer", "fake-booking-or-visa",
   "qr-code-phishing", "mfa-fatigue", "credential-stuffing", "voice-clone-family", "doxxing-swatting",
-  "leaked-password-extortion", "fake-charity",
+  "leaked-password-extortion", "fake-charity", "clickfix-fake-captcha",
 ] as const satisfies readonly LearnKey[];
 
 /* kind "video": a YouTube watch URL, and thumb is its oEmbed thumbnail_url. source is the publisher, e.g. "NCSC" or "Which?". */
@@ -186,6 +186,13 @@ export const LEARN: Record<LearnKey, Learn> = {
     title: "Five common charity scams and how to spot them - Which?",
     source: "Which?",
     url: "https://www.which.co.uk/news/article/five-common-charity-scams-and-how-to-spot-them-aSJnf6e98Oap",
+    kind: "article",
+  },
+  /* Added 25 Nov (R1) with the new pattern. 200 in the launcher's URL check. */
+  "clickfix-fake-captcha": {
+    title: "Think before you Click(Fix): Analyzing the ClickFix social engineering technique",
+    source: "Microsoft",
+    url: "https://www.microsoft.com/en-us/security/blog/2025/08/21/think-before-you-clickfix-analyzing-the-clickfix-social-engineering-technique/",
     kind: "article",
   },
 };
