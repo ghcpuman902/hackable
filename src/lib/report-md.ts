@@ -1,12 +1,13 @@
 /* Pure clean up and parsing of the model's markdown report. No React, no raw HTML. */
+import { FLAG_TAG, NO_PROFILE_TAG, PROFILE_TAG } from "./report-tags";
+
 const ALERTS = ["WARNING", "CAUTION", "TIP", "NOTE"];
 const MAX_CARDS = 3;
 const MAX_PARAS = 3;
 const MAX_PLAIN_SENTENCES = 2;
 
 export const ALLOWED_TAGS = [
-  "HighNetWorthIndividual", "InTheNews", "CryptoWorker", "RomanceTarget", "SpyTarget", "SameUsername", "PublicCommitEmail",
-  "PasswordsInBreaches", "StealerLog", "JustChangedJobs", "RecentlyMoved", "SellingOnline", "TravellingSoon", "NoProfile",
+  ...Object.values(PROFILE_TAG), NO_PROFILE_TAG, ...Object.values(FLAG_TAG),
 ];
 
 type Block = { kind: "card"; type: string; text: string } | { kind: "para"; text: string; tagsOnly: boolean; heading: boolean };

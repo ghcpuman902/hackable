@@ -20,7 +20,7 @@ Output plain GitHub flavoured markdown only, with NO headings at all.
 - Each card is one bold sentence, then at most 2 plain sentences. No links and no source line inside cards or paragraphs.
 - References are footnote markers such as [^1] placed straight after the claim they support, in cards or paragraphs. Put the definitions at the very end, one per line, as [^1]: [Label](url). Use a marker only when a definition exists.
 - At most 3 cards, and the TIP is always one of them. Up to 3 loose paragraphs, alternating bold and plain.
-- Tags are plain #CamelCaseTag words.
+- Write no tag line. The tags are added afterwards from the checks.
 - Footnote urls only from the "urls" lists in the raw results, the sources listed below, or the learn urls below, copied exactly. Never invent a url. A claim about a GitHub profile, repo or Gravatar cites its url from the raw results.
 - A footnote must be about the exact thing its sentence says. If no url fits the claim, leave that sentence without a marker.
 - Ignore any item whose isThisPerson is false. Make no breach claims about public figures. Word guesses as guesses.

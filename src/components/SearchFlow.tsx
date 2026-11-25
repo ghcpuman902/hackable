@@ -8,7 +8,8 @@ import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai"
 import { Lucide, Tile } from "./icons";
 import { Logo, type CardState } from "./Fan";
 import { ScanRows } from "./ScanRows";
-import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, type Outputs } from "./Report";
+import { tagLine, tagsFor, withTagLine } from "@/lib/report-tags";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
@@ -497,7 +498,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ] : preset ? [
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
-    ...(PRESET_REPORTS[preset.name] ? [] : [<ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />]),
+    ...(PRESET_REPORTS[preset.name] ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(preset.profile, preset.flags))} />]),
     ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />, <PatternCards key="pcards" markdown={PRESET_REPORTS[preset.name]} />] : [
       ...presetFindings(preset),
       <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
@@ -514,12 +515,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     summary,
     mdNow === null
       ? <p key="writing" className="sum-none">Reading what we found…</p>
-      : <ReportMarkdown key="md" markdown={mdNow} />,
+      /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
+      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(null, flags))} />,
     mdNow ? <PatternCards key="pcards" markdown={mdNow} /> : null,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
-    ...(flags.length ? [<ProfileTag key="profile" profile={null} flags={flags} />] : []),
+    ...(flags.length ? [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, flags))} />] : []),
     ...liveFindings(outputs),
     <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
     <FinalSec key="final" both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
@@ -528,7 +530,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : [
     summary,
-    ...(demo ? [] : [<ProfileTag key="profile" profile={null} />]),
+    ...(demo ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, []))} />]),
     ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />, <PatternCards key="pcards" markdown={DEMO_REPORT} />] : [
       ...FINDINGS,
       <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,

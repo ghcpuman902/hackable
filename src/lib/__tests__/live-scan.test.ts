@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { autoSlug } from "../live-sources";
-import { cleanReportMarkdown } from "../report-md";
+import { ALLOWED_TAGS, cleanReportMarkdown, parseReport } from "../report-md";
+import { FLAG_TAG, NO_PROFILE_TAG, PROFILE_TAG, tagLine, tagsFor, withTagLine } from "../report-tags";
 import { scanFailed } from "../scan-outcome";
 import type { ScanResult, ScanTool } from "../synthetic";
 
@@ -41,5 +42,32 @@ describe("scanFailed", () => {
   });
   it("a scan still running has not failed", () => {
     expect(scanFailed("streaming", tools, { leakCheck: down })).toBe(false);
+  });
+});
+
+describe("report tags", () => {
+  it("Tim Cook's profile reads #HighValueIndividual", () => {
+    expect(tagLine(tagsFor("High Value Individual", []))).toBe("#HighValueIndividual");
+  });
+  it("profile first, then one tag per flag, without repeats", () => {
+    expect(tagsFor("Crypto Worker", ["same-username-everywhere", "public-email-in-commits", "same-username-everywhere"]))
+      .toEqual(["CryptoWorker", "SameUsername", "PublicCommitEmail"]);
+  });
+  it("no profile and no flags gives #NoProfile, flags alone need no placeholder", () => {
+    expect(tagsFor(null, [])).toEqual(["NoProfile"]);
+    expect(tagsFor(null, ["stealer-log-hit"])).toEqual(["StealerLog"]);
+  });
+  it("every tag is allowed through the report clean up", () => {
+    const all = [...Object.values(PROFILE_TAG), NO_PROFILE_TAG, ...Object.values(FLAG_TAG)];
+    expect(all.every((t) => ALLOWED_TAGS.includes(t))).toBe(true);
+  });
+  it("a live report gets our tag line before the footnotes, and the writer's own tag line goes", () => {
+    const md = "**You are The Code Sharer.**\n\n> [!TIP]\n> **Use a separate email.**[^1]\n\n#TheCodeSharer #CryptoWorker\n\n[^1]: [GitHub](https://github.com/x)";
+    const out = withTagLine(md, ["PublicCommitEmail"]);
+    expect(out).toBe("**You are The Code Sharer.**\n\n> [!TIP]\n> **Use a separate email.**[^1]\n\n#PublicCommitEmail\n\n[^1]: [GitHub](https://github.com/x)");
+    expect(parseReport(out).tags).toEqual(["PublicCommitEmail"]);
+  });
+  it("adds the line when the writer wrote none and there are no footnotes", () => {
+    expect(withTagLine("**Hello.**", ["NoProfile"])).toBe("**Hello.**\n\n#NoProfile");
   });
 });
