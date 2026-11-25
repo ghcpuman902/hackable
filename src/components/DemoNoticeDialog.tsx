@@ -3,8 +3,9 @@
    points to the author's other projects and the LinkedIn post. Nothing is stored or sent. */
 
 import { ArrowUpRight, X } from "lucide-react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { demoNoticeLinks } from "@/lib/site-config";
+import { ModalDialog } from "./ModalDialog";
 import "./demo-notice-dialog.css";
 
 type DemoNotice = { open: (opener?: HTMLElement | null) => void };
@@ -42,37 +43,9 @@ export function DemoNoticeProvider({ children }: { children: ReactNode }) {
 }
 
 function DemoNoticeDialog({ shown, onClose }: { shown: boolean; onClose: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
   const links = demoNoticeLinks();
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (shown && !dialog.open) dialog.showModal();
-    if (!shown && dialog.open) dialog.close();
-  }, [shown]);
-
-  /* A tap on the backdrop lands on the dialog element itself, outside the panel inside it. */
-  const onBackdrop = (e: MouseEvent<HTMLDialogElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  /* A modal dialog keeps the page behind it inert, but Tab can still leave for the browser's own controls.
-     Wrapping at both ends keeps focus on the dialog's close button and links. */
-  const onKeyDown = (e: KeyboardEvent<HTMLDialogElement>) => {
-    if (e.key !== "Tab") return;
-    const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("button, a[href]"));
-    if (!items.length) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    const active = document.activeElement;
-    if (e.shiftKey && (active === first || !e.currentTarget.contains(active))) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && (active === last || !e.currentTarget.contains(active))) { e.preventDefault(); first.focus(); }
-  };
-
   return (
-    <dialog ref={ref} className="demo-notice" aria-labelledby="demo-notice-title" aria-modal="true"
-      onKeyDown={onKeyDown} onClick={onBackdrop} onCancel={(e) => { e.preventDefault(); onClose(); }} onClose={() => { if (shown) onClose(); }}>
+    <ModalDialog shown={shown} onClose={onClose} titleId="demo-notice-title" className="demo-notice">
       <div className="demo-notice-panel">
         <button type="button" className="demo-notice-close" aria-label="Close" onClick={onClose}>
           <X size={20} aria-hidden="true" />
@@ -90,7 +63,7 @@ function DemoNoticeDialog({ shown, onClose }: { shown: boolean; onClose: () => v
           ))}
         </div>
       </div>
-    </dialog>
+    </ModalDialog>
   );
 }
 

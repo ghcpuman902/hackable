@@ -7,6 +7,8 @@ import { Info, Lightbulb, ShieldAlert, TriangleAlert } from "lucide-react";
 import { parseReport } from "@/lib/report-md";
 import { shownRefs } from "@/lib/report-refs";
 import { NebiusCredit } from "./Credits";
+import { SourceSheet } from "./SourceSheet";
+import type { SourceGroup } from "@/lib/report-sources";
 import "./report-markdown.css";
 
 const ALERT = {
@@ -62,7 +64,7 @@ const components: Components = {
 };
 
 /* Each blank line separated block is one group: the block, then its references under it, outside the card. */
-export default function ReportMarkdown({ markdown, credit = false }: { markdown: string; credit?: boolean }) {
+export default function ReportMarkdown({ markdown, credit = false, sourceGroups = [] }: { markdown: string; credit?: boolean; sourceGroups?: SourceGroup[] }) {
   const blocks = parseReport(markdown).blocks;
   const groups = blocks.map((b) => ({ clean: b.markdown, refs: shownRefs(b.refs) }));
   /* The Nebius credit closes the first section: the lead line and the paragraph under it, or the lead alone. */
@@ -75,11 +77,12 @@ export default function ReportMarkdown({ markdown, credit = false }: { markdown:
           {g.refs.length > 0 && (
             <div className="rm-refs">
               {g.refs.map((r, j) => (
-                <Fragment key={r.url}>
+                <Fragment key={`${r.url}-${j}`}>
                   {j > 0 && " "}
                   <span className="rm-ref">
                   {j > 0 && "· "}
-                  {r.internal ? <a href={r.url}>{r.label}</a>
+                  {r.url.startsWith("source-sheet:") && sourceGroups.find((group) => `source-sheet:${group.id}` === r.url) ? <SourceSheet group={sourceGroups.find((group) => `source-sheet:${group.id}` === r.url)!} />
+                    : r.internal ? <a href={r.url}>{r.label}</a>
                     : <a href={r.url} target="_blank" rel="noopener noreferrer">{r.label}</a>}
                   </span>
                 </Fragment>

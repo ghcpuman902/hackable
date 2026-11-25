@@ -21,6 +21,9 @@
 .rm-refs a { position: relative; color: #6b6b6b; text-decoration: underline; text-decoration-color: #cfcfcf; text-underline-offset: 3px; }
 .rm-refs a::after { content: ""; position: absolute; inset: -6px -4px; }
 .rm-refs a:hover { color: #1a1a1a; text-decoration-color: currentColor; }
+.source-sheet-open { position: relative; padding: 0; border: 0; background: transparent; color: #6b6b6b; font: inherit; text-decoration: underline; text-decoration-color: #cfcfcf; text-underline-offset: 3px; cursor: pointer; }
+.source-sheet-open::after { content: ""; position: absolute; inset: -6px -4px; }
+.source-sheet-open:hover { color: #1a1a1a; text-decoration-color: currentColor; }
 .report a:focus-visible, .report button:focus-visible { outline: 2px solid #1a1a1a; outline-offset: 2px; border-radius: 4px; }
 /* No side margin: the spaces in the sentence already sit either side, so "chip ," never gets a gap before the comma. */
 .rm-chip { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; font-size: 14px; font-weight: 600; text-decoration: none; color: inherit; }

@@ -4,7 +4,7 @@ import { expect, test, type APIRequestContext, type Page, type TestInfo } from "
 import { LINKEDIN_POST_URL, NEBIUS_TOKEN_FACTORY_URL } from "../src/lib/site-config";
 import { checkLinks, closeBy, openFromCard, openFromNav, openReport, type CloseWay } from "./demo-notice-helpers";
 
-const paths = ["/", "/patterns", "/how-it-works", "/privacy", "/compare"];
+const paths = ["/", "/patterns", "/how-it-works", "/privacy", "/compare", "/test/source-sheet"];
 const reportPages = ["Tim Cook", "Jane Doe Smith"];
 const timeoutMs = 2_500;
 

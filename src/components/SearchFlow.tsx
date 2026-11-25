@@ -27,6 +27,7 @@ import LandingBadge from "./LandingBadge";
 const SAFE_ANYWAY = "> [!TIP]\n> **Stay safe anyway.** Treat any unexpected message that asks you to log in, pay or install something as fake until you check it another way. Use a different password for every account and turn on two step sign in.";
 import { SubscribeCard } from "./SubscribeCard";
 import { TavilyCredit } from "./Credits";
+import { sourceGroupsFrom } from "@/lib/report-sources";
 import { DemoNoticeButton, DemoNoticeProvider } from "./DemoNoticeDialog";
 import { DEMO_REPORT, PRESET_REPORTS } from "@/lib/preset-reports";
 import { LIVE_DEMO_CHIPS, PRESETS, presetFor } from "@/lib/presets";
@@ -561,7 +562,7 @@ function SearchFlowInner({ live }: { live: boolean }) {
     mdNow === null
       ? <p key="writing" className="sum-writing" role="status">Reading what we found…</p>
       /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
-      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(liveProfile, flags))} credit />,
+      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(liveProfile, flags))} credit sourceGroups={sourceGroupsFrom(outputs)} />,
     mdNow ? <PatternCards key="pcards" ids={patterns} /> : null,
     <SubscribeCard key="sub" />,
   ] : live && !demo ? [

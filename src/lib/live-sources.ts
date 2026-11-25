@@ -20,6 +20,7 @@ import { z } from "zod";
 import { HIBP_CACHE_EMAILS } from "./presets";
 import { detect, tokenize } from "./chips";
 import { pivotValue, type Pivot } from "./pivots";
+import { verifyWebResults, type WebResult } from "./verify-web";
 import type { Facts, ScanResult, ScanTool } from "./synthetic";
 
 const TIMEOUT_MS = 4000;
@@ -334,17 +335,25 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     if (!terms.length) return skipped("No identifier in the query", "Nothing to search");
     const results = await searchTerms(terms, signal, once);
     const engine = unique(results.map((result) => result.engine)).join(", ");
-    const urls = unique(results.flatMap((result) => result.urls));
-    const domains = [...new Set(urls.map((u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))];
-    return urls.length
-      ? { found: `Found: ${plural(urls.length, "result")}`, hit: false, source: "live", detail: `${engine}: ${list(domains)}`, facts: { results: urls.length, domains, urls: urls.slice(0, 5) } }
+    const raw = results.flatMap((result) => result.results).filter((result, index, all) => all.findIndex((other) => other.url === result.url) === index);
+    const verified = await verifyWebResults(raw, { emails: ids.emails, handles: [...ids.usernames, ...ids.github], names: ids.names }, async (url) => {
+      const response = await fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]), headers: { "user-agent": UA }, cache: "no-store" });
+      return response.ok ? (await response.text()).slice(0, 100_000) : null;
+    });
+    /* The fetched page text was verification-only. Never send it to the report or browser. */
+    const compact = verified.map((result) => ({ title: result.title, url: result.url, status: result.status }));
+    const confirmed = compact.filter((result) => result.status === "confirmed");
+    const possible = compact.filter((result) => result.status === "possible");
+    const domains = [...new Set(confirmed.map((r) => { try { return new URL(r.url).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))];
+    return confirmed.length
+      ? { found: `Found: ${plural(confirmed.length, "result")}`, hit: false, source: "live", detail: `${engine}: ${list(domains)}`, facts: { results: confirmed.length, domains, urls: confirmed.map((r) => r.url), webResults: confirmed, possibleWebResults: possible } }
       : noFindings("No results found", `${engine} found no results`);
   },
   linkedin: async (ids, signal, once) => {
     const terms = ids.webTerms ?? ids.names;
     if (!terms.length) return skipped("No identifier in the query", "Nothing to search");
     const results = await searchTerms(terms, signal, once);
-    const li = unique(results.flatMap((result) => result.urls)).filter((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\//i.test(u));
+    const li = unique(results.flatMap((result) => result.results.map((item) => item.url))).filter((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\//i.test(u));
     return li.length
       ? { found: "Found: public profile", hit: false, source: "live", detail: `Search result: ${list(li, 2)}`, facts: { profiles: ["LinkedIn"], urls: li.slice(0, 3) } }
       : noFindings("Not in search results", "No LinkedIn profile in the results");
@@ -420,7 +429,7 @@ function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile
 }
 
 /* ---- public web search: Tavily, with DuckDuckGo as a fallback ---- */
-type Search = { engine: string; urls: string[] };
+type Search = { engine: string; results: WebResult[] };
 const TAVILY_MS = 5000;
 async function tavily(term: string, key: string, signal: AbortSignal): Promise<Search> {
   const res = await fetch("https://api.tavily.com/search", {
@@ -429,8 +438,8 @@ async function tavily(term: string, key: string, signal: AbortSignal): Promise<S
     body: JSON.stringify({ query: `"${term}"`, max_results: 10, search_depth: "basic" }),
   });
   if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
-  const data = (await res.json()) as { results?: { url: string }[] };
-  return { engine: "Tavily", urls: [...new Set((data.results ?? []).map((r) => r.url))].slice(0, 10) };
+  const data = (await res.json()) as { results?: { url: string; title?: string; content?: string }[] };
+  return { engine: "Tavily", results: (data.results ?? []).map((r) => ({ url: r.url, title: r.title ?? new URL(r.url).hostname, content: r.content })).filter((r) => !!r.url).slice(0, 10) };
 }
 async function search(term: string, signal: AbortSignal): Promise<Search> {
   const key = process.env.TAVILY_API_KEY;
@@ -444,7 +453,7 @@ async function search(term: string, signal: AbortSignal): Promise<Search> {
   if (res.status !== 200) throw new Error(`Search HTTP ${res.status}${res.status === 202 ? " (rate limited)" : ""}${note}`);
   const html = await res.text();
   const urls = [...html.matchAll(/result__url" href="[^"]*?uddg=([^&"]+)/g)].map((m) => decodeURIComponent(m[1]));
-  return { engine: "DuckDuckGo" + note, urls: [...new Set(urls)].slice(0, 10) };
+  return { engine: "DuckDuckGo" + note, results: [...new Set(urls)].slice(0, 10).map((url) => ({ url, title: new URL(url).hostname })) };
 }
 function searchTerms(terms: string[], signal: AbortSignal, once: Once) {
   return successful(terms.map((term) => once(`search:${term.toLowerCase()}`, () => search(term, signal))));

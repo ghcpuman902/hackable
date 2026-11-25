@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { PATTERN_CATALOGUE, type PatternMeta, type Signal } from "../../data/pattern-catalogue";
 import fraud from "../fraud-patterns.json";
 import type { FlagHit } from "../flags";
+import { outputFlags } from "../flags";
+import { tagsFor } from "../report-tags";
 import { CLASS_PROFILES, fromSignals, MAX_PICKS, MIN_SIGNAL, pickPatterns, scorePatterns, signalsFrom, THRESHOLD, withTraitSignals, type Findings } from "../pattern-score";
 
 const yes = (...ids: FlagHit["id"][]): FlagHit[] => ids.map((id) => ({ id, state: "yes", evidence: "" }));
@@ -53,6 +55,27 @@ describe("signalsFrom", () => {
 });
 
 describe("scoring", () => {
+  it("Robert-like breach-only findings never become executive or crypto scams", () => {
+    const robert: Findings = {
+      hibpTest: { found: "Found: 2 breaches", hit: true, source: "live", facts: { breaches: [{ name: "Canva", email: "robert@example.com" }, { name: "Modbsolutions", email: "robert@example.com" }], checked: ["Have I Been Pwned"] } },
+      leakCheck: { found: "Found: passwords in 2 leaks", hit: true, source: "live", facts: { passwords: true, breaches: [{ name: "Canva", email: "robert@example.com" }, { name: "Modbsolutions", email: "robert@example.com" }] } },
+      web: { found: "Found: 0 results", hit: false, source: "live", facts: { possibleWebResults: [{ title: "Robert", url: "https://example.com/robert" }] } },
+    };
+    const flags = outputFlags(robert).filter((flag) => flag.state === "yes");
+    const signals = signalsFrom(robert, flags);
+    const picks = pickPatterns({ signals }).map((pick) => pick.id);
+    expect(signals).toEqual(expect.arrayContaining(["breach-any", "breach-password", "email-exposed"]));
+    expect(signals).not.toEqual(expect.arrayContaining(["job-change", "public-role", "large-following", "crypto-activity"]));
+    expect(picks).toEqual(expect.arrayContaining(["leaked-password-extortion", "credential-stuffing"]));
+    expect(picks).not.toEqual(expect.arrayContaining(["fake-boss-payment", "deepfake-crypto-giveaway"]));
+    expect(tagsFor(null, flags.map((flag) => flag.id))).toEqual(["PasswordsInBreaches"]);
+  });
+
+  it("breach-only signals cannot select fake-boss-payment or deepfake-crypto-giveaway", () => {
+    const picks = pickPatterns({ signals: ["breach-any", "breach-password", "email-exposed"] }).map((pick) => pick.id);
+    expect(picks).not.toEqual(expect.arrayContaining(["fake-boss-payment", "deepfake-crypto-giveaway"]));
+  });
+
   it("a person with no findings gets no patterns, whatever the profile", () => {
     expect(ids([])).toEqual([]);
     for (const profile of [...CLASS_PROFILES, "none" as const]) expect(ids([], { signals: [], profile, traits: ["developer", "executive"] })).toEqual([]);

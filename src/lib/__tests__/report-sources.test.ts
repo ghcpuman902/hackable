@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FlagHit } from "../flags";
 import type { Findings } from "../pattern-score";
 import { cleanReportMarkdown, parseReport } from "../report-md";
-import { attachSources, evidenceFrom, SERVICE_PAGES } from "../report-sources";
+import { attachSources, evidenceFrom, SERVICE_PAGES, sourceGroupsFrom } from "../report-sources";
 import { shownRefs } from "../report-refs";
 
 const FINDINGS: Findings = {
@@ -10,7 +10,7 @@ const FINDINGS: Findings = {
   social: { found: "Found: Gravatar", hit: true, source: "live", facts: { profiles: ["Gravatar"], urls: ["https://gravatar.com/octo"] } },
   hibpTest: { found: "Found: 3 breaches", hit: true, source: "live", facts: { breaches: [{ name: "Canva" }], checked: ["LeakCheck", "XposedOrNot"] } },
   hudsonRock: { found: "No stealer logs found", hit: false, source: "live" },
-  web: { found: "Found: 2 results", hit: false, source: "live", facts: { urls: ["https://example.org/talk", "https://example.net/post"] } },
+  web: { found: "Found: 2 results", hit: false, source: "live", facts: { results: 2, webResults: [{ title: "First result", url: "https://example.org/talk" }, { title: "Second result", url: "https://example.net/post" }], possibleWebResults: [{ title: "Name only", url: "https://example.com/possible" }] } },
   linkedin: { found: "x", hit: false, source: "skipped", facts: { urls: ["https://linkedin.com/in/should-not-show"] } },
 };
 const FLAGS: FlagHit[] = [
@@ -35,17 +35,33 @@ describe("evidenceFrom", () => {
     const urls = evidence.map((e) => e.url);
     expect(urls).toEqual(expect.arrayContaining([
       "https://github.com/octo", "https://github.com/octo/tool", "https://gravatar.com/octo", "https://news.example.com/a",
-      SERVICE_PAGES.leakcheck.url, SERVICE_PAGES.xposedornot.url, "https://example.org/talk",
+      SERVICE_PAGES.leakcheck.url, SERVICE_PAGES.xposedornot.url, "source-sheet:web",
     ]));
     expect(urls).not.toContain("https://maybe.example.com/b");
     expect(urls).not.toContain("https://linkedin.com/in/should-not-show");
     expect(urls).not.toContain(SERVICE_PAGES.hudsonrock.url);
-    expect(urls.every((u) => u.startsWith("https://"))).toBe(true);
+    expect(urls.every((u) => u.startsWith("https://") || u.startsWith("source-sheet:"))).toBe(true);
     expect(new Set(urls).size).toBe(urls.length);
   });
 
   it("finds nothing for an empty scan", () => {
     expect(evidenceFrom({}, [])).toEqual([]);
+  });
+
+  it("groups confirmed web sources by their count and keeps possible matches separate", () => {
+    expect(sourceGroupsFrom(FINDINGS)).toEqual([{
+      id: "web", label: "Web: 2 results",
+      results: [{ title: "First result", url: "https://example.org/talk" }, { title: "Second result", url: "https://example.net/post" }],
+      possible: [{ title: "Name only", url: "https://example.com/possible" }],
+    }]);
+  });
+
+  it("keeps one confirmed web source as a normal link", () => {
+    const findings: Findings = {
+      web: { found: "Found: 1 result", hit: false, source: "live", facts: { webResults: [{ title: "One result", url: "https://example.com/one" }] } },
+    };
+    expect(sourceGroupsFrom(findings)).toEqual([]);
+    expect(evidenceFrom(findings)).toContainEqual({ url: "https://example.com/one", label: "One result", topic: "web" });
   });
 });
 

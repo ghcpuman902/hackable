@@ -10,6 +10,9 @@ import type { Findings } from "./pattern-score";
 
 export type Topic = "github" | "gravatar" | "breach" | "stealer" | "linkedin" | "news" | "job" | "web" | "forum";
 export type Evidence = { url: string; label: string; topic: Topic };
+export type SourceResult = { title: string; url: string };
+export type SourceGroup = { id: string; label: string; results: SourceResult[]; possible: SourceResult[] };
+export const WEB_SOURCE_ID = "web";
 
 /* The check services themselves: where a person can see the same breach or stealer log result. */
 export const SERVICE_PAGES = {
@@ -21,6 +24,14 @@ export const SERVICE_PAGES = {
 
 const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const isHttps = (u: unknown): u is string => typeof u === "string" && /^https:\/\/[^\s<>()]+$/.test(u);
+const webResults = (findings: Findings, key: "webResults" | "possibleWebResults"): SourceResult[] =>
+  (findings.web?.facts?.[key] ?? []).map((r) => ({ title: r.title || host(r.url), url: r.url })).filter((r) => isHttps(r.url));
+
+export function sourceGroupsFrom(findings: Findings): SourceGroup[] {
+  const results = webResults(findings, "webResults");
+  const possible = webResults(findings, "possibleWebResults");
+  return results.length > 1 ? [{ id: WEB_SOURCE_ID, label: `Web: ${results.length} results`, results, possible }] : [];
+}
 
 function githubLabel(u: string): string {
   const path = (() => { try { return new URL(u).pathname.replace(/^\/|\/$/g, ""); } catch { return ""; } })();
@@ -54,8 +65,13 @@ export function evidenceFrom(findings: Findings, flags: readonly FlagHit[] = [])
     if (/LeakCheck/i.test(checked)) push(SERVICE_PAGES.leakcheck.url, SERVICE_PAGES.leakcheck.label, "breach");
   }
   if (live("leakCheck")?.hit) push(SERVICE_PAGES.leakcheck.url, SERVICE_PAGES.leakcheck.label, "breach");
-  /* Web search results last: they are the loosest link to the person. */
-  for (const u of live("web")?.facts?.urls ?? []) push(u, host(u), "web");
+  /* A group opens the result sheet. One confirmed URL remains an ordinary link. */
+  const group = sourceGroupsFrom(findings)[0];
+  if (group) out.push({ url: `source-sheet:${group.id}`, label: group.label, topic: "web" });
+  else {
+    const [result] = webResults(findings, "webResults");
+    if (result) push(result.url, result.title, "web");
+  }
   return out;
 }
 
