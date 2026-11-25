@@ -78,9 +78,16 @@ export function cleanReportDetailed(md: string, whitelist: string[], allowedTags
   let t = md.trim();
   /* Footnote definitions: keep the ones on the whitelist, written as "[^id]: [Label](url)". */
   const defs = new Map<string, string>();
+  /* Two footnotes for the same page become one: the later id points at the first. */
+  const alias = new Map<string, string>();
+  const byUrl = new Map<string, string>();
   t = t.replace(/^\[\^([^\]\s]+)\]:[ \t]*(.*)$/gm, (_, id: string, rest: string) => {
     const m = rest.trim().match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
-    if (m && ok(m[2])) { if (!defs.has(id)) defs.set(id, `[${m[1].trim()}](${m[2]})`); }
+    if (m && ok(m[2])) {
+      const firstId = byUrl.get(m[2]);
+      if (firstId && firstId !== id) alias.set(id, firstId);
+      else if (!defs.has(id)) { defs.set(id, `[${m[1].trim()}](${m[2]})`); byUrl.set(m[2], id); }
+    }
     else if (m) dropped.add(m[2]);
     return "";
   });
@@ -179,11 +186,12 @@ export function cleanReportDetailed(md: string, whitelist: string[], allowedTags
   let result = out.join("\n\n").trim();
   /* Markers need a kept definition; definitions need a marker. */
   const used = new Set<string>();
-  result = result.replace(/\[\^([^\]\s]+)\](?!:)/g, (m, id: string) => {
+  result = result.replace(/\[\^([^\]\s]+)\](?!:)/g, (_, raw: string) => {
+    const id = alias.get(raw) ?? raw;
     if (!defs.has(id)) return "";
     used.add(id);
-    return m;
-  }).replace(/ +([.,;:!?])/g, "$1").replace(/[ \t]{2,}/g, " ");
+    return `[^${id}]`;
+  }).replace(/(\[\^[^\]\s]+\])\1+/g, "$1").replace(/ +([.,;:!?])/g, "$1").replace(/[ \t]{2,}/g, " ");
   if (!result) return finish(null);
   if (AMERICAN.test(result)) stats.lintWarnings.push("american-spelling");
   const defLines = [...defs].filter(([id]) => used.has(id)).map(([id, d]) => `[^${id}]: ${d}`);
