@@ -90,8 +90,9 @@ const PROFILE_LABEL = Object.fromEntries(Object.entries(PROFILE_ID).map(([label,
 /* The scoring with the deterministic classifier, for a live report the server did not write. */
 function localPicks(findings: Findings, flags: FlagHit[], self: SelfFlagId[]): PatternId[] {
   const base = signalsFrom(findings, flags);
-  const cls = fromSignals(base, self.flatMap((f) => SELF_TRAITS[f] ?? []));
-  return pickPatterns({ signals: withTraitSignals(base, cls.traits), profile: cls.profile, traits: cls.traits }).map((p) => p.id as PatternId);
+  const selfTraits = self.flatMap((f) => SELF_TRAITS[f] ?? []);
+  const cls = fromSignals(base, selfTraits);
+  return pickPatterns({ signals: withTraitSignals(base, selfTraits), profile: cls.profile, traits: cls.traits }).map((p) => p.id as PatternId);
 }
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });

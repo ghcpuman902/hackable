@@ -4,7 +4,7 @@
 
 import { ArrowUpRight, X } from "lucide-react";
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
-import { demoNoticeLinks } from "@/lib/site-config";
+import { demoNoticeLinks, LINKEDIN_POST_URL } from "@/lib/site-config";
 import { ModalDialog } from "./ModalDialog";
 import "./demo-notice-dialog.css";
 
@@ -52,7 +52,9 @@ function DemoNoticeDialog({ shown, onClose }: { shown: boolean; onClose: () => v
         </button>
         <h2 id="demo-notice-title">Hackable is a hackathon demo</h2>
         <p>
-          {"We're not taking emails yet. Here's more I've made, and the LinkedIn post about this project, where a comment would be a big help."}
+          {LINKEDIN_POST_URL.trim() !== ""
+            ? "We're not taking emails yet. Here's more I've made, and the LinkedIn post about this project, where a comment would be a big help."
+            : "We're not taking emails yet. Here's more I've made in the meantime."}
         </p>
         <div className="demo-notice-links">
           {links.map((l) => (

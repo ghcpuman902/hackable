@@ -37,3 +37,24 @@ describe("web result verification", () => {
     expect(pickPatterns({ signals: signalsFrom(findings) })).toEqual([]);
   });
 });
+
+describe("web result verification edges", () => {
+  const ids = { emails: ["manglekuo@gmail.com"], handles: [], names: [] };
+  it("a longer address that ends with the email is not a match", () => {
+    expect(verifyWebResult({ title: "List", content: "contact xmanglekuo@gmail.com", url: "https://a.example" }, ids)).toBeNull();
+    expect(verifyWebResult({ title: "List", content: "manglekuo@gmail.com.au", url: "https://a.example" }, ids)).toBeNull();
+    expect(verifyWebResult({ title: "List", content: "mail: <manglekuo@gmail.com>.", url: "https://a.example" }, ids)?.status).toBe("confirmed");
+  });
+  it("a bot check page is never confirmed, from the snippet or from the fetched page", async () => {
+    expect(verifyWebResult({ title: "Just a moment...", content: "ghcpuman902", url: "https://devpost.example/ghcpuman902" }, { handles: ["ghcpuman902"] })).toBeNull();
+    const out = await verifyWebResults([{ title: "Profile", url: "https://devpost.example/ghcpuman902" }], { handles: ["ghcpuman902"] },
+      async () => "<title>Just a moment...</title> ghcpuman902 challenges.cloudflare.com");
+    expect(out).toEqual([]);
+  });
+  it("the email's local part confirms as an exact handle only", () => {
+    const withLocal = { emails: ["manglekuo@gmail.com"], handles: ["manglekuo"], names: [] };
+    expect(verifyWebResult({ title: "Mangle Kuo (@manglekuo)", url: "https://instagram.example/manglekuo" }, withLocal)?.status).toBe("confirmed");
+    expect(verifyWebResult({ title: "Mangekyo Sharingan", url: "https://fandom.example" }, withLocal)).toBeNull();
+    expect(verifyWebResult({ title: "manglekuo2 shop", url: "https://shop.example" }, withLocal)).toBeNull();
+  });
+});

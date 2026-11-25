@@ -1,0 +1,29 @@
+/* The list of every web result behind a grouped source label. It sits in the demo notice dialog shell
+   (centred card on desktop, bottom sheet on phones) and lists each result as a white row: title, domain, link icon. */
+.source-sheet { width: min(640px, calc(100vw - 32px)); }
+.source-sheet-panel { max-height: min(72vh, 680px); overflow: auto; overscroll-behavior: contain; }
+.source-sheet-panel h2 { margin-bottom: 20px; }
+.source-sheet-list + .source-sheet-list { margin-top: 24px; }
+.source-sheet-list h3 { margin: 0 0 10px; font: 700 15px/1.3 var(--font); color: var(--n700); }
+.source-sheet-list ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.source-sheet-list a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  color: var(--n900);
+  text-decoration: none;
+}
+.source-sheet-list a:hover { background: var(--n50); }
+.source-sheet-title { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 16px/1.35 var(--font); }
+.source-sheet-domain { grid-column: 1; grid-row: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 14px/1.35 var(--font); color: var(--n700); }
+.source-sheet-list svg { grid-column: 2; grid-row: 1 / span 2; color: var(--n700); }
+.source-sheet-list--possible a { background: transparent; box-shadow: inset 0 0 0 1px var(--n200, #e5e5e5); }
+@media (max-width: 639.98px) { .source-sheet { width: 100%; } .source-sheet-panel { max-height: 76vh; } }

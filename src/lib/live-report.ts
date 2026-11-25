@@ -20,7 +20,7 @@ export async function scoreLive(raw: LiveRaw, model?: LanguageModel | null) {
   const self = (raw.selfFlags ?? []).map((f) => SELF_TRAITS[f]).filter((t): t is Trait => !!t);
   const base = signalsFrom(findings, flags);
   const cls = await classifyProfile({ query: raw.query, findings, flags, pivots: raw.pivots }, base, self, model);
-  const signals = withTraitSignals(base, cls.traits);
+  const signals = withTraitSignals(base, self);
   const picks = pickPatterns({ signals, profile: cls.profile, traits: cls.traits }).filter((p) => p.id in PATTERNS);
   return { findings, flags, signals, cls, picks };
 }

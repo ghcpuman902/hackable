@@ -31,9 +31,10 @@
   background: var(--n50);
 }
 
-.tavily-credit b {
-  font: 700 26px/1 var(--font);
-  letter-spacing: -0.04em;
+.tavily-logo {
+  display: block;
+  width: auto;
+  height: 24px;
 }
 
 /* Report: the same quiet style as the source lines, aligned to the same edge. */

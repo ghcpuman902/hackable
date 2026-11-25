@@ -81,8 +81,11 @@ export function fromSignals(signals: readonly Signal[], extraTraits: readonly Tr
   return { profile: s.has("crypto-activity") ? "crypto-worker" : "none", traits: traits.slice(0, 4), by: "fallback" };
 }
 
-/* Two signals follow from traits rather than checks: a public role (executive, public figure) and a large following. */
-export function withTraitSignals(signals: readonly Signal[], traits: readonly Trait[]): Signal[] {
+/* Two signals follow from traits rather than checks: a public role (executive, public figure) and a large following.
+   Only traits with evidence count here: ones the person reported about themselves. A trait the classifier guessed
+   still adds its trait point in scoring, but it never becomes a signal on its own. */
+export function withTraitSignals(signals: readonly Signal[], evidencedTraits: readonly Trait[]): Signal[] {
+  const traits = evidencedTraits;
   const out = new Set(signals);
   if (traits.includes("executive") || traits.includes("public-figure")) out.add("public-role");
   if (traits.includes("public-figure")) out.add("large-following");

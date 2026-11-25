@@ -336,7 +336,8 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     const results = await searchTerms(terms, signal, once);
     const engine = unique(results.map((result) => result.engine)).join(", ");
     const raw = results.flatMap((result) => result.results).filter((result, index, all) => all.findIndex((other) => other.url === result.url) === index);
-    const verified = await verifyWebResults(raw, { emails: ids.emails, handles: [...ids.usernames, ...ids.github], names: ids.names }, async (url) => {
+    const localHandles = ids.emails.map((email) => email.slice(0, email.lastIndexOf("@"))).filter((part) => part.length >= 6 && /[a-z]/i.test(part));
+    const verified = await verifyWebResults(raw, { emails: ids.emails, handles: [...new Set([...ids.usernames, ...ids.github, ...localHandles])], names: ids.names }, async (url) => {
       const response = await fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]), headers: { "user-agent": UA }, cache: "no-store" });
       return response.ok ? (await response.text()).slice(0, 100_000) : null;
     });
