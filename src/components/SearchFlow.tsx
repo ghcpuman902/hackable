@@ -18,6 +18,7 @@ import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
 import EmptyResult, { ScanFailed } from "./EmptyResult";
 import { scanFailed } from "@/lib/scan-outcome";
+import { chipsFromSearch, historyMode, scanSearch } from "@/lib/scan-url";
 import { dedupePivots, type Pivot } from "@/lib/pivots";
 import LandingBadge from "./LandingBadge";
 
@@ -348,15 +349,12 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   /* Back to an address with no ?q (from a report) gives the same clean landing as the logo. */
   const restore = useCallback((pop?: unknown) => {
-    const q = new URLSearchParams(location.search).get("q");
-    if (!q) { if (pop) reset(); return false; }
-    try {
-      const st = JSON.parse(q) as { chips?: string[] };
-      chipsRef.current = [];
-      add((st.chips || []).join(", "));
-      scan(chipsRef.current);
-      return true;
-    } catch { return false; }
+    const saved = chipsFromSearch(location.search);
+    if (!saved) { if (pop) reset(); return false; }
+    chipsRef.current = [];
+    add(saved.join(", "));
+    scan(chipsRef.current);
+    return true;
   }, [add, scan, reset]);
 
   useEffect(() => {
@@ -372,7 +370,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
 
   /* Every scan gets its own ?q entry, so the address can be shared and Back returns to the landing. */
   const start = (list: Chip[]) => {
-    history.pushState(null, "", "?q=" + encodeURIComponent(JSON.stringify({ chips: list.map((c) => c.raw) })));
+    const next = scanSearch(list.map((c) => c.raw));
+    if (historyMode(location.search, next) === "push") history.pushState(null, "", next);
+    else history.replaceState(null, "", next);
     scan(list);
   };
 
