@@ -26,14 +26,9 @@ const steps = [
 
 const sources = [
   "LeakCheck public API for email breach records",
-  "Cached Have I Been Pwned results for the preset email addresses only",
-  "XposedOrNot for email breach records",
   "Hudson Rock Cavalier public OSINT for email addresses and usernames",
   "GitHub public REST for profiles and recent public commits",
-  "Gravatar public profiles for email hashes",
-  "Keybase public profiles for usernames",
-  "Hacker News public profiles for usernames",
-  "Tavily public web results for names and LinkedIn profiles, with DuckDuckGo as a fallback",
+  "Have I Been Pwned for email breach records when its key is available",
 ] as const;
 
 export default function HowItWorksPage() {
