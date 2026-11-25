@@ -1,10 +1,15 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { loadGoldenReports } from "@/app/api/compare/route";
 import { CompareClient } from "./CompareClient";
 import "./compare.css";
 
-export const metadata = { robots: { index: false, follow: false } };
+export const metadata: Metadata = {
+  title: "Compare reports",
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/compare" },
+};
 
 async function Comparisons() {
   await connection();

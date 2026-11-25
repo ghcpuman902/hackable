@@ -3,7 +3,10 @@ import SiteNav from "@/components/SiteNav";
 import { PATTERNS, type PatternId } from "@/lib/patterns";
 import "./patterns.css";
 
-export const metadata: Metadata = { title: "Scam patterns | Hackable" };
+export const metadata: Metadata = {
+  title: "Scam patterns",
+  alternates: { canonical: "/patterns" },
+};
 
 /* All 24 patterns from fraud-patterns.json, wording kept exactly, grouped as Mangle asked (24 Nov). */
 const GROUPS: { title: string; ids: PatternId[] }[] = [

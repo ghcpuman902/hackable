@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 
 export const metadata: Metadata = {
-  title: "How it works | Hackable",
+  title: "How it works",
+  alternates: { canonical: "/how-it-works" },
 };
 
 const steps = [
@@ -16,7 +17,7 @@ const steps = [
   },
   {
     title: "Work out the profile and scam patterns",
-    text: "A profile is a label such as Crypto Worker or Romance Target. When the public results support one, the scam patterns linked to it lead the report. When none applies, the report shows No profile.",
+    text: "A profile groups related public findings. When the results support one, the report leads with the scam patterns that relate to it. When none applies, the report shows No profile.",
   },
   {
     title: "Write the report",
@@ -26,14 +27,9 @@ const steps = [
 
 const sources = [
   "LeakCheck public API for email breach records",
-  "Cached Have I Been Pwned results for the preset email addresses only",
-  "XposedOrNot for email breach records",
   "Hudson Rock Cavalier public OSINT for email addresses and usernames",
   "GitHub public REST for profiles and recent public commits",
-  "Gravatar public profiles for email hashes",
-  "Keybase public profiles for usernames",
-  "Hacker News public profiles for usernames",
-  "Tavily public web results for names and LinkedIn profiles, with DuckDuckGo as a fallback",
+  "Have I Been Pwned for email breach records when its key is available",
 ] as const;
 
 export default function HowItWorksPage() {

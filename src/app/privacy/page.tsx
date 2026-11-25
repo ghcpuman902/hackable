@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 
 export const metadata: Metadata = {
-  title: "Privacy | Hackable",
+  title: "Privacy",
+  alternates: { canonical: "/privacy" },
 };
 
 const sections = [

@@ -1,0 +1,43 @@
+.site-nav {
+  border-bottom: 1px solid var(--n200);
+}
+
+.site-nav-links {
+  margin-left: auto;
+}
+
+.site-nav a:focus-visible,
+.site-nav-links a:focus-visible {
+  outline: 2px solid var(--n900);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .site-nav {
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .site-nav .mark {
+    gap: 0;
+    font-size: 0;
+    flex: none;
+  }
+
+  .site-nav .site-nav-links {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .site-nav-links a {
+    padding-inline: 6px;
+    white-space: nowrap;
+  }
+
+  .site-nav-home {
+    display: none;
+  }
+}
