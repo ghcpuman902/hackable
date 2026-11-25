@@ -126,10 +126,11 @@ async function github(login: string, signal: AbortSignal, once: Once): Promise<L
     user.followers === undefined ? "" : plural(user.followers, "follower"),
     user.created_at ? `joined ${user.created_at.slice(0, 4)}` : "",
   ].filter(Boolean).join(", ");
+  const urls = [`https://github.com/${user.login}`, ...own.map((r) => `https://github.com/${r.full_name}`)];
   return seen.length
     ? { found: "Found email on GitHub", hit: true, source: "live", detail: `${profile}. Public emails ${list(seen)}`,
-        facts: { emails: seen, repos: own.map((r) => r.full_name) } }
-    : { found: "Found GitHub profile", hit: false, source: "live", detail: profile, facts: { profiles: ["GitHub"] } };
+        facts: { emails: seen, repos: own.map((r) => r.full_name), urls } }
+    : { found: "Found GitHub profile", hit: false, source: "live", detail: profile, facts: { profiles: ["GitHub"], urls: urls.slice(0, 1) } };
 }
 
 const githubUsers = z.object({ items: z.array(z.object({ login: z.string().regex(githubLogin) })) });
@@ -298,6 +299,8 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     if (first) return { ...first, facts: {
       emails: unique(hits.flatMap((result) => result.facts?.emails ?? [])),
       repos: unique(hits.flatMap((result) => result.facts?.repos ?? [])),
+      /* Each claim in the report needs a page to cite: the profile and the repos the email shows up in. */
+      urls: unique(hits.flatMap((result) => result.facts?.urls ?? (result.facts?.repos ?? []).map((r) => `https://github.com/${r}`))),
     } };
     return results.find((result) => !result.empty) ?? noFindings("No GitHub profile");
   },
@@ -308,7 +311,12 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
       ...ids.emails.map((e) => once(`grav:${e}`, () => gravatar(e, signal))),
       ...users.map((user) => once(`kb:${user.toLowerCase()}`, () => keybase(user, signal))),
     ]);
-    return profiles("social", checks, users[0]);
+    /* Only a username that has a Keybase profile goes in the facts, so the report never ties a handle to the wrong site. */
+    const match = users.find((_, i) => {
+      const check = checks[ids.emails.length + i];
+      return check.status === "fulfilled" && check.value;
+    });
+    return profiles("social", checks, match);
   },
   forum: async (ids, signal, once) => {
     if (!ids.usernames.length) return skipped("No username in the query", "No username to check");
@@ -343,7 +351,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
 };
 
 /* ---- profile checks: each resolves to a site name when a public profile exists, or null ---- */
-type Profile = { site: string; linked?: string[] } | null;
+type Profile = { site: string; linked?: string[]; url?: string } | null;
 const gravatarProfile = z.object({
   display_name: z.string().nullish(),
   profile_url: z.string().nullish(),
@@ -370,9 +378,14 @@ async function gravatar(email: string, signal: AbortSignal): Promise<Gravatar | 
     site: "Gravatar",
     linked: profile.verified_accounts.map((a) => a.service_label || a.service_type || "").filter(Boolean),
     name: profile.display_name ?? undefined,
-    handle: linkedHandle ?? (slug && !/^[a-f\d]{32,}$/i.test(slug) ? slug : undefined),
+    handle: linkedHandle ?? (slug && !autoSlug(slug) ? slug : undefined),
+    url: slug ? profile.profile_url ?? undefined : undefined,
   };
 }
+
+/* Gravatar makes up a slug for profiles that never chose one: a hash, or words with a hex tail
+   ("devotedlypassionate12b997a1ec"). Neither is a handle the person uses anywhere else. */
+export const autoSlug = (slug: string) => /^[a-f\d]{32,}$/i.test(slug) || /^[a-z]{4,}(?=[a-f\d]*\d)[a-f\d]{8,}$/i.test(slug);
 
 async function keybase(user: string, signal: AbortSignal): Promise<Profile> {
   const { status, data } = await getJson<{ status?: { code: number }; them?: (object | null)[] }>(
@@ -394,7 +407,8 @@ function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile
   const sites = [...new Set(found.map((p) => p.site))];
   const linked = [...new Set(found.flatMap((p) => p.linked ?? []))];
   const note = failed.length ? `; could not check ${failed.join(", ")}` : "";
-  const facts = { profiles: sites, linked, username: user };
+  const urls = found.flatMap((p) => (p.url ? [p.url] : []));
+  const facts = { profiles: sites, linked, username: user, ...(urls.length ? { urls } : {}) };
   if (!sites.length) return noFindings(kind === "forum" ? "No forum profiles found" : "No public profiles found", `None found${note}`, facts);
   return { found: `Found: ${sites.join(", ")}`, hit: sites.includes("Gravatar"), source: "live",
     detail: `${sites.join(", ")}${linked.length ? ` (linked: ${linked.join(", ")})` : ""}${note}`, facts };
