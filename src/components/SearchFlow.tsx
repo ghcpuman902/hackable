@@ -326,9 +326,28 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     void sendMessage({ text });
   }, [live, sendMessage, setMessages]);
 
-  const restore = useCallback(() => {
+  /* A clean landing, as a refresh would give: no scan, no chips, an empty box, no suggestions, top of the page. */
+  const reset = useCallback(() => {
+    void stop();
+    flagsCtl.current?.abort();
+    setMessages([]);
+    setRunning(false);
+    setNetFlags(null);
+    setSelfFlags([]);
+    setChips([]);
+    setEditing(null);
+    setSel(null);
+    setEntry("");
+    if (entryRef.current) entryRef.current.value = "";
+    setSugQ(null);
+    setActive(-1);
+    scrollTo({ top: 0, behavior: "auto" });
+  }, [stop, setMessages]);
+
+  /* Back to an address with no ?q (from a report) gives the same clean landing as the logo. */
+  const restore = useCallback((pop?: unknown) => {
     const q = new URLSearchParams(location.search).get("q");
-    if (!q) { void stop(); setMessages([]); setRunning(false); return false; }
+    if (!q) { if (pop) reset(); return false; }
     try {
       const st = JSON.parse(q) as { chips?: string[] };
       chipsRef.current = [];
@@ -336,7 +355,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       scan(chipsRef.current);
       return true;
     } catch { return false; }
-  }, [add, scan, stop, setMessages]);
+  }, [add, scan, reset]);
 
   useEffect(() => {
     const boot = setTimeout(() => {
@@ -349,20 +368,24 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Every scan gets its own ?q entry, so the address can be shared and Back returns to the landing. */
+  const start = (list: Chip[]) => {
+    history.pushState(null, "", "?q=" + encodeURIComponent(JSON.stringify({ chips: list.map((c) => c.raw) })));
+    scan(list);
+  };
+
   const submit = () => {
     commit();
     const list = chipsRef.current;
     if (!list.length || running) return;
     entryRef.current?.blur();
-    const state = { chips: list.map((c) => c.raw) };
-    history.pushState(null, "", "?q=" + encodeURIComponent(JSON.stringify(state)));
-    scan(list);
+    start(list);
   };
 
   const pickPreset = (i: number) => {
     setChips([]);
     add(PRESETS[i].name);
-    scan(chipsRef.current);
+    start(chipsRef.current);
   };
 
   /* Jane Doe Smith is the cached demo, so she opens straight away like a preset; the others fill the box. */
@@ -370,7 +393,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     const p = PEOPLE[i];
     setChips([]);
     add(p.q);
-    if (isDemoQuery(p.q)) { scan(chipsRef.current); return; }
+    if (isDemoQuery(p.q)) { start(chipsRef.current); return; }
     entryRef.current?.focus();
   };
 
@@ -379,20 +402,19 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const home = (e: MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
-    void stop();
-    flagsCtl.current?.abort();
-    setMessages([]);
-    setRunning(false);
-    setNetFlags(null);
-    setSelfFlags([]);
-    setChips([]);
-    setEditing(null);
-    setSel(null);
-    setEntry("");
-    if (entryRef.current) entryRef.current.value = "";
-    closeSug();
+    reset();
     if (location.search || location.hash) history.pushState(null, "", "/");
-    scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  /* Subscribe in the nav: with a report open it goes to the subscribe card under it; before that there is
+     nothing to subscribe to yet, so it puts you in the search box. */
+  const toSubscribe = (e: MouseEvent) => {
+    e.preventDefault();
+    const card = document.getElementById("subscribe");
+    if (!card) { scrollTo({ top: 0, behavior: "auto" }); entryRef.current?.focus(); return; }
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
+    card.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
   };
 
   /* The link keeps its slot but fades out once the report is in view. */
@@ -516,7 +538,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ] : live && !demo && mdNow !== "" ? [
     summary,
     mdNow === null
-      ? <p key="writing" className="sum-none">Reading what we found…</p>
+      ? <p key="writing" className="sum-writing" role="status">Reading what we found…</p>
       /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
       : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(null, flags))} />,
     mdNow ? <PatternCards key="pcards" markdown={mdNow} /> : null,
@@ -548,7 +570,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       <nav className="nav">
         <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
         <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a><a href="/patterns">Patterns</a></div>
-        <a className="login" href="#">Subscribe</a>
+        <a className="login" href="#subscribe" onClick={toSubscribe}>Subscribe</a>
       </nav>
       <div className="app">
         <div className="top">

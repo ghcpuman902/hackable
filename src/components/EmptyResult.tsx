@@ -59,7 +59,7 @@ export default function EmptyResult({ first, fan, states, found, pivots }: {
           return (
             <li key={c.tool} className={failed ? "er-skip" : undefined}>
               {failed ? <Minus aria-hidden /> : <Check aria-hidden />}
-              <span>{SOURCE[c.tool] ?? c.title}</span>
+              <span>{SOURCE[c.tool] ?? c.title}<span className="sr-only">{failed ? ", not checked" : ", checked"}</span></span>
             </li>
           );
         })}
