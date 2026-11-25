@@ -1,5 +1,5 @@
 /* Sits above the fixed landing glow and floats, with fixed clearance below the scene so nothing drifts under the text. */
-.site-footer{position:relative;z-index:1;max-width:720px;margin:48px auto 0;padding:32px 16px 48px;display:grid;gap:8px;text-align:center;font-size:13px;line-height:1.5;color:#8a8a8a;background:#fff;box-shadow:0 0 0 100vmax #fff;clip-path:inset(0 -100vmax)}
+.site-footer{position:relative;z-index:1;max-width:720px;margin:48px auto 0;padding:32px 16px 48px;display:grid;gap:8px;text-align:center;font-size:13px;line-height:1.5;color:#616161;background:#fff;box-shadow:0 0 0 100vmax #fff;clip-path:inset(0 -100vmax)}
 .site-footer p{margin:0}
 .site-footer nav{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 16px;margin-bottom:4px}
 .site-footer a{color:var(--n500);font-weight:600;text-decoration:underline;text-decoration-color:var(--n200);text-underline-offset:3px}

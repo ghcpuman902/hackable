@@ -1,8 +1,8 @@
 # Hackable
 
-Hackable is a personal exposure check. Type an email, name or username and it checks public sources and breach data, then shows a short report, a bit like an MBTI result, of what a scammer could find about you and which scam patterns would follow. Every claim links to its source.
+Hackable is a personal exposure check. Type an email, name or username and it checks public sources and breach data, then shows a short report, a bit like an MBTI result, of what a scammer could find about you and which scam patterns could follow. Every claim links to its source.
 
-Built at the Innovators Guild Retail AI and Agents Hackathon (Agentic AI track) with Nebius Token Factory, Nemotron and Tavily.
+Built solo in one evening at the Innovators Guild Retail AI and Agents Hackathon, Hackable won the Agentic AI track and was one of two track winners. It uses Nebius Token Factory, Nemotron and Tavily.
 
 ![Landing page](docs/screenshots/landing-1440.png)
 
@@ -47,6 +47,12 @@ pnpm exec tsc --noEmit # type check: passes
 pnpm lint
 ```
 
+## Explore
+
+- [Scam patterns](http://localhost:3000/patterns)
+- [How it works](http://localhost:3000/how-it-works)
+- [Privacy](http://localhost:3000/privacy)
+
 The renderer tests run fixed inputs through the clean up pass: well formed reports plus messy ones such as fenced output, headings, unknown alert types, five cards, missing footnotes, raw HTML and JSON instead of markdown.
 
 ![Tim Cook preset on desktop](docs/screenshots/tim-1440.png)
@@ -76,3 +82,7 @@ Next.js 16, React 19, TypeScript, Tailwind CSS 4, Vercel AI SDK with an OpenAI c
 - The public figure presets (Tim Cook, Jensen Huang) use public role facts only and make no breach claims. Jane Doe Smith is synthetic. Mangle Kuo's preset is the author's own data, shared with consent.
 - The subscribe card is a mock. It sends nothing.
 - Keys are read from the server environment and never logged.
+
+## Licence
+
+The licence has not been decided yet.

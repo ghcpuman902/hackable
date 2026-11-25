@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 
 export const metadata: Metadata = {
-  title: "How it works | Hackable",
+  title: "How it works",
+  alternates: { canonical: "/how-it-works" },
 };
 
 const steps = [
