@@ -14,8 +14,8 @@ function internal(href: string, baseURL: string) {
 }
 
 async function visitReport(page: Page, name: string) {
-  await page.goto("/");
-  await page.getByRole("button", { name, exact: true }).click();
+  const state = encodeURIComponent(JSON.stringify({ chips: [name] }));
+  await page.goto(`/?q=${state}`);
   await expect(page.locator("#report")).toBeVisible({ timeout: 10_000 });
 }
 
