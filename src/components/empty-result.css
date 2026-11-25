@@ -7,6 +7,8 @@
 .er-body p{margin:0;font-size:17px;line-height:1.5;color:#1a1a1a}
 .er-chips{display:flex;flex-wrap:wrap;gap:8px;padding-top:2px;margin:0;padding:0;list-style:none}
 .er-chips li{padding:4px 10px;border-radius:999px;background:#fff;border:1px solid #bbf7d0;font-size:13px;font-weight:600;color:#1a1a1a;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.er-fail{border-color:#b45309;color:#b45309;background:#fffbeb}
+.er-retry{align-self:flex-start;cursor:pointer}
 .er-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
 @media (min-width:640px){.er-checks{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .er-checks li{display:flex;align-items:center;gap:8px;padding:12px 14px;border:1px solid var(--n200);border-radius:12px;background:#fff;font-size:14px;font-weight:600;color:var(--n900);min-width:0}

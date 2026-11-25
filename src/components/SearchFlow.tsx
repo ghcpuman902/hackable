@@ -15,7 +15,8 @@ import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/f
 import { patternsFor } from "@/lib/patterns";
 import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
-import EmptyResult from "./EmptyResult";
+import EmptyResult, { ScanFailed } from "./EmptyResult";
+import { scanFailed } from "@/lib/scan-outcome";
 import LandingBadge from "./LandingBadge";
 
 /* The one lesson shown when no check found a risk. */
@@ -76,6 +77,7 @@ const CHIP_ORDER = Array.from({ length: Math.max(PEOPLE.length, PRESETS.length) 
   ...(i < PRESETS.length ? [{ kind: "preset" as const, i }] : []),
 ]).flat();
 const PRELOAD_MS = 10 * 60 * 1000;
+const REASON_MS = 18_000;
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
@@ -287,12 +289,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   /* Live runs: Nemotron writes the report from what the scan actually found. "" means fall back to the rules report. */
   const [liveMd, setLiveMd] = useState<{ key: string; md: string } | null>(null);
   const liveHits = fan.filter((c) => states[c.tool] === "hit").length;
-  const wantMd = done && live && !quick && !preset && liveHits > 0;
+  const wantMd = done && live && !quick && !preset && liveHits > 0 && status !== "error";
   const outputsJson = wantMd ? JSON.stringify({ query: chips.map((c) => c.label), findings: outputs, pivots }) : "";
   useEffect(() => {
     if (!outputsJson) return;
     let alive = true;
-    fetch("/api/reason", { method: "POST", headers: { "content-type": "application/json" }, body: outputsJson, signal: AbortSignal.timeout(8000) })
+    /* Longer than the server's own 15s model deadline, so a slow model still gives the written report, not the fallback. */
+    fetch("/api/reason", { method: "POST", headers: { "content-type": "application/json" }, body: outputsJson, signal: AbortSignal.timeout(REASON_MS) })
       .then((r) => r.json()).then((d: { markdown?: string }) => d.markdown ?? "").catch(() => "")
       .then((md) => { if (alive) setLiveMd({ key: outputsJson, md }); });
     return () => { alive = false; };
@@ -488,7 +491,10 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       </ul>}
     </section>
   );
-  const report = preset ? [
+  const failed = done && scanFailed(status, fan.map((c) => c.tool), outputs);
+  const report = failed ? [
+    <ScanFailed key="failed" onRetry={() => scan(chipsRef.current)} />,
+  ] : preset ? [
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
     ...(PRESET_REPORTS[preset.name] ? [] : [<ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />]),

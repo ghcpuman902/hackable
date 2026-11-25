@@ -1,4 +1,4 @@
-import { Check, Minus, ShieldCheck } from "lucide-react";
+import { Check, Minus, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { Pivot } from "@/lib/live-sources";
 import type { FanCard, ScanTool } from "@/lib/synthetic";
 import type { CardState } from "./Fan";
@@ -13,6 +13,20 @@ const SOURCE: Partial<Record<ScanTool, string>> = {
 const FOUND_AS: Partial<Record<ScanTool, string>> = { github: "GitHub", linkedin: "LinkedIn", social: "public profile", forum: "Hacker News profile" };
 
 const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+
+/* The scan stopped, or no source answered: never shown as an all clear. */
+export function ScanFailed({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section className="er-card er-fail">
+      <TriangleAlert className="er-icon" aria-hidden />
+      <div className="er-body">
+        <h2>We could not finish the checks.</h2>
+        <p>The sources did not answer, so this is not a clean result.</p>
+        <button type="button" className="pill er-retry" onClick={onRetry}>Try again</button>
+      </div>
+    </section>
+  );
+}
 
 /* A live scan where no check found a risk. Says what was found, honestly, and shows each check passed. */
 export default function EmptyResult({ first, fan, states, found, pivots }: {
