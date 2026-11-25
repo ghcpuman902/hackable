@@ -1,5 +1,5 @@
 import { Check, Minus, ShieldCheck, TriangleAlert } from "lucide-react";
-import type { Pivot } from "@/lib/live-sources";
+import type { Pivot } from "@/lib/pivots";
 import type { FanCard, ScanTool } from "@/lib/synthetic";
 import type { CardState } from "./Fan";
 import "./empty-result.css";

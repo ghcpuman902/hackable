@@ -1,6 +1,7 @@
 import { tool, type InferUITools, type UIMessage } from "ai";
 import { z } from "zod";
-import { makeLiveContext, type Pivot } from "./live-sources";
+import { makeLiveContext } from "./live-sources";
+import type { Pivot } from "./pivots";
 import { CHECK_MS, FAN, QUICK, type ScanResult, type ScanTool } from "./synthetic";
 
 /* The synthetic model uses one tool per source to pace the demo. */

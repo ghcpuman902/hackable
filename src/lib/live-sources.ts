@@ -19,6 +19,7 @@ import path from "node:path";
 import { z } from "zod";
 import { HIBP_CACHE_EMAILS } from "./presets";
 import { detect, tokenize } from "./chips";
+import { pivotValue, type Pivot } from "./pivots";
 import type { Facts, ScanResult, ScanTool } from "./synthetic";
 
 const TIMEOUT_MS = 4000;
@@ -473,7 +474,7 @@ function freshOnce(): Once {
   };
 }
 
-export type Pivot = { from: "GitHub" | "Gravatar"; kind: "name" | "handle"; value: string };
+export type { Pivot } from "./pivots";
 
 function scanIdentifiers(query: string): ScanIds {
   const ids = identifiers(query);
@@ -509,12 +510,11 @@ async function expandIdentifiers(ids: ScanIds, signal: AbortSignal, once: Once, 
   const names: string[] = [];
   const handles: string[] = [];
   const pivot = (from: Pivot["from"], kind: Pivot["kind"], raw?: string | null) => {
-    const value = raw?.trim().replace(/\s+/g, " ");
-    if (!value || value.length > 100 || signal.aborted) return;
-    if (kind === "handle" && !/^[a-z\d][\w.-]{0,38}$/i.test(value)) return;
+    if (signal.aborted) return;
     const next = kind === "name" ? names : handles;
-    const known = kind === "name" ? ids.names : [...ids.github, ...ids.usernames];
-    if (next.length >= 2 || [...known, ...next].some((v) => v.toLowerCase() === value.toLowerCase())) return;
+    if (next.length >= 2) return;
+    const value = pivotValue(raw, kind, [...ids.names, ...ids.github, ...ids.usernames, ...ids.emails, ...names, ...handles]);
+    if (!value) return;
     next.push(value);
     onPivot({ from, kind, value });
   };

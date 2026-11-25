@@ -18,6 +18,7 @@ import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
 import EmptyResult, { ScanFailed } from "./EmptyResult";
 import { scanFailed } from "@/lib/scan-outcome";
+import { dedupePivots, type Pivot } from "@/lib/pivots";
 import LandingBadge from "./LandingBadge";
 
 /* The one lesson shown when no check found a risk. */
@@ -271,9 +272,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const states: Partial<Record<ScanTool, CardState>> = {};
   const found: Partial<Record<ScanTool, string>> = {};
   const outputs: Outputs = {};
-  const pivots = [];
+  const received: Pivot[] = [];
   for (const p of assistant?.parts ?? []) {
-    if (p.type === "data-pivot") pivots.push(p.data);
+    if (p.type === "data-pivot") received.push(p.data);
     if (!isStaticToolUIPart(p)) continue;
     const name = getStaticToolName(p) as ScanTool;
     if (p.state === "output-available") {
@@ -283,6 +284,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     }
     else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
   }
+  const pivots = dedupePivots(received);
   const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
   const flagsIn = !live || quick || netFlags !== null;
   const done = running && flagsIn && (status === "error" || (status === "ready" && settled));

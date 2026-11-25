@@ -26,6 +26,14 @@
   line-height: 1.2;
 }
 
+.scan-pivots > div {
+  animation: pivot-in 200ms ease-out;
+}
+
+@keyframes pivot-in {
+  from { opacity: 0; }
+}
+
 .scan-pivots > div > * {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -33,6 +41,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .scan-pivots > div,
   .run .scan-rows .pc.ck.chk .st::after,
   .run .scan-rows .pc.ck.bad .lrow {
     animation: none;

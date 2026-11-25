@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Pivot } from "@/lib/live-sources";
+import { pivotLabel, type Pivot } from "@/lib/pivots";
 import type { FanCard, ScanTool } from "@/lib/synthetic";
 import { Fan, runH, type CardState } from "./Fan";
 import "./scan-rows.css";
@@ -16,10 +16,10 @@ export function ScanRows({ fan, states, found, pivots, showPivots }: {
     <>
       {showPivots && (
         <div className="scan-pivots" aria-live="polite">
-          {pivots.map(({ from, kind, value }) => (
-            <div key={`${kind}:${value}`}>
-              <span>Found {kind} from {from}</span>
-              <b>{value}</b>
+          {pivots.map((p) => (
+            <div key={p.value.toLowerCase()}>
+              <span>{pivotLabel(p)}</span>
+              <b>{p.value}</b>
             </div>
           ))}
         </div>
