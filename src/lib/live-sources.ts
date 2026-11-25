@@ -513,7 +513,9 @@ async function expandIdentifiers(ids: ScanIds, signal: AbortSignal, once: Once, 
     if (signal.aborted) return;
     const next = kind === "name" ? names : handles;
     if (next.length >= 2) return;
-    const value = pivotValue(raw, kind, [...ids.names, ...ids.github, ...ids.usernames, ...ids.emails, ...names, ...handles]);
+    /* An email's local part is already searched, so it never makes a chip of its own. */
+    const localParts = ids.emails.map((e) => e.slice(0, e.lastIndexOf("@")));
+    const value = pivotValue(raw, kind, [...ids.names, ...ids.github, ...ids.usernames, ...ids.emails, ...localParts, ...names, ...handles]);
     if (!value) return;
     next.push(value);
     onPivot({ from, kind, value });
