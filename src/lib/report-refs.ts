@@ -41,3 +41,12 @@ export function patternsInReport(markdown: string): FraudPattern[] {
   }
   return out.slice(0, 4);
 }
+
+/* The pattern cards under a report: the ones it cites, or, when the model cited none, the ones the checks point to
+   (baseline patterns last), so a live report never ends without a link to the scams it talks about. */
+export function reportPatterns(markdown: string, fallback: readonly string[] = []): FraudPattern[] {
+  const cited = patternsInReport(markdown);
+  if (cited.length) return cited;
+  const ps = fallback.map((id) => PATTERN_LIST.find((p) => p.id === id)).filter((p): p is FraudPattern => !!p);
+  return [...ps.filter((p) => !p.triggeredBy.baseline), ...ps.filter((p) => p.triggeredBy.baseline)].slice(0, 4);
+}

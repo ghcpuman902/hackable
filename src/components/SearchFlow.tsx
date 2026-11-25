@@ -543,7 +543,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       ? <p key="writing" className="sum-writing" role="status">Reading what we found…</p>
       /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
       : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(null, flags))} />,
-    mdNow ? <PatternCards key="pcards" markdown={mdNow} /> : null,
+    mdNow ? <PatternCards key="pcards" markdown={mdNow} fallback={patterns} /> : null,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,

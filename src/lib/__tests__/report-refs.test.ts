@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEMO_REPORT, PRESET_REPORTS } from "../preset-reports";
 import { PATTERN_LIST, PATTERNS } from "../patterns";
 import { parseReport } from "../report-md";
-import { patternsInReport, PATTERN_BY_SOURCE, shownRefs } from "../report-refs";
+import { patternsInReport, PATTERN_BY_SOURCE, reportPatterns, shownRefs } from "../report-refs";
 
 const REPORTS = { ...PRESET_REPORTS, "Jane Doe Smith": DEMO_REPORT };
 
@@ -60,5 +60,26 @@ describe("preset report links", () => {
   }
   it("Tim Cook's cards cite fake boss payment and the deepfake giveaway", () => {
     expect(patternsInReport(PRESET_REPORTS["Tim Cook"]).map((p) => p.id)).toEqual(["fake-boss-payment", "deepfake-crypto-giveaway"]);
+  });
+});
+
+/* C7: a live report where the model cited nothing ended with no pattern cards and no link to any scam. */
+describe("reportPatterns", () => {
+  const uncited = "**You are The Code Sharer.**\n\n> [!TIP]\n> **Use a different email for public code.**";
+  it("prefers the patterns the report cites", () => {
+    expect(reportPatterns(PRESET_REPORTS["Tim Cook"], ["contagious-interview"]).map((p) => p.id)).toEqual(["fake-boss-payment", "deepfake-crypto-giveaway"]);
+  });
+  it("falls back to the patterns the checks point to when the report cites none", () => {
+    expect(reportPatterns(uncited, ["contagious-interview", "email-bomb-fake-it-support"]).map((p) => p.id)).toEqual(["contagious-interview", "email-bomb-fake-it-support"]);
+  });
+  it("puts baseline patterns last, keeps at most four and skips unknown ids", () => {
+    const base = PATTERN_LIST.filter((p) => p.triggeredBy.baseline).map((p) => p.id);
+    const main = PATTERN_LIST.filter((p) => !p.triggeredBy.baseline).map((p) => p.id);
+    const got = reportPatterns(uncited, [...base, "nope", ...main.slice(0, 5)]).map((p) => p.id);
+    expect(got).toEqual(main.slice(0, 4));
+    expect(reportPatterns(uncited, [base[0], main[0]]).map((p) => p.id)).toEqual([main[0], base[0]]);
+  });
+  it("shows nothing with no citations and no fallback", () => {
+    expect(reportPatterns(uncited)).toEqual([]);
   });
 });
