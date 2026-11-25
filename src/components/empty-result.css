@@ -1,5 +1,5 @@
 /* Same shape as the report cards: tip green for the all clear, neutral tiles for the checks. */
-.er{display:flex;flex-direction:column;gap:22px}
+.er{display:flex;flex-direction:column;gap:var(--report-gap,22px)}
 .er-card{display:flex;gap:14px;align-items:flex-start;padding:20px;border-radius:12px;border:1px solid #15803d;color:#15803d;background:#f0fdf4}
 .er-icon{width:22px;height:22px;flex:none;margin-top:3px}
 .er-body{display:flex;flex-direction:column;gap:10px;min-width:0}

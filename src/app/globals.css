@@ -73,7 +73,8 @@ a{color:inherit}
 .go-btn:disabled{background:#d4d4d4;cursor:default}
 .under{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:14px;min-height:36px}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.report{display:grid;gap:18px;margin-top:28px}
+/* One vertical rhythm for the whole report: every card and block sits --report-gap from the next, whichever wrapper holds it. */
+.report{--report-gap:22px;display:grid;gap:var(--report-gap);margin-top:28px}
 .sec{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:center;padding:24px 24px 24px 30px;animation:rise .5s ease-out both;text-decoration:none;color:inherit}
 .sec .qx{margin:0}
 .sec.plain{grid-template-columns:1fr}
@@ -81,7 +82,9 @@ a.sec .go{position:absolute;top:18px;right:18px;width:32px;height:32px;border-ra
 a.sec .go svg{width:100%;height:100%}
 a.sec:hover .go{transform:translateX(2px)}
 a.sec{padding-right:64px}
-.more{justify-self:start;border:0;background:none;font:600 15px var(--font);color:var(--n500);cursor:pointer;padding:10px 4px;min-height:44px}
+/* The button is as tall as its text, so it sits one report gap from the cards; its finger target grows outwards. */
+.more{position:relative;justify-self:start;border:0;background:none;font:600 15px/1.4 var(--font);color:var(--n500);cursor:pointer;padding:0}
+.more::after{content:"";position:absolute;inset:-13px -8px}
 .more:hover{color:var(--n900)}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 .actions .pill{cursor:pointer;min-height:44px}
@@ -296,7 +299,9 @@ button.src:hover{background:var(--n50)}
 .run .pc.ck.bad .lrow{background:#fff1f1}
 .pc.bad .st{color:#c4262d}
 .results-area{padding-bottom:64px}
-.rise{display:grid;animation:rise .5s ease-out both;scroll-margin-top:16px}
+.rise{display:grid;gap:var(--report-gap,22px);animation:rise .5s ease-out both;scroll-margin-top:16px}
+/* A block that renders nothing (no pattern picks yet) must not leave a grid row, or the gap above it doubles. */
+.rise:empty{display:none}
 .rise .sec{animation:none}
 @media (max-width:640px){
   .nav{padding:12px 16px}

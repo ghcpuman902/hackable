@@ -1,5 +1,5 @@
 /* Same neutral catalogue card as /patterns, sized for the report column. */
-.pc-grid{list-style:none;margin:0;padding:0;display:grid;gap:12px;grid-template-columns:1fr}
+.pc-grid{list-style:none;margin:0;padding:0;display:grid;gap:var(--report-gap,22px);grid-template-columns:1fr}
 @media (min-width:640px){.pc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pc-card{display:flex;flex-direction:column;gap:6px;height:100%;padding:18px 20px;background:#fff;border:1px solid var(--n200);border-radius:16px;text-decoration:none;color:inherit}
 .pc-card:hover{border-color:var(--n500)}
