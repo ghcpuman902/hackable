@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CSSProperties } from "react";
+import type { Metadata } from "next";
 import ReportMarkdown from "@/components/ReportMarkdown";
 import { cleanReportMarkdown } from "@/lib/report-md";
 import { Fan, runH, type CardState } from "@/components/Fan";
@@ -9,6 +10,11 @@ import { SubscribeCard } from "@/components/SubscribeCard";
 import { FAN, type MiniName, type ScanTool } from "@/lib/synthetic";
 
 const FIXTURES = join(process.cwd(), "src/lib/__tests__/renderer-fixtures");
+
+export const metadata: Metadata = {
+  title: "Animation lab",
+  robots: { index: false, follow: false },
+};
 const fixtureMd = cleanReportMarkdown(
   readFileSync(join(FIXTURES, "valid/long-paragraphs.md"), "utf8"),
   JSON.parse(readFileSync(join(FIXTURES, "whitelist.json"), "utf8")).allowedUrls,

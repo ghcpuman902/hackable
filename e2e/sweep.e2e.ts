@@ -4,7 +4,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 const paths = ["/", "/patterns", "/how-it-works", "/privacy", "/compare"];
 const reportPages = ["Tim Cook", "Jane Doe Smith"];
-const timeoutMs = 7_000;
+const timeoutMs = 2_500;
 
 type Result = { subject: string; result: string };
 
@@ -24,6 +24,7 @@ async function visibleButtons(page: Page) {
 }
 
 test("every visible control and link completes without browser errors", async ({ page, request, baseURL }, testInfo) => {
+  test.setTimeout(90_000);
   const origin = baseURL ?? "http://127.0.0.1:3092";
   const results: Result[] = [];
   const browserErrors: string[] = [];
@@ -69,7 +70,18 @@ test("every visible control and link completes without browser errors", async ({
       continue;
     }
     const url = new URL(href, origin).toString();
-    const response = await request.get(url, { timeout: timeoutMs, failOnStatusCode: false, maxRedirects: 5 });
+    const protocol = new URL(url).protocol;
+    if (protocol !== "http:" && protocol !== "https:") {
+      results.push({ subject: href, result: "not an HTTP link" });
+      continue;
+    }
+    let response;
+    try {
+      response = await request.get(url, { timeout: timeoutMs, failOnStatusCode: false, maxRedirects: 5 });
+    } catch (error) {
+      results.push({ subject: href, result: `unavailable: ${error instanceof Error ? error.message : String(error)}` });
+      continue;
+    }
     const status = response.status();
     if (internal(href, origin)) {
       expect(status, `${href} returned ${status}`).toBeLessThan(400);

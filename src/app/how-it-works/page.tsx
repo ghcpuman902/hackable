@@ -17,7 +17,7 @@ const steps = [
   },
   {
     title: "Work out the profile and scam patterns",
-    text: "A profile is a label such as Crypto Worker or Romance Target. When the public results support one, the scam patterns linked to it lead the report. When none applies, the report shows No profile.",
+    text: "A profile groups related public findings. When the results support one, the report leads with the scam patterns that relate to it. When none applies, the report shows No profile.",
   },
   {
     title: "Write the report",

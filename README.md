@@ -10,7 +10,7 @@ Built solo in one evening at the Innovators Guild Retail AI and Agents Hackathon
 
 Live: https://mangle-hackable.vercel.app
 
-Live searches need the API keys below set on the server. The presets work without them.
+Set `SCAN_MODE=live` to use the available public sources. Some sources use the optional keys below. The presets work without them.
 
 Run it locally:
 

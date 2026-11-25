@@ -14,24 +14,30 @@
 
 @media (max-width: 640px) {
   .site-nav {
-    gap: 12px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    gap: 10px;
+    justify-content: space-between;
   }
 
-  .site-nav::-webkit-scrollbar {
-    display: none;
+  .site-nav .mark {
+    gap: 0;
+    font-size: 0;
+    flex: none;
   }
 
   .site-nav .site-nav-links {
     display: flex;
-    flex: 0 0 auto;
+    flex: 1;
     gap: 0;
     margin-left: 0;
+    justify-content: space-between;
   }
 
   .site-nav-links a {
-    padding-inline: 10px;
+    padding-inline: 6px;
     white-space: nowrap;
+  }
+
+  .site-nav-home {
+    display: none;
   }
 }
