@@ -46,9 +46,10 @@ export const FAN: FanCard[] = [
     checking: "Checking the web", result: { found: "Found: 14 mentions", hit: false } },
   { tool: "leakCheck", title: "Leaked passwords", icon: { lucide: "lock", bg: "#0A66C2" },
     checking: "Checking leak lists", result: { found: "Found: 3 passwords", hit: true } },
-  { tool: "social", title: "Social", icon: { brand: "instagram" },
+  /* Generic icons: these checks cover many sites (Gravatar, forums, giveaway scams), so no one brand logo fits. */
+  { tool: "social", title: "Social", icon: { lucide: "at-sign", bg: "#dd2a7b" },
     checking: "Checking social", result: { found: "Found: public profile", hit: false } },
-  { tool: "forum", title: "Forums", icon: { brand: "hackernews" },
+  { tool: "forum", title: "Forums", icon: { lucide: "messages-square", bg: "#FF6600" },
     checking: "Checking forums", result: { found: "Found: 3 old posts", hit: false } },
 ];
 /* Live mode has no free source for people search or phone numbers, so those cards are dropped. The rest keep
