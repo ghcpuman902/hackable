@@ -31,10 +31,15 @@ export const PATTERN_ART: Partial<Record<PatternId, { anim: MiniName; href: stri
   "pass-the-cookie": { anim: "sess", href: "/mockups/03-pattern-session-hijack.html" },
 };
 
+const BREACH_AS_SELF: Partial<Record<FlagId | SelfFlagId, FlagId | SelfFlagId>> = { "travel-site-breach": "travelling-soon", "marketplace-breach": "selling-online" };
+
 /* Matching patterns, most reasons first (the profile counts as one reason, each flag as one), then file order.
    Baseline patterns go last. extra adds patterns a cached preset names directly. */
-export function patternsFor({ profile, flags, extra = [] }: { profile: Profile | null; flags: (FlagId | SelfFlagId)[]; extra?: PatternId[] }): PatternId[] {
+export function patternsFor({ profile, flags: given, extra = [] }: { profile: Profile | null; flags: (FlagId | SelfFlagId)[]; extra?: PatternId[] }): PatternId[] {
   const pid = profile ? PROFILE_ID[profile] : "no-profile";
+  /* An account at a travel site or a marketplace, seen in a breach, brings the same patterns as the person ticking
+     travelling soon or selling online. Counted once when both are set. */
+  const flags = [...new Set(given.map((f) => BREACH_AS_SELF[f] ?? f))];
   const scored = PATTERN_LIST.map((p, i) => ({
     id: p.id, i, base: p.triggeredBy.baseline,
     n: (p.triggeredBy.profiles.includes(pid) ? 1 : 0) + p.triggeredBy.flags.filter((f) => flags.includes(f)).length + (extra.includes(p.id) ? 1 : 0),

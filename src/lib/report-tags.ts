@@ -21,6 +21,8 @@ export const FLAG_TAG: Record<FlagId | SelfFlagId, string> = {
   "stealer-log-hit": "StealerLog",
   "phone-number-exposed": "PhoneExposed",
   "home-address-exposed": "AddressExposed",
+  "travel-site-breach": "TravelSiteBreach",
+  "marketplace-breach": "MarketplaceBreach",
   "recently-moved": "RecentlyMoved",
   "big-life-event": "BigLifeEvent",
   "selling-online": "SellingOnline",
