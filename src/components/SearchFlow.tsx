@@ -534,7 +534,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ] : live && !demo && hits.length === 0 ? [
     /* Zero hits: never list web results, which are usually about someone else with the same name. */
     /* Says what was found and that no check turned up a risk, then one lesson at normal card size. */
-    <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} pivots={pivots} />,
+    <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} outputs={outputs} pivots={pivots} />,
     <ReportMarkdown key="safe" markdown={SAFE_ANYWAY} />,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo && mdNow !== "" ? [

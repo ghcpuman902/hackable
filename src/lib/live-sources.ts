@@ -249,7 +249,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
         const out: { e: string; names: string[] }[] = [];
         for (const [i, e] of ids.emails.entries()) {
           if (i) await wait(500);
-          try { out.push({ e, names: await once(`xon:${e}`, () => xposedOrNot(e, signal)) }); } catch (err) { failed.push(err instanceof Error ? err.message : "XposedOrNot error"); break; }
+          try { out.push({ e, names: await once(`xon:${e}`, () => xposedOrNot(e, signal)) }); } catch (err) { failed.push(isTimeout(err) ? "XposedOrNot timed out" : err instanceof Error ? err.message : "XposedOrNot error"); break; }
         }
         return out;
       })(),
@@ -401,9 +401,13 @@ async function hackerNews(user: string, signal: AbortSignal): Promise<Profile> {
   return data?.id ? { site: "Hacker News" } : null;
 }
 
+const isTimeout = (e: unknown) => e instanceof Error && e.name === "TimeoutError";
+
 function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile>[], user?: string): LiveResult {
-  const failed = checks.flatMap((c) => (c.status === "rejected" ? [c.reason instanceof Error ? c.reason.message : "error"] : []));
-  if (failed.length === checks.length) throw new Error(failed.join("; "));
+  const rejected = checks.flatMap((c) => (c.status === "rejected" ? [c.reason as unknown] : []));
+  const failed = rejected.map((e) => (isTimeout(e) ? "timed out" : e instanceof Error ? e.message : "error"));
+  /* Every check timing out keeps the TimeoutError, so the card reads "Timed out after 4s" like the others. */
+  if (rejected.length === checks.length) throw rejected.every(isTimeout) ? rejected[0] : new Error(failed.join("; "));
   const found = checks.flatMap((c) => (c.status === "fulfilled" && c.value ? [c.value] : []));
   const sites = [...new Set(found.map((p) => p.site))];
   const linked = [...new Set(found.flatMap((p) => p.linked ?? []))];

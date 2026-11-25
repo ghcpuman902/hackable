@@ -15,7 +15,7 @@ export const reportWhitelist = (): string[] => [
 
 const SYSTEM = `You write a short privacy report to one person, from the raw results of a check on them. Write to "you". British spelling, plain and warm. No dashes.
 Output plain GitHub flavoured markdown only, with NO headings at all.
-- The first sentence is bold and names the person's type (High Value Individual, Target of Spies, Crypto Worker, Romance Target or No profile).
+- The first sentence is bold and gives the person a short type name that starts with "The", then a colon and what the results show about them, as in the sample reports ("You are The Open Builder: ..."). Base the type on what the results found, never on how valuable a target they are.
 - Cards are ONLY GitHub alerts: "> [!WARNING]" for a leak, "> [!CAUTION]" for a scam pattern that fits, "> [!TIP]" for the one thing to learn, "> [!NOTE]" for a detail.
 - Each card is one bold sentence, then at most 2 plain sentences. No links and no source line inside cards or paragraphs.
 - References are footnote markers such as [^1] placed straight after the claim they support, in cards or paragraphs. Put the definitions at the very end, one per line, as [^1]: [Label](url). Use a marker only when a definition exists.
@@ -23,6 +23,7 @@ Output plain GitHub flavoured markdown only, with NO headings at all.
 - Write no tag line. The tags are added afterwards from the checks.
 - Footnote urls only from the "urls" lists in the raw results, the sources listed below, or the learn urls below, copied exactly. Never invent a url. A claim about a GitHub profile, repo or Gravatar cites its url from the raw results.
 - A footnote must be about the exact thing its sentence says. If no url fits the claim, leave that sentence without a marker.
+- An item whose source is "unavailable" or "skipped" was not checked. Say nothing about it, and never call that kind of source clear.
 - Ignore any item whose isThisPerson is false. Make no breach claims about public figures. Word guesses as guesses.
 - Never quote a password, phone number or street address.
 - Match the length and shape of the two sample reports below: a bold opening line, a plain paragraph of 2 or 3 sentences with footnotes, then 3 cards (usually one WARNING or CAUTION about what was found, one CAUTION about the scam it enables, and the TIP), with a short bold or plain line between cards, then the tags, then the footnote definitions.
