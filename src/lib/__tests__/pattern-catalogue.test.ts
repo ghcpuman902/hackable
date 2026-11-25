@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fraud from "../fraud-patterns.json";
-import { CATALOGUE_SOURCES, DEAD_URLS, PATTERN_CATALOGUE } from "../../data/pattern-catalogue";
+import { CATALOGUE_SOURCES, PATTERN_CATALOGUE, isDeadUrl, urlKey } from "../../data/pattern-catalogue";
 import { PATTERNS } from "../patterns";
 
 const knownIds = new Set(fraud.patterns.map((p) => p.id));
@@ -22,11 +22,11 @@ describe("merged pattern catalogue", () => {
 
   it("sources are deduped by url, https, dated and none of them dead", () => {
     expect(sourceIds.size).toBe(CATALOGUE_SOURCES.length);
-    expect(new Set(CATALOGUE_SOURCES.map((s) => s.url)).size).toBe(CATALOGUE_SOURCES.length);
+    expect(new Set(CATALOGUE_SOURCES.map((s) => urlKey(s.url))).size).toBe(CATALOGUE_SOURCES.length);
     for (const s of CATALOGUE_SOURCES) {
       expect(s.url).toMatch(/^https:\/\//);
       expect(s.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(DEAD_URLS.has(s.url)).toBe(false);
+      expect(isDeadUrl(s.url)).toBe(false);
     }
   });
 
@@ -37,7 +37,7 @@ describe("merged pattern catalogue", () => {
       expect(p.cases.length).toBeGreaterThanOrEqual(1);
       for (const c of p.cases) {
         expect(c.url).toMatch(/^https:\/\//);
-        expect(DEAD_URLS.has(c.url)).toBe(false);
+        expect(isDeadUrl(c.url)).toBe(false);
       }
       for (const prof of p.targets.profiles) expect(profiles.has(prof)).toBe(true);
       expect(p.signals.length).toBeGreaterThan(0);
