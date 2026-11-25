@@ -19,6 +19,7 @@ import path from "node:path";
 import { z } from "zod";
 import { HIBP_CACHE_EMAILS } from "./presets";
 import { detect, tokenize } from "./chips";
+import { pivotValue, type Pivot } from "./pivots";
 import type { Facts, ScanResult, ScanTool } from "./synthetic";
 
 const TIMEOUT_MS = 4000;
@@ -126,10 +127,11 @@ async function github(login: string, signal: AbortSignal, once: Once): Promise<L
     user.followers === undefined ? "" : plural(user.followers, "follower"),
     user.created_at ? `joined ${user.created_at.slice(0, 4)}` : "",
   ].filter(Boolean).join(", ");
+  const urls = [`https://github.com/${user.login}`, ...own.map((r) => `https://github.com/${r.full_name}`)];
   return seen.length
     ? { found: "Found email on GitHub", hit: true, source: "live", detail: `${profile}. Public emails ${list(seen)}`,
-        facts: { emails: seen, repos: own.map((r) => r.full_name) } }
-    : { found: "Found GitHub profile", hit: false, source: "live", detail: profile, facts: { profiles: ["GitHub"] } };
+        facts: { emails: seen, repos: own.map((r) => r.full_name), urls } }
+    : { found: "Found GitHub profile", hit: false, source: "live", detail: profile, facts: { profiles: ["GitHub"], urls: urls.slice(0, 1) } };
 }
 
 const githubUsers = z.object({ items: z.array(z.object({ login: z.string().regex(githubLogin) })) });
@@ -247,7 +249,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
         const out: { e: string; names: string[] }[] = [];
         for (const [i, e] of ids.emails.entries()) {
           if (i) await wait(500);
-          try { out.push({ e, names: await once(`xon:${e}`, () => xposedOrNot(e, signal)) }); } catch (err) { failed.push(err instanceof Error ? err.message : "XposedOrNot error"); break; }
+          try { out.push({ e, names: await once(`xon:${e}`, () => xposedOrNot(e, signal)) }); } catch (err) { failed.push(isTimeout(err) ? "XposedOrNot timed out" : err instanceof Error ? err.message : "XposedOrNot error"); break; }
         }
         return out;
       })(),
@@ -298,6 +300,8 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
     if (first) return { ...first, facts: {
       emails: unique(hits.flatMap((result) => result.facts?.emails ?? [])),
       repos: unique(hits.flatMap((result) => result.facts?.repos ?? [])),
+      /* Each claim in the report needs a page to cite: the profile and the repos the email shows up in. */
+      urls: unique(hits.flatMap((result) => result.facts?.urls ?? (result.facts?.repos ?? []).map((r) => `https://github.com/${r}`))),
     } };
     return results.find((result) => !result.empty) ?? noFindings("No GitHub profile");
   },
@@ -308,7 +312,12 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
       ...ids.emails.map((e) => once(`grav:${e}`, () => gravatar(e, signal))),
       ...users.map((user) => once(`kb:${user.toLowerCase()}`, () => keybase(user, signal))),
     ]);
-    return profiles("social", checks, users[0]);
+    /* Only a username that has a Keybase profile goes in the facts, so the report never ties a handle to the wrong site. */
+    const match = users.find((_, i) => {
+      const check = checks[ids.emails.length + i];
+      return check.status === "fulfilled" && check.value;
+    });
+    return profiles("social", checks, match);
   },
   forum: async (ids, signal, once) => {
     if (!ids.usernames.length) return skipped("No username in the query", "No username to check");
@@ -343,7 +352,7 @@ const RUNNERS: Partial<Record<ScanTool, Runner>> = {
 };
 
 /* ---- profile checks: each resolves to a site name when a public profile exists, or null ---- */
-type Profile = { site: string; linked?: string[] } | null;
+type Profile = { site: string; linked?: string[]; url?: string } | null;
 const gravatarProfile = z.object({
   display_name: z.string().nullish(),
   profile_url: z.string().nullish(),
@@ -370,9 +379,14 @@ async function gravatar(email: string, signal: AbortSignal): Promise<Gravatar | 
     site: "Gravatar",
     linked: profile.verified_accounts.map((a) => a.service_label || a.service_type || "").filter(Boolean),
     name: profile.display_name ?? undefined,
-    handle: linkedHandle ?? (slug && !/^[a-f\d]{32,}$/i.test(slug) ? slug : undefined),
+    handle: linkedHandle ?? (slug && !autoSlug(slug) ? slug : undefined),
+    url: slug ? profile.profile_url ?? undefined : undefined,
   };
 }
+
+/* Gravatar makes up a slug for profiles that never chose one: a hash, or words with a hex tail
+   ("devotedlypassionate12b997a1ec"). Neither is a handle the person uses anywhere else. */
+export const autoSlug = (slug: string) => /^[a-f\d]{32,}$/i.test(slug) || /^[a-z]{4,}(?=[a-f\d]*\d)[a-f\d]{8,}$/i.test(slug);
 
 async function keybase(user: string, signal: AbortSignal): Promise<Profile> {
   const { status, data } = await getJson<{ status?: { code: number }; them?: (object | null)[] }>(
@@ -387,14 +401,19 @@ async function hackerNews(user: string, signal: AbortSignal): Promise<Profile> {
   return data?.id ? { site: "Hacker News" } : null;
 }
 
+const isTimeout = (e: unknown) => e instanceof Error && e.name === "TimeoutError";
+
 function profiles(kind: "social" | "forum", checks: PromiseSettledResult<Profile>[], user?: string): LiveResult {
-  const failed = checks.flatMap((c) => (c.status === "rejected" ? [c.reason instanceof Error ? c.reason.message : "error"] : []));
-  if (failed.length === checks.length) throw new Error(failed.join("; "));
+  const rejected = checks.flatMap((c) => (c.status === "rejected" ? [c.reason as unknown] : []));
+  const failed = rejected.map((e) => (isTimeout(e) ? "timed out" : e instanceof Error ? e.message : "error"));
+  /* Every check timing out keeps the TimeoutError, so the card reads "Timed out after 4s" like the others. */
+  if (rejected.length === checks.length) throw rejected.every(isTimeout) ? rejected[0] : new Error(failed.join("; "));
   const found = checks.flatMap((c) => (c.status === "fulfilled" && c.value ? [c.value] : []));
   const sites = [...new Set(found.map((p) => p.site))];
   const linked = [...new Set(found.flatMap((p) => p.linked ?? []))];
   const note = failed.length ? `; could not check ${failed.join(", ")}` : "";
-  const facts = { profiles: sites, linked, username: user };
+  const urls = found.flatMap((p) => (p.url ? [p.url] : []));
+  const facts = { profiles: sites, linked, username: user, ...(urls.length ? { urls } : {}) };
   if (!sites.length) return noFindings(kind === "forum" ? "No forum profiles found" : "No public profiles found", `None found${note}`, facts);
   return { found: `Found: ${sites.join(", ")}`, hit: sites.includes("Gravatar"), source: "live",
     detail: `${sites.join(", ")}${linked.length ? ` (linked: ${linked.join(", ")})` : ""}${note}`, facts };
@@ -459,7 +478,7 @@ function freshOnce(): Once {
   };
 }
 
-export type Pivot = { from: "GitHub" | "Gravatar"; kind: "name" | "handle"; value: string };
+export type { Pivot } from "./pivots";
 
 function scanIdentifiers(query: string): ScanIds {
   const ids = identifiers(query);
@@ -495,12 +514,13 @@ async function expandIdentifiers(ids: ScanIds, signal: AbortSignal, once: Once, 
   const names: string[] = [];
   const handles: string[] = [];
   const pivot = (from: Pivot["from"], kind: Pivot["kind"], raw?: string | null) => {
-    const value = raw?.trim().replace(/\s+/g, " ");
-    if (!value || value.length > 100 || signal.aborted) return;
-    if (kind === "handle" && !/^[a-z\d][\w.-]{0,38}$/i.test(value)) return;
+    if (signal.aborted) return;
     const next = kind === "name" ? names : handles;
-    const known = kind === "name" ? ids.names : [...ids.github, ...ids.usernames];
-    if (next.length >= 2 || [...known, ...next].some((v) => v.toLowerCase() === value.toLowerCase())) return;
+    if (next.length >= 2) return;
+    /* An email's local part is already searched, so it never makes a chip of its own. */
+    const localParts = ids.emails.map((e) => e.slice(0, e.lastIndexOf("@")));
+    const value = pivotValue(raw, kind, [...ids.names, ...ids.github, ...ids.usernames, ...ids.emails, ...localParts, ...names, ...handles]);
+    if (!value) return;
     next.push(value);
     onPivot({ from, kind, value });
   };

@@ -5,7 +5,8 @@ import type { ScanResult, ScanTool } from "./synthetic";
    in the news can match a namesake, so it needs a second identifier; job change, phone and address are partial.
    Moved home, big life event, selling online and travelling soon have no public signal and are only ever ticked by the person. */
 export type FlagId = "same-username-everywhere" | "in-the-news" | "just-changed-jobs" | "public-email-in-commits"
-  | "passwords-in-breaches" | "stealer-log-hit" | "phone-number-exposed" | "home-address-exposed";
+  | "passwords-in-breaches" | "stealer-log-hit" | "phone-number-exposed" | "home-address-exposed"
+  | "travel-site-breach" | "marketplace-breach";
 export type SelfFlagId = "recently-moved" | "big-life-event" | "selling-online" | "travelling-soon";
 /* yes: shown and used. maybe: something matched but not enough to show (a namesake, an undated snippet). */
 export type FlagHit = { id: FlagId; state: "yes" | "maybe" | "no" | "skip"; evidence: string; urls?: string[] };
@@ -14,11 +15,41 @@ export const FLAG_LABEL: Record<FlagId | SelfFlagId, string> = {
   "same-username-everywhere": "Same username everywhere", "in-the-news": "In the news", "just-changed-jobs": "Just changed jobs",
   "public-email-in-commits": "Public email in commits", "passwords-in-breaches": "Passwords in breaches", "stealer-log-hit": "Stealer log hit",
   "phone-number-exposed": "Phone number exposed", "home-address-exposed": "Home address exposed",
+  "travel-site-breach": "Travel site in a breach", "marketplace-breach": "Marketplace in a breach",
   "recently-moved": "Recently moved", "big-life-event": "Big life event", "selling-online": "Selling online", "travelling-soon": "Travelling soon",
 };
 export const NETWORK_FLAGS: FlagId[] = ["same-username-everywhere", "in-the-news", "just-changed-jobs"];
-export const OUTPUT_FLAGS: FlagId[] = ["public-email-in-commits", "passwords-in-breaches", "stealer-log-hit", "phone-number-exposed", "home-address-exposed"];
+export const OUTPUT_FLAGS: FlagId[] = ["public-email-in-commits", "passwords-in-breaches", "stealer-log-hit", "phone-number-exposed", "home-address-exposed", "travel-site-breach", "marketplace-breach"];
 export const ALL_FLAGS: FlagId[] = [...NETWORK_FLAGS, ...OUTPUT_FLAGS];
+
+/* Breach names that are travel sites (airlines, hotels, booking and rail) or online marketplaces. Matched on the breach
+   name only; an account at one of these is a lead for a scammer, not proof of a trip or a sale. */
+const TRAVEL_BREACH = new RegExp([
+  String.raw`\bair(?:lines?|ways|port|asia|india|miles|bnb)?\b`, "airbnb", "marriott", "hilton", "hyatt", "\\bihg\\b", "accor", "radisson", "wyndham",
+  String.raw`booking\.com`, "expedia", "trivago", "tripadvisor", "trainline", "skyscanner", "kayak", "webjet", "lastminute", "opodo", "agoda",
+  "orbitz", "travelocity", "hotwire", "priceline", "hotels?\\b", "hostel", "easyjet", "ryanair", "lufthansa", "qantas", "cathay", "emirates", "etihad",
+  "jetblue", "southwest", "eurostar", "amtrak", "travelex", "holiday", "cruise", "mgm resorts", "\\bresorts?\\b",
+].join("|"), "i");
+const MARKETPLACE_BREACH = new RegExp([
+  "ebay", "etsy", "vinted", "depop", "gumtree", "craigslist", "\\bolx\\b", "mercari", "poshmark", "shpock", "carousell", "offerup", "marketplace",
+  "aliexpress", "taobao", "rakuten", "stockx", "grailed", "kijiji", "wallapop", "tradera", "mercadolibre", "swappa", "discogs", "tokopedia",
+  "shopee", "lazada", "trademe", "bonanza", "reverb",
+].join("|"), "i");
+
+/* Breach names that match a pattern, one entry per leak (the same leak is listed by several sources under slightly different names). */
+export function breachNamesMatching(breaches: { name: string }[], pattern: RegExp): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const { name } of breaches) {
+    const key = name.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9]/g, "");
+    if (!pattern.test(name) || seen.has(key)) continue;
+    seen.add(key);
+    out.push(name.trim());
+  }
+  return out;
+}
+export const travelBreaches = (b: { name: string }[]) => breachNamesMatching(b, TRAVEL_BREACH);
+export const marketplaceBreaches = (b: { name: string }[]) => breachNamesMatching(b, MARKETPLACE_BREACH);
 
 /* Flags read straight from the scan's own tool results, so they need no extra calls. */
 export function outputFlags(o: Partial<Record<ScanTool, ScanResult>>): FlagHit[] {
@@ -36,6 +67,11 @@ export function outputFlags(o: Partial<Record<ScanTool, ScanResult>>): FlagHit[]
   const lists = o.hudsonRock?.facts?.stealerLists ?? [];
   const devices = o.hudsonRock?.facts?.devices ?? [];
   const noHr = !o.hudsonRock || o.hudsonRock.source === "skipped" ? "No email or username checked" : false;
+  /* Every breach either breach source named, so the HIBP, LeakCheck and XposedOrNot lists are read together. */
+  const allBreaches = [...(o.hibpTest?.facts?.breaches ?? []), ...(o.leakCheck?.facts?.breaches ?? [])];
+  const travel = travelBreaches(allBreaches);
+  const market = marketplaceBreaches(allBreaches);
+  const account = (names: string[]) => `${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}. A breach held an account, which does not mean it is in use now`;
   return [
     hit("public-email-in-commits", emails.length > 0, emails.length ? `GitHub commits: ${emails.join(", ")}` : "No personal email in recent public commits", noGh),
     hit("passwords-in-breaches", pw, pw ? [o.leakCheck?.facts?.passwords ? "LeakCheck records with a password field" : "", pwBreach.length ? `HIBP: ${pwBreach.slice(0, 3).join(", ")}` : ""].filter(Boolean).join("; ") : "No breach record lists a password", noEmail),
@@ -43,6 +79,8 @@ export function outputFlags(o: Partial<Record<ScanTool, ScanResult>>): FlagHit[]
     /* Partial: a breach held the field, which does not mean it is public now. The number and address are never shown. */
     hit("phone-number-exposed", phone, held(phone), noEmail),
     hit("home-address-exposed", addr, held(addr), noEmail),
+    hit("travel-site-breach", travel.length > 0, travel.length ? `Travel breach: ${account(travel)}` : "No travel site in the breach lists", noEmail),
+    hit("marketplace-breach", market.length > 0, market.length ? `Marketplace breach: ${account(market)}` : "No marketplace in the breach lists", noEmail),
   ];
 }
 

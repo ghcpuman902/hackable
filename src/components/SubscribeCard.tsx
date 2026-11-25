@@ -20,7 +20,7 @@ export function SubscribeCard({ email }: { email?: string }) {
   }
 
   return (
-    <section className="sec mk-card plain subscribe-card" data-submitted={submitted}>
+    <section id="subscribe" className="sec mk-card plain subscribe-card" data-submitted={submitted}>
       <form className="subscribe-card-form" onSubmit={handleSubmit}>
         <h2>Get an updated report when something new turns up</h2>
         <label htmlFor={emailId}>Email address</label>

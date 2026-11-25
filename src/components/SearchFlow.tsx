@@ -8,14 +8,18 @@ import { DefaultChatTransport, getStaticToolName, isStaticToolUIPart } from "ai"
 import { Lucide, Tile } from "./icons";
 import { Logo, type CardState } from "./Fan";
 import { ScanRows } from "./ScanRows";
-import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, ProfileTag, type Outputs } from "./Report";
+import { FINDINGS, FinalSec, liveFindings, PatternList, presetFindings, type Outputs } from "./Report";
+import { tagLine, tagsFor, withTagLine } from "@/lib/report-tags";
 import { BRAND_BG, BrandIcon } from "./brand-icons";
 import { detect, isStrong, KIND_LABEL, tokenize, type Chip } from "@/lib/chips";
 import { outputFlags, type FlagHit, type FlagId, type SelfFlagId } from "@/lib/flags";
 import { patternsFor } from "@/lib/patterns";
 import ReportMarkdown from "./ReportMarkdown";
 import PatternCards from "./PatternCards";
-import EmptyResult from "./EmptyResult";
+import EmptyResult, { ScanFailed } from "./EmptyResult";
+import { scanFailed } from "@/lib/scan-outcome";
+import { chipsFromSearch, historyMode, scanSearch } from "@/lib/scan-url";
+import { dedupePivots, type Pivot } from "@/lib/pivots";
 import LandingBadge from "./LandingBadge";
 
 /* The one lesson shown when no check found a risk. */
@@ -76,6 +80,7 @@ const CHIP_ORDER = Array.from({ length: Math.max(PEOPLE.length, PRESETS.length) 
   ...(i < PRESETS.length ? [{ kind: "preset" as const, i }] : []),
 ]).flat();
 const PRELOAD_MS = 10 * 60 * 1000;
+const REASON_MS = 18_000;
 
 const transport = new DefaultChatTransport<ScanMessage>({ api: "/api/scan" });
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("");
@@ -268,9 +273,9 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const states: Partial<Record<ScanTool, CardState>> = {};
   const found: Partial<Record<ScanTool, string>> = {};
   const outputs: Outputs = {};
-  const pivots = [];
+  const received: Pivot[] = [];
   for (const p of assistant?.parts ?? []) {
-    if (p.type === "data-pivot") pivots.push(p.data);
+    if (p.type === "data-pivot") received.push(p.data);
     if (!isStaticToolUIPart(p)) continue;
     const name = getStaticToolName(p) as ScanTool;
     if (p.state === "output-available") {
@@ -280,6 +285,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     }
     else if (p.state === "input-streaming" || p.state === "input-available") states[name] = "checking";
   }
+  const pivots = dedupePivots(received);
   const settled = fan.every((c) => states[c.tool] === "ok" || states[c.tool] === "hit");
   const flagsIn = !live || quick || netFlags !== null;
   const done = running && flagsIn && (status === "error" || (status === "ready" && settled));
@@ -287,12 +293,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   /* Live runs: Nemotron writes the report from what the scan actually found. "" means fall back to the rules report. */
   const [liveMd, setLiveMd] = useState<{ key: string; md: string } | null>(null);
   const liveHits = fan.filter((c) => states[c.tool] === "hit").length;
-  const wantMd = done && live && !quick && !preset && liveHits > 0;
+  const wantMd = done && live && !quick && !preset && liveHits > 0 && status !== "error";
   const outputsJson = wantMd ? JSON.stringify({ query: chips.map((c) => c.label), findings: outputs, pivots }) : "";
   useEffect(() => {
     if (!outputsJson) return;
     let alive = true;
-    fetch("/api/reason", { method: "POST", headers: { "content-type": "application/json" }, body: outputsJson, signal: AbortSignal.timeout(8000) })
+    /* Longer than the server's own 15s model deadline, so a slow model still gives the written report, not the fallback. */
+    fetch("/api/reason", { method: "POST", headers: { "content-type": "application/json" }, body: outputsJson, signal: AbortSignal.timeout(REASON_MS) })
       .then((r) => r.json()).then((d: { markdown?: string }) => d.markdown ?? "").catch(() => "")
       .then((md) => { if (alive) setLiveMd({ key: outputsJson, md }); });
     return () => { alive = false; };
@@ -312,25 +319,43 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     if (live && !presetFor(text) && !isDemoQuery(text)) {
       const ctl = new AbortController();
       flagsCtl.current = ctl;
-      fetch("/api/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: text }), signal: ctl.signal })
+      /* A lookup that never answers must not hold the report back: after 25s the flags are taken as none. */
+      fetch("/api/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: text }), signal: AbortSignal.any([ctl.signal, AbortSignal.timeout(25_000)]) })
         .then((r) => r.json() as Promise<{ flags?: FlagHit[] }>)
         .then((j) => { if (flagsCtl.current === ctl) setNetFlags(j.flags ?? []); })
         .catch(() => { if (flagsCtl.current === ctl && !ctl.signal.aborted) setNetFlags([]); });
+      // A timeout aborts only the combined signal, so ctl.signal.aborted stays false and the catch above sets [].
     }
     void sendMessage({ text });
   }, [live, sendMessage, setMessages]);
 
-  const restore = useCallback(() => {
-    const q = new URLSearchParams(location.search).get("q");
-    if (!q) { void stop(); setMessages([]); setRunning(false); return false; }
-    try {
-      const st = JSON.parse(q) as { chips?: string[] };
-      chipsRef.current = [];
-      add((st.chips || []).join(", "));
-      scan(chipsRef.current);
-      return true;
-    } catch { return false; }
-  }, [add, scan, stop, setMessages]);
+  /* A clean landing, as a refresh would give: no scan, no chips, an empty box, no suggestions, top of the page. */
+  const reset = useCallback(() => {
+    void stop();
+    flagsCtl.current?.abort();
+    setMessages([]);
+    setRunning(false);
+    setNetFlags(null);
+    setSelfFlags([]);
+    setChips([]);
+    setEditing(null);
+    setSel(null);
+    setEntry("");
+    if (entryRef.current) entryRef.current.value = "";
+    setSugQ(null);
+    setActive(-1);
+    scrollTo({ top: 0, behavior: "auto" });
+  }, [stop, setMessages]);
+
+  /* Back to an address with no ?q (from a report) gives the same clean landing as the logo. */
+  const restore = useCallback((pop?: unknown) => {
+    const saved = chipsFromSearch(location.search);
+    if (!saved) { if (pop) reset(); return false; }
+    chipsRef.current = [];
+    add(saved.join(", "));
+    scan(chipsRef.current);
+    return true;
+  }, [add, scan, reset]);
 
   useEffect(() => {
     const boot = setTimeout(() => {
@@ -343,20 +368,26 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Every scan gets its own ?q entry, so the address can be shared and Back returns to the landing. */
+  const start = (list: Chip[]) => {
+    const next = scanSearch(list.map((c) => c.raw));
+    if (historyMode(location.search, next) === "push") history.pushState(null, "", next);
+    else history.replaceState(null, "", next);
+    scan(list);
+  };
+
   const submit = () => {
     commit();
     const list = chipsRef.current;
     if (!list.length || running) return;
     entryRef.current?.blur();
-    const state = { chips: list.map((c) => c.raw) };
-    history.pushState(null, "", "?q=" + encodeURIComponent(JSON.stringify(state)));
-    scan(list);
+    start(list);
   };
 
   const pickPreset = (i: number) => {
     setChips([]);
     add(PRESETS[i].name);
-    scan(chipsRef.current);
+    start(chipsRef.current);
   };
 
   /* Jane Doe Smith is the cached demo, so she opens straight away like a preset; the others fill the box. */
@@ -364,7 +395,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     const p = PEOPLE[i];
     setChips([]);
     add(p.q);
-    if (isDemoQuery(p.q)) { scan(chipsRef.current); return; }
+    if (isDemoQuery(p.q)) { start(chipsRef.current); return; }
     entryRef.current?.focus();
   };
 
@@ -373,20 +404,19 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   const home = (e: MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
-    void stop();
-    flagsCtl.current?.abort();
-    setMessages([]);
-    setRunning(false);
-    setNetFlags(null);
-    setSelfFlags([]);
-    setChips([]);
-    setEditing(null);
-    setSel(null);
-    setEntry("");
-    if (entryRef.current) entryRef.current.value = "";
-    closeSug();
+    reset();
     if (location.search || location.hash) history.pushState(null, "", "/");
-    scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  /* Subscribe in the nav: with a report open it goes to the subscribe card under it; before that there is
+     nothing to subscribe to yet, so it puts you in the search box. */
+  const toSubscribe = (e: MouseEvent) => {
+    e.preventDefault();
+    const card = document.getElementById("subscribe");
+    if (!card) { scrollTo({ top: 0, behavior: "auto" }); entryRef.current?.focus(); return; }
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
+    card.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
   };
 
   /* The link keeps its slot but fades out once the report is in view. */
@@ -488,10 +518,13 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
       </ul>}
     </section>
   );
-  const report = preset ? [
+  const failed = done && scanFailed(status, fan.map((c) => c.tool), outputs);
+  const report = failed ? [
+    <ScanFailed key="failed" connection={status === "error"} onRetry={() => scan(chipsRef.current)} />,
+  ] : preset ? [
     summary,
     /* Markdown reports carry their own hashtags, so the old tag pill row is only for the fallback layout. */
-    ...(PRESET_REPORTS[preset.name] ? [] : [<ProfileTag key="profile" profile={preset.profile} flags={preset.flags} />]),
+    ...(PRESET_REPORTS[preset.name] ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(preset.profile, preset.flags))} />]),
     ...(PRESET_REPORTS[preset.name] ? [<ReportMarkdown key="md" markdown={PRESET_REPORTS[preset.name]} />, <PatternCards key="pcards" markdown={PRESET_REPORTS[preset.name]} />] : [
       ...presetFindings(preset),
       <PatternList key={"pats" + scanId} ids={patternsFor({ profile: preset.profile, flags: preset.flags })} who={preset.name.split(" ")[0]} open={showAll} />,
@@ -501,19 +534,20 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
   ] : live && !demo && hits.length === 0 ? [
     /* Zero hits: never list web results, which are usually about someone else with the same name. */
     /* Says what was found and that no check turned up a risk, then one lesson at normal card size. */
-    <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} pivots={pivots} />,
+    <EmptyResult key="empty" first={first} fan={fan} states={states} found={found} outputs={outputs} pivots={pivots} />,
     <ReportMarkdown key="safe" markdown={SAFE_ANYWAY} />,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo && mdNow !== "" ? [
     summary,
     mdNow === null
-      ? <p key="writing" className="sum-none">Reading what we found…</p>
-      : <ReportMarkdown key="md" markdown={mdNow} />,
-    mdNow ? <PatternCards key="pcards" markdown={mdNow} /> : null,
+      ? <p key="writing" className="sum-writing" role="status">Reading what we found…</p>
+      /* The tag line is built from the flags, as for presets, so Nemotron's own tags never decide it. */
+      : <ReportMarkdown key="md" markdown={withTagLine(mdNow, tagsFor(null, flags))} />,
+    mdNow ? <PatternCards key="pcards" markdown={mdNow} fallback={patterns} /> : null,
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : live && !demo ? [
     summary,
-    ...(flags.length ? [<ProfileTag key="profile" profile={null} flags={flags} />] : []),
+    ...(flags.length ? [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, flags))} />] : []),
     ...liveFindings(outputs),
     <PatternList key={"pats" + scanId} ids={patterns} who={who} open={showAll} />,
     <FinalSec key="final" both={patterns.includes("contagious-interview") && patterns.includes("email-bomb-fake-it-support")}
@@ -522,7 +556,7 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ] : [
     summary,
-    ...(demo ? [] : [<ProfileTag key="profile" profile={null} />]),
+    ...(demo ? [] : [<ReportMarkdown key="profile" markdown={tagLine(tagsFor(null, []))} />]),
     ...(demo ? [<ReportMarkdown key="md" markdown={DEMO_REPORT} />, <PatternCards key="pcards" markdown={DEMO_REPORT} />] : [
       ...FINDINGS,
       <PatternList key={"pats" + scanId} ids={[...new Set([...LEAD_PATTERNS, ...EXTRA_PATTERNS, ...patternsFor({ profile: null, flags: selfFlags })])]} max={2} open={showAll} />,
@@ -531,14 +565,22 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
     <SubscribeCard key="sub" email={chips.find((c) => c.kind === "email")?.label} />,
   ];
 
+  /* One spoken line for the whole scan, instead of every card announcing itself. */
+  const finished = fan.filter((c) => states[c.tool] === "ok" || states[c.tool] === "hit").length;
+  const progress = !running ? ""
+    : failed ? "The checks did not finish."
+    : done ? (hits.length ? `Checks finished. ${hits.length} of ${fan.length} found something.` : "Checks finished. Nothing risky found.")
+    : `Checking sources. ${finished} of ${fan.length} done.`;
+
   return (
     <div className={"landing" + (running ? " run" : "") + (done ? " done" : "") + (quick ? " quick" : "")}>
+      <p className="sr-only" role="status" aria-live="polite">{progress}</p>
       {!running && <LandingBadge />}
       <div className="glow" aria-hidden="true"></div>
       <nav className="nav">
         <Link className="mark" href="/" onClick={home}><i><Lucide name="shield" /></i>Hackable</Link>
-        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><a href="/how-it-works">How it works</a><a href="/privacy">Privacy</a><a href="/patterns">Patterns</a></div>
-        <a className="login" href="#">Subscribe</a>
+        <div className="links"><Link href="/" aria-current="page" onClick={home}>Home</Link><Link href="/how-it-works">How it works</Link><Link href="/privacy">Privacy</Link><Link href="/patterns">Patterns</Link></div>
+        <a className="login" href="#subscribe" onClick={toSubscribe}>Subscribe</a>
       </nav>
       <div className="app">
         <div className="top">
@@ -559,7 +601,8 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                 editing === c.id ? (
                   <EditChip key={c.id} chip={c} onDone={(v, keep) => finishEdit(c.id, v, keep)} />
                 ) : (
-                  <span key={c.id} tabIndex={0} role="button" data-id={c.id} data-kind={c.kind}
+                  <span key={c.id} tabIndex={0} role="group" data-id={c.id} data-kind={c.kind}
+                    aria-label={`${KIND_LABEL[c.kind]}: ${c.raw}`}
                     title={`${KIND_LABEL[c.kind]}: ${c.raw}`}
                     className={"chip pill new" + (sel === c.id ? " sel" : "") + (shake?.id === c.id ? " shake" : "")}
                     onDoubleClick={(e) => { e.preventDefault(); setEditing(c.id); }}
@@ -576,14 +619,14 @@ export default function SearchFlow({ live = false }: { live?: boolean }) {
                       if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); (el.previousElementSibling as HTMLElement | null)?.focus(); }
                     }}>
                     <span className="nw"><Tile kind={c.kind} /><span className="lbl">{c.label}</span></span>
-                    <button type="button" className="x" aria-label="Remove">
+                    <button type="button" className="x" aria-label={`Remove ${c.label}`}>
                       <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                     </button>
                   </span>
                 ),
               )}
               <input ref={entryRef} className="entry" type="text" spellCheck={false}
-                role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls="sg-list"
+                role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls={open ? "sg-list" : undefined}
                 aria-activedescendant={open && active >= 0 ? `sg-${active}` : undefined}
                 aria-label="Name, email or link" enterKeyHint="go" autoComplete="off" autoCapitalize="off" autoCorrect="off"
                 placeholder={chips.length ? "Add more" : PASTE[0]}
