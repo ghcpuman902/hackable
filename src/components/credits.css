@@ -13,6 +13,8 @@
 
 .run .tavily-credit {
   display: flex;
+  /* The 30px logo makes the pill taller; keep a clear gap above the identity chips. */
+  margin-bottom: 12px;
 }
 
 .tavily-credit a {
@@ -34,7 +36,7 @@
 .tavily-logo {
   display: block;
   width: auto;
-  height: 24px;
+  height: 30px;
 }
 
 /* Report: the same quiet style as the source lines, aligned to the same edge. */

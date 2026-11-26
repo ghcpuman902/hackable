@@ -27,3 +27,12 @@
 .source-sheet-list svg { grid-column: 2; grid-row: 1 / span 2; color: var(--n700); }
 .source-sheet-list--possible a { background: transparent; box-shadow: inset 0 0 0 1px var(--n200, #e5e5e5); }
 @media (max-width: 639.98px) { .source-sheet { width: 100%; } .source-sheet-panel { max-height: 76vh; } }
+
+/* On a report the sheet sits inside a card's reference line (.rm-refs), which right-aligns and underlines links.
+   The sheet resets that so its rows read as a plain left-aligned list. */
+.rm-refs .source-sheet { text-align: left; font-size: 16px; line-height: 1.4; color: var(--n900); }
+.rm-refs .source-sheet-list a,
+.rm-refs .source-sheet-list a:hover { position: static; color: var(--n900); text-decoration: none; }
+.rm-refs .source-sheet-list a::after { content: none; }
+.rm-refs .source-sheet-title,
+.rm-refs .source-sheet-domain { text-align: left; text-decoration: none; }
